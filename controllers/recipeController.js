@@ -68,13 +68,13 @@ const updateRecipe = asyncHandler(async(req, res) => {
 //@desc Delete recipe
 //@route DELETE /api/recipe:/id
 //@access public
-const deleteRecipe = asyncHandler(async (req,res) =>{
+const deleteRecipe = asyncHandler(async (req, res) => {
     const recipe = await Recipe.findById(req.params.id);
-    if(!recipe){
+    if (!recipe) {
         res.status(404);
-        throw  new Error("Recipe not found");
+        throw new Error("Recipe not found");
     }
-    await Recipe.deleteOne();
+    await Recipe.deleteOne({ _id: req.params.id });
     res.status(200).json(recipe);
 });
 

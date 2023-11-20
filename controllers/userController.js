@@ -2,6 +2,12 @@ const asyncHandler = require("express-async-handler");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const User = require("../models/userModel");
+//const redisClient = require("../config/redicClient");
+
+const listOfUsers = asyncHandler(async (req, res) => {
+    const users = await User.findAll();
+    res.json(users);
+  });
 //@desc Register a user
 //@route POST /api/users/register
 //@access public
@@ -25,6 +31,8 @@ const registerUser = asyncHandler(async (req,res) =>{
         password: hashedPassword,
     });
     if(user){
+        //redisClient.set(`user:${user.id}`, JSON.stringify(user));
+        
         res.status(201).json({_id: user.id , email: user.email});
     }
     else{
@@ -55,8 +63,16 @@ const loginUser = asyncHandler(async (req,res) =>{
             },
         },
         process.env.ACCESS_TOKEN_SECRET,
-        {expiresIn: "1m"}
+        {expiresIn: "5m"}
         );
+        const refreshToken = jwt.sign({
+            user:{
+                username: user.username,
+                email: user.email,
+                id: user.id,
+            },
+        },)
+        //redisClient.set(`user:${user.id}`, JSON.stringify(user));
         res.status(200).json({accesToken});
     }else{
         res.status(401);
@@ -72,4 +88,5 @@ const currentUser = asyncHandler(async (req,res) =>{
     res.json({ message: "Current user information"});
 });
 
-module.exports= {registerUser,loginUser,currentUser}
+
+module.exports= {registerUser,loginUser,currentUser,listOfUsers}
