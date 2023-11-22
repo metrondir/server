@@ -9,7 +9,7 @@ const {getRecipes,
 const validateToken = require("../midlware/validateTokenHandler");
 
 router.use(validateToken);
-router.route("/").get(getRecipes).post(createRecipe);
+router.route("/").get(getRecipes).post(createRecipe).options(createRecipe);
 
 router.route("/:id").get(getRecipe).put(updateRecipe).delete(deleteRecipe);
 
