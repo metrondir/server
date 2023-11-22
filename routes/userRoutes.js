@@ -10,7 +10,7 @@ router.use((req, res, next) => {
 	next();
  });
 
-router.get("/users",listOfUsers)
+router.get("/allusers",listOfUsers)
 
 router.post("/register", registerUser);
 

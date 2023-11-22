@@ -5,9 +5,10 @@ const User = require("../models/userModel");
 //const redisClient = require("../config/redicClient");
 
 const listOfUsers = asyncHandler(async (req, res) => {
-    const users = await User.findAll();
-    res.json(users);
+    const users = await User.find();
+    res.status(200).json(users);
   });
+ 
 //@desc Register a user
 //@route POST /api/users/register
 //@access public
@@ -63,7 +64,7 @@ const loginUser = asyncHandler(async (req,res) =>{
             },
         },
         process.env.ACCESS_TOKEN_SECRET,
-        {expiresIn: "5m"}
+        {expiresIn: "10m"}
         );
         const refreshToken = jwt.sign({
             user:{
@@ -71,9 +72,12 @@ const loginUser = asyncHandler(async (req,res) =>{
                 email: user.email,
                 id: user.id,
             },
-        },)
+        },
+        process.env.REFRESH_TOKEN_SECRET,
+        { expiresIn: "7d" });
         //redisClient.set(`user:${user.id}`, JSON.stringify(user));
-        res.status(200).json({accesToken});
+        res.status(200).json({accesToken, refreshToken});
+        
     }else{
         res.status(401);
         throw new Error("Email or password is not valid ");
