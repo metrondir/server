@@ -1,96 +1,90 @@
 const asyncHandler = require("express-async-handler");
-const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
-const User = require("../models/userModel");
-//const redisClient = require("../config/redicClient");
+const {validationResult} = require("express-validator");
+const {registration ,activate, login,logout, refresh ,getAllUsers } = require("../services/userService");
+const ApiError = require("../middleware/apiError");
 
-const listOfUsers = asyncHandler(async (req, res) => {
-    const users = await User.find();
-    res.status(200).json(users);
-  });
+const getUsers = asyncHandler(async (req, res,next) => {
+    try {
+        const users = getAllUsers();
+        res.status(200).json(users);
+    } catch (error) {
+        next(error);
+    }
+});
  
 //@desc Register a user
 //@route POST /api/users/register
 //@access public
-const registerUser = asyncHandler(async (req,res) =>{
-    const{username, email,password}=req.body;
-    if(!username || !email || !password){
-    res.status(400);
-        throw new Error("All fields are mandatory");
-    }
-    const userAvailable = await User.findOne({email});
-    if(userAvailable) {
-        res.status(400);
-        throw new Error("User already registered");
-    }
+const registerUser = asyncHandler(async (req,res,next) =>{
+    try {
+        const errors = validationResult(req);
+        if(!errors.isEmpty()){
+            return next(ApiError.BadRequest("Validation error", errors.array()));
+        }
+        const {username, email, password} = req.body;
+        const userData = registration(username, email, password);
+        res.cookie("refreshToken", userData.refreshToken, {maxAge: 30*24*60*60*1000, httpOnly: true});
 
-    const hashedPassword = await bcrypt.hash(password,10);
-    console.log("Hashed Password: " ,hashedPassword);
-    const user = await User.create({
-        username,
-        email,
-        password: hashedPassword,
-    });
-    if(user){
-        //redisClient.set(`user:${user.id}`, JSON.stringify(user));
-        
-        res.status(201).json({_id: user.id , email: user.email});
+        return res.json(userData);
+    } catch (error) {
+        next(error);
     }
-    else{
-        res.status(400);
-        throw new Error("User data is not valid");
-    }
-    console.log(`user created ${user}`);
-    res.json({ message: "Register the user"});
 });
 
 //@desc loginUser a user
 //@route POST /api/users/login
 //@access public
-const loginUser = asyncHandler(async (req,res) =>{
-    const {email , password} = req.body;
-    if(!email || !password){
-        res.status(400);
-        throw new Error("All field are mandatory!");
-    }
-    const user = await User.findOne({email});
-
-    if(user &&(await bcrypt.compare(password, user.password))){
-        const accesToken = jwt.sign({
-            user:{
-                username: user.username,
-                email: user.email,
-                id: user.id,
-            },
-        },
-        process.env.ACCESS_TOKEN_SECRET,
-        {expiresIn: "10m"}
-        );
-        const refreshToken = jwt.sign({
-            user:{
-                username: user.username,
-                email: user.email,
-                id: user.id,
-            },
-        },
-        process.env.REFRESH_TOKEN_SECRET,
-        { expiresIn: "7d" });
-        //redisClient.set(`user:${user.id}`, JSON.stringify(user));
-        res.status(200).json({accesToken, refreshToken});
+const loginUser = asyncHandler(async (req,res,next) =>{
+    try {
+        const {email,password} = req.body;
+        const userData = login(email, password);
+        res.cookie("refreshToken", userData.refreshToken, {maxAge: 30*24*60*60*1000, httpOnly: true});
         
-    }else{
-        res.status(401);
-        throw new Error("Email or password is not valid ");
+        return res.json(userData);
+    } catch (e) {
+        next(e);
     }
 
 });
 
-//@desc Current user information
-//@route GET /api/users/current
-//@access private
-const currentUser = asyncHandler(async (req,res) =>{
-    res.json({ message: "Current user information"});
+const logoutUser = asyncHandler(async (req,res,next) =>{
+    try{
+        const {refreshToken} = req.cookies;
+        const token = logout(refreshToken);
+        res.clearCookie("refreshToken");
+        return res.json(token);
+    }
+    catch(error){
+        next(error);
+    }
+});
+
+const refreshTokenUser = asyncHandler(async (req,res) =>{
+        try {
+        const {refreshToken} = req.cookies;
+        const userData = refresh(refreshToken);
+        res.cookie("refreshToken", userData.refreshToken, {maxAge: 30*24*60*60*1000, httpOnly: true});
+        return res.json(userData);   
+    } catch (error) {
+            next(error);
+        }
+
 });
 
 
-module.exports= {registerUser,loginUser,currentUser,listOfUsers}
+const activateUser = asyncHandler(async (req,res) =>{
+    try {
+        const activationLink = req.params.link;
+        activate(activationLink);
+        return res.redirect(process.env.CLIENT_URL);
+    } catch (error) {
+        next(error);
+    }
+
+});
+
+
+
+
+
+module.exports= {registerUser,loginUser,logoutUser,refreshTokenUser,activateUser,getUsers}

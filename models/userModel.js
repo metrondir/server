@@ -14,7 +14,14 @@ const userSchema = mongoose.Schema({
     type: String,
     required: [true, "Please add the user password"]
    },
-
+   isActivated: {
+    type: Boolean,
+    default: false,
+   },
+    activationLink: {
+     type: String,
+     required: [true, "Please add the user activation link"]
+    },
 },
 {
     timestamps: true,
