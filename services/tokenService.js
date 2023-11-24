@@ -1,6 +1,5 @@
 const jwt = require("jsonwebtoken");
 const tokenModel = require("../models/tokenModel");
-const asynchHandler = require("express-async-handler");
 function generateTokens (payload) {
 	const accessToken = jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '15m' });
 	const refreshToken = jwt.sign(payload, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '7d' });
@@ -26,7 +25,7 @@ function generateTokens (payload) {
 		return null;
 	}	
 }
-	const saveTokens = asynchHandler(async(userId, refreshToken)=> {
+	async function saveTokens (userId, refreshToken) {
 		const tokenData = await tokenModel.findOne({ user: userId });
 		if(tokenData) {
 			tokenData.refreshToken = refreshToken;
@@ -34,16 +33,16 @@ function generateTokens (payload) {
 		}
 		const token = await tokenModel.create({ user: userId, refreshToken });
 		return token;
-	});
-	const  removeToken = asynchHandler(async(refreshToken)=> {
+	}
+  async function removeToken (refreshToken) {
 	const tokenData = await tokenModel.deleteOne({ refreshToken });
 	return tokenData;
-});
+}
 
-const findToken = asynchHandler(async(refreshToken)=> {
+async function findToken (refreshToken) {
 	const tokenData = await tokenModel.findOne({ refreshToken });
 	return tokenData;
-});
+}
 
 
   module.exports = { generateTokens, saveTokens, removeToken,validateAccessToken,validateRefreshToken,findToken };

@@ -5,7 +5,7 @@ const ApiError = require("../middleware/apiError");
 
 const getUsers = asyncHandler(async (req, res,next) => {
     try {
-        const users = getAllUsers();
+        const users = await getAllUsers();
         res.status(200).json(users);
     } catch (error) {
         next(error);
@@ -22,9 +22,9 @@ const registerUser = asyncHandler(async (req,res,next) =>{
             return next(ApiError.BadRequest("Validation error", errors.array()));
         }
         const {username, email, password} = req.body;
-        const userData = registration(username, email, password);
+        const userData = await registration(username, email, password);
         res.cookie("refreshToken", userData.refreshToken, {maxAge: 30*24*60*60*1000, httpOnly: true});
-
+        console.log("The user data is :", userData);
         return res.json(userData);
     } catch (error) {
         next(error);
@@ -37,7 +37,7 @@ const registerUser = asyncHandler(async (req,res,next) =>{
 const loginUser = asyncHandler(async (req,res,next) =>{
     try {
         const {email,password} = req.body;
-        const userData = login(email, password);
+        const userData = await login(email, password);
         res.cookie("refreshToken", userData.refreshToken, {maxAge: 30*24*60*60*1000, httpOnly: true});
         
         return res.json(userData);
@@ -50,7 +50,7 @@ const loginUser = asyncHandler(async (req,res,next) =>{
 const logoutUser = asyncHandler(async (req,res,next) =>{
     try{
         const {refreshToken} = req.cookies;
-        const token = logout(refreshToken);
+        const token = await logout(refreshToken);
         res.clearCookie("refreshToken");
         return res.json(token);
     }
@@ -62,7 +62,7 @@ const logoutUser = asyncHandler(async (req,res,next) =>{
 const refreshTokenUser = asyncHandler(async (req,res) =>{
         try {
         const {refreshToken} = req.cookies;
-        const userData = refresh(refreshToken);
+        const userData = await refresh(refreshToken);
         res.cookie("refreshToken", userData.refreshToken, {maxAge: 30*24*60*60*1000, httpOnly: true});
         return res.json(userData);   
     } catch (error) {
@@ -75,7 +75,7 @@ const refreshTokenUser = asyncHandler(async (req,res) =>{
 const activateUser = asyncHandler(async (req,res) =>{
     try {
         const activationLink = req.params.link;
-        activate(activationLink);
+        await activate(activationLink);
         return res.redirect(process.env.CLIENT_URL);
     } catch (error) {
         next(error);
