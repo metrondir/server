@@ -1,5 +1,6 @@
 const User  = require('../models/userModel');
 const bcrypt = require('bcrypt');
+const asyncHandler = require('express-async-handler');
 const uuid = require('uuid');
 const EmailService = require('./gmailService');
 const gmailService = new EmailService();
@@ -9,7 +10,7 @@ const ApiError = require('../middleware/apiError');
 
 
 
-async function registration(username,email,password) {
+const registration = asyncHandler(async(username,email,password) => {
 
 	const candidate = await User.findOne({email});
 	if(candidate) {
@@ -26,17 +27,17 @@ async function registration(username,email,password) {
 	await saveTokens(userDto.id, tokens.refreshToken);
 	
 	return {...tokens,user: userDto};
-}
-	async function activate(activationLink) {
+});
+	const activate= asyncHandler(async(activationLink)=> {
 	const user = await User.findOne({activationLink});
 	if(!user) {
 		throw ApiError.BadRequest('Incorrect activation link');
 	}
 	user.isActivated = true;
 	await user.save();
-	}
+	});
 
-	async function login(email,password) {
+	const login = asyncHandler(async(email,password) => {
 		const user = await User.findOne({email});
 			if(!user) {
 				throw ApiError.BadRequest(`User with this email ${email} not found`);
@@ -51,13 +52,13 @@ async function registration(username,email,password) {
 			await saveTokens(userDto.id, tokens.refreshToken);
 
 			return {...tokens,user: userDto};
-	}
+	});
 
-	async function logout(refreshToken) {
+	const logout = asyncHandler(async(refreshToken) => {
 		const token= await removeToken(refreshToken);
 		return token;
-	}
-	async function refresh(refreshToken) {
+	});
+	const  refresh = asyncHandler(async (refreshToken) => {
 		if(!refreshToken) {
 			throw ApiError.UnauthorizedError();
 		}
@@ -73,10 +74,10 @@ async function registration(username,email,password) {
 		await saveTokens(userDto.id, tokens.refreshToken);
 		return {...tokens,user: userDto};
 
-	}
+	});
 
-	async function getAllUsers() {
+	const  getAllUsers = asyncHandler(async() => {
 		const users = await User.find();
 		return users;
-	}
+	});
 module.exports= {registration,activate,login,logout,refresh,getAllUsers};
