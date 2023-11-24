@@ -41,13 +41,13 @@ const registration = asyncHandler(async (username,email,password)=>{
 				throw ApiError.BadRequest(`User with this email ${email} not found`);
 			}
 			
-			const isPassEquals = bcrypt.compare(password, user.password);
+			const isPassEquals = await bcrypt.compare(password, user.password);
 			if(!isPassEquals) {
 				throw ApiError.BadRequest('Incorrect password');
 			}
 			const userDto = new UserDto(user);
 			const tokens = generateTokens({...userDto});
-			saveTokens(userDto.id, tokens.refreshToken);
+			await saveTokens(userDto.id, tokens.refreshToken);
 
 			return {...tokens,user: userDto};
 	});
@@ -69,7 +69,7 @@ const registration = asyncHandler(async (username,email,password)=>{
 		const userDto = new UserDto(user);
 		const tokens = generateTokens({...userDto});
 
-		saveTokens(userDto.id, tokens.refreshToken);
+		await saveTokens(userDto.id, tokens.refreshToken);
 		return {...tokens,user: userDto};
 
 	});
