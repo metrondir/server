@@ -19,7 +19,8 @@ router.post("/forget-password",forgetPasswordUser );
 
 router.get("/change-password/:link",changePasswordUserLink);
 
-router.post("/change-password",changePasswordUser);
+router.post("/change-password",
+body("newPassword").isLength({min:7,max:50}),changePasswordUser);
 
 router.get("/refresh",refreshTokenUser );
 

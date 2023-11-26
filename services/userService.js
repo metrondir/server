@@ -98,10 +98,11 @@ const registration = asyncHandler(async(username,email,password) => {
 			await user.save();
 		
 	});
-	const changePassword = asyncHandler(async(email,newPassword,refreshToken)=> {
-		if(!newPassword) {
+	const changePassword = asyncHandler(async(email,password,refreshToken)=> {
+		if(!password) {
 			 throw ApiError.BadRequest('Incorrect new password');
 		}
+		
 		if(!refreshToken) {
 			throw ApiError.UnauthorizedError();
 		}
@@ -109,11 +110,14 @@ const registration = asyncHandler(async(username,email,password) => {
 		if(!user) {
 			throw ApiError.BadRequest(`User doest not exsit or link has been expired`);
 		}
+		if(password===user.password) {
+		throw ApiError.BadRequest(`New password can not be the same as old password`);
+		}
 		if(email!==user.email) {
 			throw ApiError.BadRequest(`User with this email ${email} not found`);
 		}
 
-		const hashedPassword = await bcrypt.hash(newPassword,10);
+		const hashedPassword = await bcrypt.hash(password,10);
 		user.password = hashedPassword;
 		user.changePasswordLink = null;
 		await user.save();
