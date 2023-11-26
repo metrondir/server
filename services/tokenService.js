@@ -26,7 +26,7 @@ function generateTokens (payload) {
 		return null;
 	}	
 }
-	const saveTokens =asyncHandler(async(userId, refreshToken) =>{
+	const saveTokens = asyncHandler(async(userId, refreshToken) =>{
 		const tokenData = await tokenModel.findOne({ user: userId });
 		if(tokenData) {
 			tokenData.refreshToken = refreshToken;
@@ -44,6 +44,7 @@ const findToken = asyncHandler(async(refreshToken) =>{
 	const tokenData = await tokenModel.findOne({ refreshToken });
 	return tokenData;
 });
+
 
 
   module.exports = { generateTokens, saveTokens, removeToken,validateAccessToken,validateRefreshToken,findToken };

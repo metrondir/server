@@ -1,5 +1,5 @@
 const express = require("express");
-const { registerUser, currentUser, loginUser,logoutUser,refreshTokenUser,activateUser, getUsers } = require("../controllers/userController");
+const { registerUser, currentUser, loginUser,logoutUser,refreshTokenUser,activateUser ,forgetPasswordUser,changePasswordUserLink,changePasswordUser, getUsers } = require("../controllers/userController");
 const authMiddleware = require("../middleware/authMiddleware");
 const {body} = require("express-validator");
 const router = express.Router();
@@ -14,6 +14,12 @@ router.post("/login", loginUser);
 router.post("/logout",logoutUser );
 
 router.get("/activate/:link",activateUser );
+
+router.post("/forget-password",forgetPasswordUser );
+
+router.get("/change-password/:link",changePasswordUserLink);
+
+router.post("/change-password",changePasswordUser);
 
 router.get("/refresh",refreshTokenUser );
 

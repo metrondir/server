@@ -1,6 +1,6 @@
 const asyncHandler = require("express-async-handler");
 const {validationResult} = require("express-validator");
-const {registration ,activate, login,logout, refresh ,getAllUsers } = require("../services/userService");
+const {registration ,activate, login,logout, refresh ,getAllUsers,changePassword,changePasswordLink,forgetPassword } = require("../services/userService");
 const ApiError = require("../middleware/apiError");
 
 const getUsers = asyncHandler(async (req, res,next) => {
@@ -59,7 +59,7 @@ const logoutUser = asyncHandler(async (req,res,next) =>{
     }
 });
 
-const refreshTokenUser = asyncHandler(async (req,res) =>{
+const refreshTokenUser = asyncHandler(async (req,res,next) =>{
         try {
         const {refreshToken} = req.cookies;
         const userData = await refresh(refreshToken);
@@ -72,7 +72,7 @@ const refreshTokenUser = asyncHandler(async (req,res) =>{
 });
 
 
-const activateUser = asyncHandler(async (req,res) =>{
+const activateUser = asyncHandler(async (req,res,next) =>{
     try {
         const activationLink = req.params.link;
         await activate(activationLink);
@@ -83,8 +83,45 @@ const activateUser = asyncHandler(async (req,res) =>{
 
 });
 
+const changePasswordUser = asyncHandler(async (req,res,next) =>{
+    try {
+       const {email,newPassword} = req.body;
+       const {refreshToken} = req.cookies;    
+       await changePassword(email,newPassword,refreshToken);
+       res.clearCookie("refreshToken");
+       return res.json("Password changed successfully");
+       
+    } catch (error) {
+        next(error);
+    }
+
+});
+const forgetPasswordUser = asyncHandler(async (req,res,next) =>{
+    try {
+        const errors = validationResult(req);
+        if(!errors.isEmpty()){
+            return next(ApiError.BadRequest("Validation error", errors.array()));
+        }
+        const {email, password} = req.body;
+        await forgetPassword(email,password);
+       
+        return res.json("Forget password link has been sent to your email");
+    } catch (error) {
+        next(error);
+    }
+
+});
+
+const changePasswordUserLink = asyncHandler(async (req,res,next) =>{
+    try {
+        const changePasswordLin = req.params.link;
+        await changePasswordLink(changePasswordLin);
+        return res.redirect(process.env.CLIENT_URL+"/login");
+    } catch (error) {
+        next(error);
+    }
+
+});
 
 
-
-
-module.exports= {registerUser,loginUser,logoutUser,refreshTokenUser,activateUser,getUsers}
+module.exports= {registerUser,loginUser,logoutUser,refreshTokenUser,activateUser,getUsers,changePasswordUser,changePasswordUserLink,forgetPasswordUser}

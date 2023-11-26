@@ -7,6 +7,7 @@ const gmailService = new EmailService();
 const { generateTokens, saveTokens, removeToken,validateRefreshToken,findToken } = require('./tokenService');
 const UserDto = require('../dtos/userDtos');
 const ApiError = require('../middleware/apiError');
+const { response } = require('express');
 
 
 
@@ -28,7 +29,7 @@ const registration = asyncHandler(async(username,email,password) => {
 	
 	return {...tokens,user: userDto};
 });
-	const activate= asyncHandler(async(activationLink)=> {
+	const activate = asyncHandler(async(activationLink)=> {
 	const user = await User.findOne({activationLink});
 	if(!user) {
 		throw ApiError.BadRequest('Incorrect activation link');
@@ -80,4 +81,50 @@ const registration = asyncHandler(async(username,email,password) => {
 		const users = await User.find();
 		return users;
 	});
-module.exports= {registration,activate,login,logout,refresh,getAllUsers};
+
+	const forgetPassword = asyncHandler(async(email ,password) => {
+		const user = await User.findOne({email});
+			if(!user) {
+				throw ApiError.BadRequest(`User with this email ${email} not found`);
+			}
+			
+			const isPassEquals = await bcrypt.compare(password,user.password);
+			if(!isPassEquals) {
+				throw ApiError.BadRequest('Incorrect password');
+			}
+			const changePasswordLink = uuid.v4();
+			await gmailService.sendChangePasswordUser(email,`${process.env.API_URL}/api/users/change-password/${changePasswordLink}`);
+			user.changePasswordLink = changePasswordLink;
+			await user.save();
+		
+	});
+	const changePassword = asyncHandler(async(email,newPassword,refreshToken)=> {
+		if(!newPassword) {
+			 throw ApiError.BadRequest('Incorrect new password');
+		}
+		if(!refreshToken) {
+			throw ApiError.UnauthorizedError();
+		}
+		const user = await User.findOne({email, changePasswordLink: {$exists: true, $ne: null}}); 
+		if(!user) {
+			throw ApiError.BadRequest(`User doest not exsit or link has been expired`);
+		}
+		if(email!==user.email) {
+			throw ApiError.BadRequest(`User with this email ${email} not found`);
+		}
+
+		const hashedPassword = await bcrypt.hash(newPassword,10);
+		user.password = hashedPassword;
+		user.changePasswordLink = null;
+		await user.save();
+  });
+		const changePasswordLink = asyncHandler(async(changePasswordLink)=> {
+
+			if(!changePasswordLink) {
+				throw ApiError.BadRequest('Incorrect change password link');
+			}
+			
+				return changePasswordLink;
+		});
+
+module.exports= {registration,activate,login,logout,refresh,getAllUsers,forgetPassword,changePassword,changePasswordLink};

@@ -28,6 +28,21 @@ class EmailService {
 				`,
 		  });
 	 }
+	 async sendChangePasswordUser(to, link) {
+		await this.transporter.sendMail({
+			 from: process.env.SMTP_USER,
+			 to,
+			 subject: `Confirmation link to change passwors ` + process.env.API_URL,
+			 text: '',
+			 html:
+				  `
+				  <div>
+						<h1>For Change password</h1>
+						<a href="${link}">${link}</a>
+				  </div>
+			 `,
+		});
+  }
 }
 
 

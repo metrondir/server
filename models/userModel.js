@@ -22,6 +22,10 @@ const userSchema = mongoose.Schema({
      type: String,
      required: [true, "Please add the user activation link"]
     },
+    changePasswordLink: {
+        type: String,
+        required: [false, "Please add the user change password link"]
+    },
 },
 {
     timestamps: true,
