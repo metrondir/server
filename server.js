@@ -8,6 +8,7 @@ const compression = require('compression');
 const expressWinston = require('express-winston');
 const corsOptions = require('./middleware/corsOptions');
 const {transports,format } = require('winston');
+const helmet = require('helmet'); 
 require('winston-mongodb');
 const logger = require('./utils/logger');
 
@@ -15,7 +16,7 @@ connectDb();
 const port = process.env.PORT || 5000;
 const app = express();
 
-
+app.use(helmet);
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors(corsOptions));
@@ -51,6 +52,7 @@ app.use(expressWinston.errorLogger({
         myFormat
     ),
 }));
+
 
 
 //const ngrok = require('ngrok');
