@@ -1,7 +1,7 @@
 const ApiError = require('./apiError');
 
 
-const whitelist = [`${process.env.API_URL}`];
+const whitelist = [`${process.env.CLIENT_URL}`];
 
 const corsOptions = {
   origin: function (origin, callback) {
