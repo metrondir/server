@@ -15,7 +15,7 @@ function generateTokens (payload) {
 		return userData;
 		
 	} catch (error) {
-		return null;
+		throw new Error('Invalid access token');
 	}	
 }
  function validateRefreshToken(token){
