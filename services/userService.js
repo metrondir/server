@@ -11,7 +11,6 @@ const paginateMiddleware = require('../middleware/paginateMiddleware');
 const redis = require('../config/redisClient');
 
 const registration = asyncHandler(async(username,email,password) => {
-
 	const candidate = await User.findOne({email});
 	if(candidate) {
 		throw ApiError.BadRequest(`User with this email ${email} already registered`);
@@ -28,6 +27,7 @@ const registration = asyncHandler(async(username,email,password) => {
 	
 	return {...tokens,user: userDto};
 });
+
 	const activate = asyncHandler(async(activationLink)=> {
 	const user = await User.findOne({activationLink});
 	if(!user) {
@@ -37,6 +37,7 @@ const registration = asyncHandler(async(username,email,password) => {
 	await user.save();
 	});
 
+	
 	const login = asyncHandler(async(email,password) => {
 		const user = await User.findOne({email});
 			if(!user) {
@@ -76,11 +77,6 @@ const registration = asyncHandler(async(username,email,password) => {
 
 	});
 
-//	const getAllUsers = asyncHandler(async(req, res) => {
-//		await paginateMiddleware.paginate(User)(req, res, () => {});
-//		const paginatedResult = res.paginatedResult;
-//		return paginatedResult;
-//  });
 const getAllUsers = asyncHandler(async (req, res, next) => {
 
 	const users = await redisGetUsers(req,res,next);
@@ -89,10 +85,8 @@ const getAllUsers = asyncHandler(async (req, res, next) => {
 
  const redisGetUsers = asyncHandler (async(req, res,next) => {
 	return new Promise((resolve, reject) => {
-	  // Try to get users from Redis
 	  redis.get('users', async (err, redisUsers) => {
 		 if (err) reject(err);
- 
 		 if (redisUsers) {
 			console.log('Redis has users');
 			resolve(JSON.parse(redisUsers));
@@ -130,14 +124,13 @@ const getAllUsers = asyncHandler(async (req, res, next) => {
 			await gmailService.sendChangePasswordUser(email,`${process.env.API_URL}/api/users/change-password/${changePasswordLink}`);
 			user.changePasswordLink = changePasswordLink;
 			await user.save();
-			
-		
+			return changePasswordLink;
 	});
+	
 	const changePassword = asyncHandler(async(email,password,refreshToken)=> {
 		if(!password) {
 			 throw ApiError.BadRequest('Incorrect new password');
 		}
-		
 		if(!refreshToken) {
 			throw ApiError.UnauthorizedError();
 		}
@@ -151,18 +144,20 @@ const getAllUsers = asyncHandler(async (req, res, next) => {
 		if(email!==user.email) {
 			throw ApiError.BadRequest(`User with this email ${email} not found`);
 		}
-
 		const hashedPassword = await bcrypt.hash(password,10);
 		user.password = hashedPassword;
 		user.changePasswordLink = null;
 		await user.save();
+		const userDto = new UserDto(user);
+		const tokens = generateTokens({...userDto});
+		await saveTokens(userDto.id, tokens.refreshToken);
+		return {...tokens,user: userDto};
+
   });
 		const changePasswordLink = asyncHandler(async(changePasswordLink)=> {
-
 			if(!changePasswordLink) {
 				throw ApiError.BadRequest('Incorrect change password link');
 			}
-			
 				return changePasswordLink;
 		});
 
