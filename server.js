@@ -6,7 +6,7 @@ const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const compression = require('compression');
 const expressWinston = require('express-winston');
-const corsOptions = require('./middleware/corsOptions');
+
 const {transports,format } = require('winston');
 const helmet = require('helmet'); 
 require('winston-mongodb');
@@ -20,7 +20,7 @@ const app = express();
 app.use(helmet());
 app.use(express.json());
 app.use(cookieParser());
-app.use(cors(corsOptions));
+app.use(cors);
 
 app.use(expressWinston.logger({
     winstonInstance: logger,
