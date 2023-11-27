@@ -83,32 +83,42 @@ const getAllUsers = asyncHandler(async (req, res, next) => {
 	res.status(200).json(users);
  });
 
- const redisGetUsers = asyncHandler (async(req, res,next) => {
-	return new Promise((resolve, reject) => {
-	  redis.get('users', async (err, redisUsers) => {
-		 if (err) reject(err);
-		 if (redisUsers) {
-			console.log('Redis has users');
-			resolve(JSON.parse(redisUsers));
-		 } else {
-			try {
-			  console.log('Redis does not have users');
-			   await paginateMiddleware.paginate(User)(req, res, () => {});
-			  const paginatedResult = res.paginatedResult;
-			  if (!paginatedResult) {
-				 reject('Error: paginatedResult is undefined');
-			  } else {
-				 redis.setex('users', process.env.DEFAULT_EXPIRATION, JSON.stringify(paginatedResult));
-				 resolve(paginatedResult);
-			  }
-			  return paginatedResult;
-			} catch (error) {
-			  reject(error);
+ const redisGetUsers = async (req, res, next) => {
+	try {
+	  const { page, limit } = req.query;
+	  const redisKey = `users:${page}:${limit}`;
+ 
+	  const redisUsers = await new Promise((resolve, reject) => {
+		 redis.get(redisKey, (err, redisUsers) => {
+			if (err) {
+			  reject(err);
+			} else {
+			  resolve(redisUsers);
 			}
-		 }
+		 });
 	  });
-	});
- });
+ 
+	  if (redisUsers) {
+		 console.log('Redis has users');
+		 res.json(JSON.parse(redisUsers));
+	  } else {
+		 console.log('Redis does not have users');
+		 await paginateMiddleware.paginate(User)(req, res, () => {});
+		 const paginatedResult = res.paginatedResult;
+ 
+		 if (!paginatedResult) {
+			throw new Error('Error: paginatedResult is undefined');
+		 } else {
+			redis.setex(redisKey, process.env.DEFAULT_EXPIRATION, JSON.stringify(paginatedResult));
+			res.json(paginatedResult);
+		 }
+	  }
+	  
+	} catch (error) {
+	  next(error);
+	}
+ };
+ 
 
 	const forgetPassword = asyncHandler(async(email ,password) => {
 		const user = await User.findOne({email});
@@ -126,7 +136,7 @@ const getAllUsers = asyncHandler(async (req, res, next) => {
 			await user.save();
 			return changePasswordLink;
 	});
-	
+
 	const changePassword = asyncHandler(async(email,password,refreshToken)=> {
 		if(!password) {
 			 throw ApiError.BadRequest('Incorrect new password');
