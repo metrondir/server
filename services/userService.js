@@ -7,9 +7,8 @@ const gmailService = new EmailService();
 const { generateTokens, saveTokens, removeToken,validateRefreshToken,findToken } = require('./tokenService');
 const UserDto = require('../dtos/userDtos');
 const ApiError = require('../middleware/apiError');
-const { response } = require('express');
-
-
+const paginateMiddleware = require('../middleware/paginateMiddleware');
+const redis = require('../config/redisClient');
 
 const registration = asyncHandler(async(username,email,password) => {
 
@@ -77,10 +76,45 @@ const registration = asyncHandler(async(username,email,password) => {
 
 	});
 
-	const  getAllUsers = asyncHandler(async() => {
-		const users = await User.find();
-		return users;
+//	const getAllUsers = asyncHandler(async(req, res) => {
+//		await paginateMiddleware.paginate(User)(req, res, () => {});
+//		const paginatedResult = res.paginatedResult;
+//		return paginatedResult;
+//  });
+const getAllUsers = asyncHandler(async (req, res, next) => {
+
+	const users = await redisGetUsers(req,res,next);
+	res.status(200).json(users);
+ });
+
+ const redisGetUsers = asyncHandler (async(req, res,next) => {
+	return new Promise((resolve, reject) => {
+	  // Try to get users from Redis
+	  redis.get('users', async (err, redisUsers) => {
+		 if (err) reject(err);
+ 
+		 if (redisUsers) {
+			console.log('Redis has users');
+			resolve(JSON.parse(redisUsers));
+		 } else {
+			try {
+			  console.log('Redis does not have users');
+			   await paginateMiddleware.paginate(User)(req, res, () => {});
+			  const paginatedResult = res.paginatedResult;
+			  if (!paginatedResult) {
+				 reject('Error: paginatedResult is undefined');
+			  } else {
+				 redis.setex('users', process.env.DEFAULT_EXPIRATION, JSON.stringify(paginatedResult));
+				 resolve(paginatedResult);
+			  }
+			  return paginatedResult;
+			} catch (error) {
+			  reject(error);
+			}
+		 }
+	  });
 	});
+ });
 
 	const forgetPassword = asyncHandler(async(email ,password) => {
 		const user = await User.findOne({email});
@@ -96,6 +130,7 @@ const registration = asyncHandler(async(username,email,password) => {
 			await gmailService.sendChangePasswordUser(email,`${process.env.API_URL}/api/users/change-password/${changePasswordLink}`);
 			user.changePasswordLink = changePasswordLink;
 			await user.save();
+			
 		
 	});
 	const changePassword = asyncHandler(async(email,password,refreshToken)=> {

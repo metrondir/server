@@ -5,15 +5,16 @@ module.exports = function ( req, res, next) {
 	try {
 		const authHeader = req.headers.authorization;
 		if (!authHeader) {
-			return next(ApiError.UnauthorizedError());
+			throw ApiError.Forbbiden("User dont sent token");
 		}
 		const accessToken = authHeader.split(' ')[1];
 		if (!accessToken) {
-			return next(ApiError.UnauthorizedError());
+			throw ApiError.UnauthorizedError();
 		}
 		const userData = validateAccessToken(accessToken);
+	
 		if (!userData) {
-			return next(ApiError.UnauthorizedError());
+			throw ApiError.UnauthorizedError();
 		}
 		req.user = userData;
 		next();

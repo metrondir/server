@@ -3,9 +3,10 @@ const {validationResult} = require("express-validator");
 const {registration ,activate, login,logout, refresh ,getAllUsers,changePassword,changePasswordLink,forgetPassword } = require("../services/userService");
 const ApiError = require("../middleware/apiError");
 
-const getUsers = asyncHandler(async (req, res,next) => {
+
+const getUsers = asyncHandler(async (req, res, next) => {
     try {
-        const users = await getAllUsers();
+        const users = await getAllUsers(req, res);
         res.status(200).json(users);
     } catch (error) {
         next(error);
