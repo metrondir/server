@@ -63,6 +63,10 @@ const logoutUser = asyncHandler(async (req,res,next) =>{
 const refreshTokenUser = asyncHandler(async (req,res,next) =>{
         try {
         const {refreshToken} = req.cookies;
+        if(!refreshToken){
+            return res.json("User is not authorized");
+        }
+
         const userData = await refresh(refreshToken);
         res.cookie("refreshToken", userData.refreshToken, {maxAge: 30*24*60*60*1000, httpOnly: true});
         return res.json(userData);   
