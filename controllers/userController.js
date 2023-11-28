@@ -24,7 +24,7 @@ const registerUser = asyncHandler(async (req,res,next) =>{
         }
         const {username, email, password} = req.body;
         const userData = await registration(username, email, password);
-        res.cookie("refreshToken", userData.refreshToken, {maxAge: 30*24*60*60*1000, httpOnly: true,path: "/api/users/refresh", secure: true});
+        res.cookie("refreshToken", userData.refreshToken, {maxAge: 30*24*60*60*1000, httpOnly: true,path: "/api/users/refresh", secure: true, sameSite: 'None'});
         console.log("The user data is :", userData);
         return res.json(userData);
     } catch (error) {
@@ -39,7 +39,7 @@ const loginUser = asyncHandler(async (req,res,next) =>{
     try {
         const {email,password} = req.body;
         const userData = await login(email, password);
-        res.cookie("refreshToken", userData.refreshToken, {maxAge: 30*24*60*60*1000, httpOnly: true,path: "/api/users/refresh", secure: true});
+        res.cookie("refreshToken", userData.refreshToken, {maxAge: 30*24*60*60*1000, httpOnly: true,path: "/api/users/refresh", secure: true,sameSite: 'None'});
         
         return res.json(userData);
     } catch (e) {
@@ -69,7 +69,7 @@ const refreshTokenUser = asyncHandler(async (req,res,next) =>{
         }
 
         const userData = await refresh(refreshToken);
-        res.cookie("refreshToken", userData.refreshToken, {maxAge: 30*24*60*60*1000, httpOnly: true, path: "/api/users/refresh", secure: true});
+        res.cookie("refreshToken", userData.refreshToken, {maxAge: 30*24*60*60*1000, httpOnly: true, path: "/api/users/refresh", secure: true,sameSite: 'None'});
         return res.json(userData);   
     } catch (error) {
             next(error);
