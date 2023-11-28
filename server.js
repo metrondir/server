@@ -1,16 +1,16 @@
 const express = require("express");
 const errorHandler = require("./middleware/errorHandler");
 const connectDb = require('./config/dbConnection');
-const dotenv = require("dotenv").config();
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
+const dotenv = require("dotenv").config();
 const compression = require('compression');
 const expressWinston = require('express-winston');
-
 const {transports,format } = require('winston');
 const helmet = require('helmet'); 
 require('winston-mongodb');
 const logger = require('./utils/logger');
+
 
 
 connectDb();
@@ -24,6 +24,7 @@ app.use(cors({
     origin: process.env.CLIENT_URL,
     credentials: true,
 }));
+
 
 app.use(expressWinston.logger({
     winstonInstance: logger,
@@ -59,10 +60,6 @@ app.use(expressWinston.errorLogger({
 
 
 
-//const ngrok = require('ngrok');
-//(async function() {
-//  const url = await ngrok.connect();
-//})();
 
 app.listen(port,()=>{
     console.log(`Server running on port ${port}`);

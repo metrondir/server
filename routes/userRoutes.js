@@ -1,9 +1,10 @@
 const express = require("express");
-const { registerUser, currentUser, loginUser,logoutUser,refreshTokenUser,activateUser ,forgetPasswordUser,changePasswordUserLink,changePasswordUser, getUsers } = require("../controllers/userController");
+const { registerUser, loginUser,logoutUser,refreshTokenUser,activateUser ,forgetPasswordUser,changePasswordUserLink,changePasswordUser, getUsers } = require("../controllers/userController");
+const {googleOauthHandler} = require("../services/userService");
 const authMiddleware = require("../middleware/authMiddleware");
 const {body} = require("express-validator");
 const router = express.Router();
-
+const axios = require('axios');
 
 router.post("/register",
 body("email").isEmail()
@@ -25,5 +26,9 @@ body("newPassword").isLength({min:7,max:50}),changePasswordUser);
 router.get("/refresh",refreshTokenUser );
 
 router.get("/allusers",authMiddleware,getUsers)
+
+router.get("/sessions/oauth/google", async(req, res) => {
+	googleOauthHandler(req, res);
+ });
 
 module.exports = router;

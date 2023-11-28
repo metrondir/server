@@ -18,6 +18,11 @@ const userSchema = mongoose.Schema({
     type: Boolean,
     default: false,
    },
+   picture:{
+    type: String,
+    required: [false, "Please add the user picture"],
+    default: "https://res.cloudinary.com/dx4wkpab8/image/upload/v1621546506/avatars/avatar-1_kkq1wz.png"
+   },
     activationLink: {
      type: String,
      required: [true, "Please add the user activation link"]
