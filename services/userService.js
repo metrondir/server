@@ -258,7 +258,7 @@ const getAllUsers = asyncHandler(async (req, res, next) => {
 			  const userDto = new UserDto(user);
 			  const tokens = generateTokens({ ...userDto });
 			  await saveTokens(userDto.id, tokens.refreshToken);
-			  res.cookie("refreshToken", tokens.refreshToken, { maxAge: 30 * 24 * 60 * 60 * 1000, httpOnly: true });
+			  res.cookie("refreshToken", tokens.refreshToken, { maxAge: 30 * 24 * 60 * 60 * 1000, httpOnly: true,path: "/api/users/refresh", secure: true });
 			  res.redirect(`${process.env.API_URL}`);
 			  return res.json({ ...tokens, user: userDto });
 			} catch (error) {
