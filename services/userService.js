@@ -62,12 +62,12 @@ const registration = asyncHandler(async(username,email,password) => {
 	});
 	const  refresh = asyncHandler(async (refreshToken) => {
 		if(!refreshToken) {
-			throw res.json({message: "Invalid token in refresh"});
+			throw ApiError.UnauthorizedError("Invalid token in refresh");
 		}
 		const userData = validateRefreshToken(refreshToken);
 		const tokenFromDb = await findToken(refreshToken);
 		if(!userData || !tokenFromDb) {
-		 throw res.json({message: "Invalid token in refresh"})
+			throw ApiError.UnauthorizedError("Invalid token in userdata in refresh");
 		}
 		const user = await User.findById(tokenFromDb.user);
 		const userDto = new UserDto(user);

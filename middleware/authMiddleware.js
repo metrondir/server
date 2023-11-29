@@ -9,18 +9,18 @@ module.exports = function ( req, res, next) {
 		}
 		const accessToken = authHeader.split(' ')[1];
 		if (!accessToken) {
-			throw res.json({message: "Invalid accessToken in accessMiddleware in authMiddleware in if(!accessToken)"});
+			throw ApiError.UnauthorizedError();
 		}
 		const userData = validateAccessToken(accessToken);
 	
 		if (!userData) {
-			throw res.json({message: "Invalid accessToken in accessMiddleware in authMiddleware in if(!userData)"});
+			throw ApiError.UnauthorizedError();
 		}
 		req.user = userData;
 		next();
 		
 	} catch (error) {
-		return res.json({message: "Invalid accessToken in accessMiddleware in authMiddleware in if(catch)"});
+		return next(ApiError.UnauthorizedError());
 	}
 	
 }
