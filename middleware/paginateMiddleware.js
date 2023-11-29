@@ -1,5 +1,67 @@
 const asyncHandler = require("express-async-handler");
 const ApiError = require("./apiError");
+const redis = require('../config/redisClient');
+
+
+const redisGetModels= async (model,req, res, next,conditions = {}) => {
+	try {
+	  const redisKey = `${model.modelName.toLowerCase() + 's'}`;
+	  const redisModels = await new Promise((resolve, reject) => {
+		 redis.get(redisKey, (err, redisModels) => {
+			if (err) {
+			  reject(err);
+			} else {
+			  resolve(redisModels);
+			}
+		 });
+	  });
+ 
+	  if (redisModels) {
+		 console.log(`Redis has ${model.modelName.toLowerCase() + 's'}`);
+		 res.json(JSON.parse(redisModels));
+	  } else {
+		 console.log(`Redis does not have ${model.modelName.toLowerCase() + 's'}`);
+		 const models = await model.find(conditions); 
+		 redis.setex(redisKey, process.env.DEFAULT_EXPIRATION, JSON.stringify(models));
+		 res.json(models);
+	  }
+	} catch (error) {
+	  throw ApiError.BadRequest(error.message);
+	}
+ };
+ 
+const redisGetModelsWithPaginating = async (model, req, res, next) => {
+	try {
+	  const { page, limit } = req.query;
+	  const redisKey = `${model.modelName.toLowerCase()+'s'}:${page}:${limit}`;
+	  const redisModels = await new Promise((resolve, reject) => {
+		 redis.get(redisKey, (err, redisModels) => {
+			if (err) {
+			  reject(err);
+			} else {
+			  resolve(redisModels);
+			}
+		 });
+	  });
+ 
+	  if (redisModels) {
+		 console.log(`Redis has ${model.modelName.toLowerCase()+'s'}`);
+		 res.json(JSON.parse(redisModels));
+	  } else {
+		 console.log(`Redis does not have ${model.modelName.toLowerCase()+'s'}`);
+		 await paginate(model)(req, res, () => {});
+		 const paginatedResult = res.paginatedResult;
+		 if (!paginatedResult) {
+			throw ApiError.BadRequest('Error: paginatedResult is undefined');
+		 } else {
+			redis.setex(redisKey, process.env.DEFAULT_EXPIRATION, JSON.stringify(paginatedResult));
+			res.json(paginatedResult);
+		 }
+	  }
+	} catch (error) {
+	  throw ApiError.BadRequest(error.message);
+	}
+ };
 
 function calculatePagination(page, limit, totalDocuments) {
     const startIndex = (page - 1) * limit;
@@ -13,11 +75,11 @@ function calculatePagination(page, limit, totalDocuments) {
     };
 }
 
-module.exports.paginate = function (model, conditions = {}) {
+    paginate = function (model, conditions = { }) {
     return asyncHandler(async (req, res, next) => {
         try {
 			const totalDocuments = await model.countDocuments();
-            const page = parseInt(req.query.page) || 1; // Default to page 1
+            const page = parseInt(req.query.page) || 1; 
             const limit = parseInt(req.query.limit) || totalDocuments;
 
 				if (isNaN(page) || page < 1) {
@@ -51,3 +113,5 @@ module.exports.paginate = function (model, conditions = {}) {
         }
     });
 };
+
+module.exports = { paginate,redisGetModelsWithPaginating, redisGetModels };
