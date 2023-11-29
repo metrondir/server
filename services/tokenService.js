@@ -2,7 +2,7 @@ const jwt = require("jsonwebtoken");
 const asyncHandler = require("express-async-handler");
 const tokenModel = require("../models/tokenModel");
 function generateTokens (payload) {
-	const accessToken = jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '15min' });
+	const accessToken = jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '30s' });
 	const refreshToken = jwt.sign(payload, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '7d' });
 	
 	return { accessToken, refreshToken };
@@ -15,7 +15,7 @@ function generateTokens (payload) {
 		return userData;
 		
 	} catch (error) {
-		throw new Error('Invalid access token');
+		return res.json({ error });
 	}	
 }
  function validateRefreshToken(token){
@@ -23,7 +23,7 @@ function generateTokens (payload) {
 		const userData = jwt.verify(token, process.env.REFRESH_TOKEN_SECRET);
 		return userData;
 	} catch (error) {
-		return null;
+		return res.json({ error });
 	}	
 }
 	const saveTokens = asyncHandler(async(userId, refreshToken) =>{
