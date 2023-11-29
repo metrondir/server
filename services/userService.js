@@ -73,7 +73,7 @@ const registration = asyncHandler(async(username,email,password) => {
 		const tokens = generateTokens({...userDto});
 	
 		await saveTokens(userDto.id, tokens.refreshToken);
-		return res.json({...tokens,user: userDto});
+		return {...tokens,user: userDto};
 
 	});
 
