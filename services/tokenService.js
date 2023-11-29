@@ -10,7 +10,7 @@ function generateTokens (payload) {
 
  function validateAccessToken(token){
 	try {
-		console.log("The token is :",token);
+		console.log("The accessToken is :",token);
 		const userData = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
 		console.log(userData);
 		return userData;
@@ -21,7 +21,7 @@ function generateTokens (payload) {
 }
  function validateRefreshToken(token){
 	try {
-		console.log("The token is :",token);
+		console.log("The refreshToken is :",token);
 		const userData = jwt.verify(token, process.env.REFRESH_TOKEN_SECRET);
 		return userData;
 	} catch (error) {
