@@ -4,6 +4,7 @@
   "description": "This is express project for my recipes backend api",
   "main": "server.js",
   "scripts": {
+    "lint": "eslint 'server.js'",
     "test": "jest --testTimeout=10000 --watchAll --verbose --detectOpenHandles --forceExit --runInBand --coverage",
     "start": "node server.js",
     "dev": "nodemon --env-file .env server.js"
@@ -38,6 +39,7 @@
     "winston-mongodb": "^5.1.1"
   },
   "devDependencies": {
+    "eslint": "^8.54.0",
     "jest": "^29.7.0",
     "nodemon": "^3.0.1",
     "supertest": "^6.3.3"

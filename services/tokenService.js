@@ -15,7 +15,7 @@ function generateTokens (payload) {
 		return userData;
 		
 	} catch (error) {
-		return res.json({ error });
+		return res.json({ error: "Invalid accessToken in validateAccessToken" });
 	}	
 }
  function validateRefreshToken(token){
@@ -23,7 +23,7 @@ function generateTokens (payload) {
 		const userData = jwt.verify(token, process.env.REFRESH_TOKEN_SECRET);
 		return userData;
 	} catch (error) {
-		return res.json({ error });
+		return res.json({ error: "Invalid refreshToken in validateRefreshToken" });
 	}	
 }
 	const saveTokens = asyncHandler(async(userId, refreshToken) =>{
