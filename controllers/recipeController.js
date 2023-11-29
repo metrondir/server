@@ -1,11 +1,18 @@
 const asyncHandler = require("express-async-handler");
 const Recipe = require("../models/recipeModel");
+const { redisGetModelsWithPaginating } = require("../middleware/paginateMiddleware");
 //@desc Get all contacts
 //@route GET /api/recipe
 //@access public
-const getRecipes = asyncHandler(async (req, res) => {
-    const recipes = await Recipe.find();
-    res.status(200).json(recipes);
+const getRecipes = asyncHandler(async (req, res,next) => {
+    try{
+        const recipes = await redisGetModelsWithPaginating(Recipe, req, res, next);
+        res.status(200).json(recipes);
+    }
+    catch(error){
+        next(error);
+    }
+   
 });
 
 //@desc Create new recipe

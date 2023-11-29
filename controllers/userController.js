@@ -2,11 +2,12 @@ const asyncHandler = require("express-async-handler");
 const {validationResult} = require("express-validator");
 const {registration ,activate, login,logout, refresh ,getAllUsers,changePassword,changePasswordLink,forgetPassword } = require("../services/userService");
 const ApiError = require("../middleware/apiError");
-
+const User = require("../models/userModel");
+const { redisGetModelsWithPaginating } = require("../middleware/paginateMiddleware");
 
 const getUsers = asyncHandler(async (req, res, next) => {
     try {
-        const users = await getAllUsers(req, res);
+        const users = await redisGetModelsWithPaginating(User, req, res, next);
         res.status(200).json(users);
     } catch (error) {
         next(error);

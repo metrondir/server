@@ -78,15 +78,6 @@ const registration = asyncHandler(async(username,email,password) => {
 
 	});
 
-const getAllUsers = asyncHandler(async (req, res, next) => {
-	const users = await redisGetModelsWithPaginating(User, req, res, next);
-	res.status(200).json(users);
- });
-
-
- 
-
- 
 
 	const forgetPassword = asyncHandler(async(email ,password) => {
 		const user = await User.findOne({email});
@@ -141,4 +132,4 @@ const getAllUsers = asyncHandler(async (req, res, next) => {
 
 
 		 
-module.exports= {registration,activate,login,logout,refresh,getAllUsers,forgetPassword,changePassword,changePasswordLink};
+module.exports= {registration,activate,login,logout,refresh,forgetPassword,changePassword,changePasswordLink};
