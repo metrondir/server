@@ -57,7 +57,11 @@ const getGoogleOauthTokens = asyncHandler(async (code) => {
 	  } 
 	  const user = await findAndUpdateUser(
 		{ email: googleUserData.email },
-		{ username: googleUserData.name,picture: googleUserData.picture,},
+		{ 
+		  username: googleUserData.name,
+		  picture: googleUserData.picture,
+		  isActivated: true
+		},
 		{ upsert: true, new: true }
 	 );
 	  const userDto = new UserDto(user);
