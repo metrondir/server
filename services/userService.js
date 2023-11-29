@@ -52,7 +52,7 @@ const registration = asyncHandler(async(username,email,password) => {
 			const tokens = generateTokens({...userDto});
 			await saveTokens(userDto.id, tokens.refreshToken);
 
-			return {...tokens,user: userDto};
+			return res.json({...tokens,user: userDto});
 	});
 
 	const logout = asyncHandler(async(refreshToken) => {
@@ -73,7 +73,7 @@ const registration = asyncHandler(async(username,email,password) => {
 		const tokens = generateTokens({...userDto});
 	
 		await saveTokens(userDto.id, tokens.refreshToken);
-		return {...tokens,user: userDto};
+		return res.json({...tokens,user: userDto});
 
 	});
 

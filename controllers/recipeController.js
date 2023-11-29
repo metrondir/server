@@ -6,7 +6,7 @@ const { redisGetModelsWithPaginating } = require("../middleware/paginateMiddlewa
 //@access public
 const getRecipes = asyncHandler(async (req, res,next) => {
     try{
-        const recipes = await Recipe.find({});
+        const recipes = await redisGetModelsWithPaginating(Recipe, req, res, next);
         res.status(200).json(recipes);
     }
     catch(error){
