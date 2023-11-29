@@ -5,8 +5,7 @@ const authMiddleware = require("../middleware/authMiddleware");
 
 
 
-router.route("/").get(getRecipes,authMiddleware).post(createRecipe,authMiddleware);
+router.route("/").get(authMiddleware, getRecipes).post(authMiddleware, createRecipe);
 
-router.route("/:id").get(getRecipe,authMiddleware).put(updateRecipe,authMiddleware).delete(deleteRecipe,authMiddleware);
-
+router.route("/:id").get(authMiddleware, getRecipe).put(authMiddleware, updateRecipe).delete(authMiddleware, deleteRecipe);
 module.exports = router;
