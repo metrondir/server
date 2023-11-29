@@ -21,7 +21,7 @@ function generateTokens (payload) {
 }
 async function validateRefreshToken(token) {
 	try {
-	  const tokenDocument = await tokenModel.findOne({ token });
+	const tokenDocument = await findToken(token);
 	  return tokenDocument;
 	} catch (error) {
 	  throw error;
