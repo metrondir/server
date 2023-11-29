@@ -30,7 +30,9 @@ const redisGetModels= async (model,req, res, next,conditions = {}) => {
 	}
  };
  
-const redisGetModelsWithPaginating = async (model, req, res, next) => {
+
+
+const redisGetModelsWithPaginating = async (model, req, res, next,conditions={}) => {
 	try {
 	  const { page, limit } = req.query;
 	  const redisKey = `${model.modelName.toLowerCase()+'s'}:${page}:${limit}`;
@@ -49,7 +51,7 @@ const redisGetModelsWithPaginating = async (model, req, res, next) => {
 		 res.json(JSON.parse(redisModels));
 	  } else {
 		 console.log(`Redis does not have ${model.modelName.toLowerCase()+'s'}`);
-		 await paginate(model)(req, res, () => {});
+		 await paginate(model,conditions)(req, res, () => {});
 		 const paginatedResult = res.paginatedResult;
 		 if (!paginatedResult) {
 			throw ApiError.BadRequest('Error: paginatedResult is undefined');
@@ -62,6 +64,7 @@ const redisGetModelsWithPaginating = async (model, req, res, next) => {
 	  throw ApiError.BadRequest(error.message);
 	}
  };
+
 
 function calculatePagination(page, limit, totalDocuments) {
     const startIndex = (page - 1) * limit;
