@@ -7,7 +7,6 @@ const gmailService = new EmailService();
 const { generateTokens, saveTokens, removeToken,validateRefreshToken,findToken } = require('./tokenService');
 const UserDto = require('../dtos/userDtos');
 const ApiError = require('../middleware/apiError');
-const {redisGetModelsWithPaginating, redisGetModels } = require('../middleware/paginateMiddleware');
 
 
 const registration = asyncHandler(async(username,email,password) => {
