@@ -33,7 +33,7 @@ const registerUser = asyncHandler(async (req,res,next) =>{
         }
         const {username, email, password} = req.body;
         const userData = await registration(username, email, password);
-        res.cookie("refreshToken", userData.refreshToken, {maxAge: process.env.COOKIE_MAX_AGE,path:'/api/users/refresh', secure: true, sameSite: 'None'});
+        res.cookie("refreshToken", userData.refreshToken, {maxAge: process.env.COOKIE_MAX_AGE, secure: true, sameSite: 'None'});
         console.log("The user data is :", userData);
         onDataChanged('User');
         return res.json(userData);
@@ -50,7 +50,7 @@ const loginUser = asyncHandler(async (req,res,next) =>{
     try {
         const {email,password} = req.body;
         const userData = await login(email, password);
-        res.cookie("refreshToken", userData.refreshToken, {maxAge: process.env.COOKIE_MAX_AGE,path:'/api/users/refresh', secure: true,sameSite: 'None'});
+        res.cookie("refreshToken", userData.refreshToken, {maxAge: process.env.COOKIE_MAX_AGE, secure: true,sameSite: 'None'});
         
         return res.json(userData);
     } catch (e) {
@@ -75,7 +75,7 @@ const refreshTokenUser = asyncHandler(async (req,res,next) =>{
         try {
         const {refreshToken} = req.cookies;
         const userData = await refresh(refreshToken);
-        res.cookie("refreshToken", userData.refreshToken, {maxAge: process.env.COOKIE_MAX_AGE,path:'/api/users/refresh', secure: true,sameSite: 'None'});
+        res.cookie("refreshToken", userData.refreshToken, {maxAge: process.env.COOKIE_MAX_AGE, secure: true,sameSite: 'None'});
         return res.json(userData);   
     } catch (error) {
             next(error);
