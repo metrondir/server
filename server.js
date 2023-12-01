@@ -8,7 +8,6 @@ const compression = require('compression');
 const expressWinston = require('express-winston');
 const {transports,format } = require('winston');
 const helmet = require('helmet');
-const bodyparser = require('body-parser');
 require('winston-mongodb');
 const logger = require('./utils/logger');
 
@@ -22,7 +21,7 @@ const app = express();
 app.disable('x-powered-by');
 app.use(helmet());
 app.use(express.json());
-app.use(bodyparser.json());
+
 app.use(express.urlencoded({extended: true}));
 
 app.use(cookieParser());
@@ -46,9 +45,6 @@ app.use("/api/recipes", require("./routes/recipeRoutes" ));
 app.use("/api/users", require("./routes/userRoutes"));
 
 
-
-app.use(errorHandler);
-
 const myFormat = format.printf(({ level, message, label, timestamp, metadata }) => {
     return `${timestamp} ${level}: ${message} ${metadata ? JSON.stringify(metadata) : ''}`;
   });
@@ -64,6 +60,9 @@ app.use(expressWinston.errorLogger({
         myFormat
     ),
 }));
+app.use(errorHandler);
+
+
 
 
 

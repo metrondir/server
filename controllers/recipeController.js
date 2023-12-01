@@ -1,6 +1,6 @@
 const asyncHandler = require("express-async-handler");
 const Recipe = require("../models/recipeModel");
-const { redisGetModelsWithPaginating } = require("../middleware/paginateMiddleware");
+const { redisGetModelsWithPaginating, onDataChanged } = require("../middleware/paginateMiddleware");
 //@desc Get all contacts
 //@route GET /api/recipe
 //@access public
@@ -41,6 +41,7 @@ const createRecipe = asyncHandler( async( req, res) => {
         cuisineType,
     });
     res.status(201).json(recipe);
+    onDataChanged('Recipe');
 });
 
 //@desc Get recipe
@@ -53,6 +54,7 @@ const getRecipe = asyncHandler(async (req, res) => {
         throw new Error("Recipe not found");
     }
     res.status(200).json(recipe);
+    
   });
 
 //@desc Update recipe
@@ -70,6 +72,7 @@ const updateRecipe = asyncHandler(async(req, res) => {
         {new : true}
     );
     res.status(200).json(updateRecipe);
+    onDataChanged('Recipe');
 });
 
 //@desc Delete recipe
@@ -83,6 +86,7 @@ const deleteRecipe = asyncHandler(async (req, res) => {
     }
     await Recipe.deleteOne({ _id: req.params.id });
     res.status(200).json(recipe);
+    onDataChanged('Recipe');
 });
 
 module.exports = {

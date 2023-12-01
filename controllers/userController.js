@@ -3,7 +3,7 @@ const {validationResult} = require("express-validator");
 const {registration ,activate, login,logout, refresh ,changePassword,changePasswordLink,forgetPassword } = require("../services/userService");
 const ApiError = require("../middleware/apiError");
 const User = require("../models/userModel");
-const { redisGetModelsWithPaginating } = require("../middleware/paginateMiddleware");
+const { redisGetModelsWithPaginating,onDataChanged } = require("../middleware/paginateMiddleware");
 
 const getUsers = asyncHandler(async (req, res, next) => {
     try {
@@ -27,7 +27,9 @@ const registerUser = asyncHandler(async (req,res,next) =>{
         const userData = await registration(username, email, password);
         res.cookie("refreshToken", userData.refreshToken, {maxAge: process.env.COOKIE_MAX_AGE, secure: true, sameSite: 'None'});
         console.log("The user data is :", userData);
+        onDataChanged('User');
         return res.json(userData);
+        
     } catch (error) {
         next(error);
     }

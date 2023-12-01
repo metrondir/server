@@ -116,5 +116,17 @@ function calculatePagination(page, limit, totalDocuments) {
         }
     });
 };
+const onDataChanged = (modelName) => {
+	const pattern = `${modelName.toLowerCase() + 's'}:*`;
+	redis.keys(pattern, (err, keys) => {
+	  if (err) throw err;
+ 
+	  keys.forEach((key) => {
+		 redis.del(key, (err) => {
+			if (err) throw err;
+		 });
+	  });
+	});
+ };
 
-module.exports = { paginate,redisGetModelsWithPaginating, redisGetModels };
+module.exports = { paginate,redisGetModelsWithPaginating, redisGetModels,onDataChanged };
