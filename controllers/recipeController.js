@@ -1,13 +1,22 @@
 const asyncHandler = require("express-async-handler");
 const Recipe = require("../models/recipeModel");
-const { redisGetModelsWithPaginating, onDataChanged } = require("../middleware/paginateMiddleware");
+const { redisGetModels,redisGetModelsWithPaginating, onDataChanged } = require("../middleware/paginateMiddleware");
+const ApiError = require("../middleware/apiError");
 //@desc Get all contacts
 //@route GET /api/recipe
 //@access public
 const getRecipes = asyncHandler(async (req, res,next) => {
     try{
-        const recipes = await redisGetModelsWithPaginating(Recipe, req, res, next);
-        res.status(200).json(recipes);
+        if(req.query.page && req.query.limit){
+            console.log("The request asdis :", req.query);
+            const recipes = await redisGetModelsWithPaginating(Recipe, req, res, next);
+            res.status(200).json(recipes);
+        }
+        else{
+            console.log("The request is asd:", req.query);
+            const recipes = await redisGetModels(Recipe, req, res, next);
+            res.status(200).json(recipes);
+        }
     }
     catch(error){
         next(error);
@@ -29,7 +38,7 @@ const createRecipe = asyncHandler( async( req, res) => {
         cuisineType} = req.body;
         if(!title || !ingredients || !instructions || !imageUrl || !cookingTime || !cuisineType){
             res.status(400)
-            throw new Error("All fields are mandatory")    
+            throw ApiError.BadRequest("All fields are mandatory")    
         }
 
     const recipe = await Recipe.create({
@@ -51,7 +60,7 @@ const getRecipe = asyncHandler(async (req, res) => {
     const recipe = await Recipe.findById(req.params.id);
     if(!recipe){
         res.status(404);
-        throw new Error("Recipe not found");
+        throw ApiError.BadRequest("Recipe not found");
     }
     res.status(200).json(recipe);
     
@@ -64,7 +73,7 @@ const updateRecipe = asyncHandler(async(req, res) => {
     const recipe = await Recipe.findById(req.params.id);
     if(!recipe){
         res.status(404);
-        throw new Error("Recipe not found");
+        throw ApiError.BadRequest("Recipe not found");
     }
     const updateRecipe = await Recipe.findByIdAndUpdate(
         req.params.id,
@@ -82,7 +91,7 @@ const deleteRecipe = asyncHandler(async (req, res) => {
     const recipe = await Recipe.findById(req.params.id);
     if (!recipe) {
         res.status(404);
-        throw new Error("Recipe not found");
+        throw ApiError.BadRequest("Recipe not found");
     }
     await Recipe.deleteOne({ _id: req.params.id });
     res.status(200).json(recipe);

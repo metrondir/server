@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
 const asyncHandler = require("express-async-handler");
 const tokenModel = require("../models/tokenModel");
+const ApiError = require("../middleware/apiError");
 function generateTokens (payload) {
 	const accessToken = jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '15min' });
 	const refreshToken = jwt.sign(payload, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '7d' });
@@ -16,7 +17,7 @@ function generateTokens (payload) {
 		return userData;
 		
 	} catch (error) {
-		throw new Error('Invalid access token');
+		throw ApiError.BadRequest('Invalid access token');
 	}	
 }
 async function validateRefreshToken(token) {

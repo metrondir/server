@@ -3,12 +3,20 @@ const {validationResult} = require("express-validator");
 const {registration ,activate, login,logout, refresh ,changePassword,changePasswordLink,forgetPassword } = require("../services/userService");
 const ApiError = require("../middleware/apiError");
 const User = require("../models/userModel");
-const { redisGetModelsWithPaginating,onDataChanged } = require("../middleware/paginateMiddleware");
+const { redisGetModelsWithPaginating,onDataChanged,redisGetModels } = require("../middleware/paginateMiddleware");
+
 
 const getUsers = asyncHandler(async (req, res, next) => {
     try {
-        const users = await redisGetModelsWithPaginating(User, req, res, next);
-        res.status(200).json(users);
+        if(req.query.page && req.query.limit)
+        {
+            const users = await redisGetModelsWithPaginating(User, req, res, next);
+            res.status(200).json(users);
+        }
+        else{
+            const users = await redisGetModels(User, req, res, next);
+            res.status(200).json(users);
+        }
     } catch (error) {
         next(error);
     }
@@ -81,6 +89,7 @@ const activateUser = asyncHandler(async (req,res,next) =>{
     try {
         const activationLink = req.params.link;
         await activate(activationLink);
+        onDataChanged('User');
         return res.redirect(process.env.CLIENT_URL);
     } catch (error) {
         next(error);
@@ -93,7 +102,8 @@ const changePasswordUser = asyncHandler(async (req,res,next) =>{
        const {refreshToken} = req.cookies;
        const {email,password} = req.body;
        await changePassword(email,password,refreshToken);
-         res.clearCookie("refreshToken");   
+         res.clearCookie("refreshToken");
+         onDataChanged('User');   
        return res.json("Password changed successfully");
        
     } catch (error) {
@@ -109,7 +119,7 @@ const forgetPasswordUser = asyncHandler(async (req,res,next) =>{
         }
         const {email, password} = req.body;
         await forgetPassword(email,password);
-       
+        onDataChanged('User');
         return res.json("Forget password link has been sent to your email");
     } catch (error) {
         next(error);

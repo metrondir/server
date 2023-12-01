@@ -86,13 +86,13 @@ function calculatePagination(page, limit, totalDocuments) {
             const limit = parseInt(req.query.limit) || totalDocuments;
 
 				if (isNaN(page) || page < 1) {
-				next(new ApiError.BadRequest('Page must be greater than 0'));
+				throw ApiError.BadRequest('Page must be greater than 0');
 				}
 			  if (isNaN(limit) || limit < 1) {
-				next(new ApiError.BadRequest('Limit must be greater than 0'));
+				throw ApiError.BadRequest('Limit must be greater than 0');
 			  }
 			  if(limit > totalDocuments){
-				next(new ApiError.BadRequest(`Limit cannot be greater than total documents: ${totalDocuments}`));
+				throw ApiError.BadRequest(`Limit cannot be greater than total documents: ${totalDocuments}`);
 
 			  }
 
