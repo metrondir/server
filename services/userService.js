@@ -111,14 +111,10 @@ async function sendActivationEmail(to, link) {
 			return changePasswordLink;
 	});
 
-	const changePassword = asyncHandler(async(email,password,refreshToken)=> {
+	const changePassword = asyncHandler(async(email,password)=> {
 
 		if(!password) {
 			 throw ApiError.BadRequest('Incorrect new password');
-		}
-		
-		if(!refreshToken) {
-			throw ApiError.UnauthorizedError();
 		}
 		const user = await User.findOne({email, changePasswordLink: {$exists: true, $ne: null}}); 
 		if(!user) {

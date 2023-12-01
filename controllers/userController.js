@@ -99,11 +99,9 @@ const activateUser = asyncHandler(async (req,res,next) =>{
 
 const changePasswordUser = asyncHandler(async (req,res,next) =>{
     try {
-       const {refreshToken} = req.cookies;
        const {email,password} = req.body;
-       await changePassword(email,password,refreshToken);
-         res.clearCookie("refreshToken");
-         onDataChanged('User');   
+       await changePassword(email,password);
+       onDataChanged('User');   
        return res.json("Password changed successfully");
        
     } catch (error) {
