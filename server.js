@@ -7,18 +7,24 @@ const dotenv = require("dotenv").config();
 const compression = require('compression');
 const expressWinston = require('express-winston');
 const {transports,format } = require('winston');
-const helmet = require('helmet'); 
+const helmet = require('helmet');
+const bodyparser = require('body-parser');
 require('winston-mongodb');
 const logger = require('./utils/logger');
 
-
-
 connectDb();
+
+
+
 const port = process.env.PORT || 5000;
 const app = express();
 
+app.disable('x-powered-by');
 app.use(helmet());
 app.use(express.json());
+app.use(bodyparser.json());
+app.use(express.urlencoded({extended: true}));
+
 app.use(cookieParser());
 app.use(cors({
     origin: process.env.CLIENT_URL,
@@ -38,6 +44,7 @@ app.use(compression());
 
 app.use("/api/recipes", require("./routes/recipeRoutes" ));
 app.use("/api/users", require("./routes/userRoutes"));
+
 
 
 app.use(errorHandler);

@@ -9,27 +9,40 @@ const UserDto = require('../dtos/userDtos');
 const ApiError = require('../middleware/apiError');
 
 
-const registration = asyncHandler(async(username,email,password) => {
-	const candidate = await User.findOne({email});
-	if(candidate) {
-		throw ApiError.BadRequest(`User with this email ${email} already registered`);
-	}
-	const hashedPassword = await bcrypt.hash(password,10);
-	const activationLink = uuid.v4();
-	
-	const user = await User.create({username,email,password: hashedPassword,activationLink});
-	await gmailService.sendActivationGmail(email,`${process.env.API_URL}/api/users/activate/${activationLink}`);
-	
-	const userDto = new UserDto(user);
-	const tokens = generateTokens({...userDto});
-	await saveTokens(userDto.id, tokens.refreshToken);
+const registration = asyncHandler(async (username, email, password) => {
+	await validateEmailUniqueness(email);
 
+	const hashedPassword = await bcrypt.hash(password, 10);
+	const activationLink = uuid.v4();
+
+	const user = await createUser(username, email, hashedPassword, activationLink);
+	await sendActivationEmail(email, `${process.env.API_URL}/api/users/activate/${activationLink}`);
+
+	const userDto = new UserDto(user);
+	const tokens = generateTokens({ ...userDto });
+	await saveTokens(userDto.id, tokens.refreshToken);
+	return { ...tokens, user: userDto };
 	
-	return {...tokens,user: userDto};
 });
 
+async function validateEmailUniqueness(email) {
+	const candidate = await User.findOne({ email });
+	if (candidate) {
+		 throw ApiError.BadRequest(`User with this email ${email} already registered`);
+	}
+}
+
+async function createUser(username, email, hashedPassword, activationLink) {
+	return await User.create({ username, email, password: hashedPassword, activationLink });
+}
+
+async function sendActivationEmail(to, link) {
+	await gmailService.sendActivationGmail(to, link);
+}
+
+
 	const activate = asyncHandler(async(activationLink)=> {
-	const user = await User.findOne({activationLink});
+	const user = await User.findOne({activationLink: activationLink});
 	if(!user) {
 		throw ApiError.BadRequest('Incorrect activation link');
 	}
@@ -37,7 +50,6 @@ const registration = asyncHandler(async(username,email,password) => {
 	await user.save();
 	});
 
-	
 	const login = asyncHandler(async(email,password) => {
 		const user = await User.findOne({email});
 			if(!user) {
@@ -88,17 +100,23 @@ const registration = asyncHandler(async(username,email,password) => {
 			if(!isPassEquals) {
 				throw ApiError.BadRequest('Incorrect password');
 			}
+			if(!user.isActivated) {
+				throw ApiError.BadRequest('User is not activated');
+			}
 			const changePasswordLink = uuid.v4();
 			await gmailService.sendChangePasswordUser(email,`${process.env.API_URL}/api/users/change-password/${changePasswordLink}`);
 			user.changePasswordLink = changePasswordLink;
+			user.isChagePasswordLink = false;
 			await user.save();
 			return changePasswordLink;
 	});
 
 	const changePassword = asyncHandler(async(email,password,refreshToken)=> {
+
 		if(!password) {
 			 throw ApiError.BadRequest('Incorrect new password');
 		}
+		
 		if(!refreshToken) {
 			throw ApiError.UnauthorizedError();
 		}
@@ -106,15 +124,21 @@ const registration = asyncHandler(async(username,email,password) => {
 		if(!user) {
 			throw ApiError.BadRequest(`User doest not exsit or link has been expired`);
 		}
-		if(password===user.password) {
-		throw ApiError.BadRequest(`New password can not be the same as old password`);
-		}
+		if(!user.isChangePasswordLink){
+			throw ApiError.BadRequest(`User not activate link for change password`);
+		}	
 		if(email!==user.email) {
 			throw ApiError.BadRequest(`User with this email ${email} not found`);
 		}
 		const hashedPassword = await bcrypt.hash(password,10);
+		const isMatch = await bcrypt.compare(password, user.password);
+  		if(isMatch) {
+    		throw ApiError.BadRequest(`New password cannot be the same as old password`);
+  		}
+		
 		user.password = hashedPassword;
-		user.changePasswordLink = null;
+		user.changePasswordLink = undefined;
+		user.isChangePasswordLink = undefined;
 		await user.save();
 		const userDto = new UserDto(user);
 		const tokens = generateTokens({...userDto});
@@ -123,10 +147,12 @@ const registration = asyncHandler(async(username,email,password) => {
 
   });
 		const changePasswordLink = asyncHandler(async(changePasswordLink)=> {
-			if(!changePasswordLink) {
-				throw ApiError.BadRequest('Incorrect change password link');
-			}
-				return changePasswordLink;
+			const user = await User.findOne({changePasswordLink: changePasswordLink});
+			if (!user) {
+				throw ApiError.BadRequest('Invalid change password link');
+			 }
+				user.isChangePasswordLink = true;
+				await user.save();
 		});
 
 

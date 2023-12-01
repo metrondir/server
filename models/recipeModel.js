@@ -12,7 +12,7 @@ const recipeSchema = mongoose.Schema({
     // Consider using a URL or path to the image instead of Buffer
     imageUrl: {
         type: String,
-        required: [true, "Please add the image URL or path to this recipe"]
+        required: [false, "Please add the image URL or path to this recipe"]
     },
     instructions: {
         type: String,
