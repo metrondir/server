@@ -8,12 +8,12 @@ const ApiError = require("../middleware/apiError");
 const getRecipes = asyncHandler(async (req, res,next) => {
     try{
         if(req.query.page && req.query.limit){
-            console.log("The request asdis :", req.query);
+           
             const recipes = await redisGetModelsWithPaginating(Recipe, req, res, next);
             res.status(200).json(recipes);
         }
         else{
-            console.log("The request is asd:", req.query);
+           
             const recipes = await redisGetModels(Recipe, req, res, next);
             res.status(200).json(recipes);
         }
@@ -28,7 +28,6 @@ const getRecipes = asyncHandler(async (req, res,next) => {
 //@route POST /api/recipe
 //@access public
 const createRecipe = asyncHandler( async( req, res) => {
-    console.log("The request body is :" ,req.body);
     const{
         title,
         ingredients,

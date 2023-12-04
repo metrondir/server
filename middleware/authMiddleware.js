@@ -3,7 +3,7 @@ const {validateAccessToken} = require('../services/tokenService');
 
 module.exports = function ( req, res, next) {
 	try {
-		console.log(req.headers.authorization)
+	
 		const authHeader = req.headers.authorization;
 		if (!authHeader) {
 			throw ApiError.Forbbiden("User dont sent token");

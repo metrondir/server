@@ -34,7 +34,7 @@ const registerUser = asyncHandler(async (req,res,next) =>{
         const {username, email, password} = req.body;
         const userData = await registration(username, email, password);
         res.cookie("refreshToken", userData.refreshToken, {maxAge: process.env.COOKIE_MAX_AGE, secure: true, sameSite: 'None'});
-        console.log("The user data is :", userData);
+      
         onDataChanged('User');
         return res.json(userData);
         
@@ -53,12 +53,14 @@ const loginUser = asyncHandler(async (req,res,next) =>{
         res.cookie("refreshToken", userData.refreshToken, {maxAge: process.env.COOKIE_MAX_AGE, secure: true,sameSite: 'None'});
         
         return res.json(userData);
-    } catch (e) {
-        next(e);
+    } catch (eror) {
+        next(eror);
     }
 
 });
-
+//@desc logoutUser a user
+//@route POST /api/users/logout
+//@access private with refreshtoken
 const logoutUser = asyncHandler(async (req,res,next) =>{
     try{
         const {refreshToken} = req.cookies;
@@ -70,7 +72,9 @@ const logoutUser = asyncHandler(async (req,res,next) =>{
         next(error);
     }
 });
-
+//@desc refreshToken from user
+//@route POST /api/users/refresh
+//@access private with refreshtoken
 const refreshTokenUser = asyncHandler(async (req,res,next) =>{
         try {
         const {refreshToken} = req.cookies;
@@ -83,7 +87,9 @@ const refreshTokenUser = asyncHandler(async (req,res,next) =>{
 
 });
 
-
+//@desc Activate a user
+//@route POST /api/users/activate/:link
+//@access private with activationLink
 const activateUser = asyncHandler(async (req,res,next) =>{
     try {
         const activationLink = req.params.link;
@@ -95,7 +101,9 @@ const activateUser = asyncHandler(async (req,res,next) =>{
     }
 
 });
-
+//@desc Change password of user
+//@route POST /api/users/change-password
+//@access private with email and password
 const changePasswordUser = asyncHandler(async (req,res,next) =>{
     try {
        const {email,password} = req.body;
@@ -108,6 +116,9 @@ const changePasswordUser = asyncHandler(async (req,res,next) =>{
     }
 
 });
+//@desc Forget password of user
+//@route POST /api/users/forgot-password
+//@access public with email and password
 const forgetPasswordUser = asyncHandler(async (req,res,next) =>{
     try {
         const errors = validationResult(req);
@@ -123,7 +134,9 @@ const forgetPasswordUser = asyncHandler(async (req,res,next) =>{
     }
 
 });
-
+//@desc Confirm Link to change password of user
+//@route POST /api/users/change-password/:link
+//@access private with link
 const changePasswordUserLink = asyncHandler(async (req,res,next) =>{
     try {
         const changePasswordLin = req.params.link;

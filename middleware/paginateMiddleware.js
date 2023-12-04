@@ -17,10 +17,8 @@ const redisGetModels= async (model,req, res, next,conditions = {}) => {
 	  });
  
 	  if (redisModels) {
-		 console.log(`Redis has ${model.modelName.toLowerCase() + 's'}`);
 		 res.json(JSON.parse(redisModels));
 	  } else {
-		 console.log(`Redis does not have ${model.modelName.toLowerCase() + 's'}`);
 		 const models = await model.find(conditions); 
 		 redis.setex(redisKey, process.env.DEFAULT_EXPIRATION, JSON.stringify(models));
 		 res.json(models);
@@ -47,10 +45,8 @@ const redisGetModelsWithPaginating = async (model, req, res, next,conditions={})
 	  });
  
 	  if (redisModels) {
-		 console.log(`Redis has ${model.modelName.toLowerCase()+'s'}`);
 		 res.json(JSON.parse(redisModels));
 	  } else {
-		 console.log(`Redis does not have ${model.modelName.toLowerCase()+'s'}`);
 		 await paginate(model,conditions)(req, res, () => {});
 		 const paginatedResult = res.paginatedResult;
 		 if (!paginatedResult) {

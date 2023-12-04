@@ -13,7 +13,7 @@ function generateTokens (payload) {
 	try {
 	
 		const userData = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
-		console.log(userData);
+	
 		return userData;
 		
 	} catch (error) {
