@@ -125,8 +125,8 @@ const forgetPasswordUser = asyncHandler(async (req,res,next) =>{
         if(!errors.isEmpty()){
             return next(ApiError.BadRequest("Validation error", errors.array()));
         }
-        const {email, password} = req.body;
-        await forgetPassword(email,password);
+        const {email} = req.body;
+        await forgetPassword(email);
         onDataChanged('User');
         return res.json("Forget password link has been sent to your email");
     } catch (error) {
@@ -141,7 +141,7 @@ const changePasswordUserLink = asyncHandler(async (req,res,next) =>{
     try {
         const changePasswordLin = req.params.link;
         await changePasswordLink(changePasswordLin);
-        return res.redirect(process.env.CLIENT_URL+"/login");
+        return res.redirect(process.env.CLIENT_URL+"/new-password");
     } catch (error) {
         next(error);
     }

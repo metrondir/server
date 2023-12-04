@@ -90,16 +90,12 @@ async function sendActivationEmail(to, link) {
 	});
 
 
-	const forgetPassword = asyncHandler(async(email ,password) => {
+	const forgetPassword = asyncHandler(async(email) => {
 		const user = await User.findOne({email});
 			if(!user) {
 				throw ApiError.BadRequest(`User with this email ${email} not found`);
 			}
 			
-			const isPassEquals = await bcrypt.compare(password,user.password);
-			if(!isPassEquals) {
-				throw ApiError.BadRequest('Incorrect password');
-			}
 			if(!user.isActivated) {
 				throw ApiError.BadRequest('User is not activated');
 			}
