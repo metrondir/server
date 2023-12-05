@@ -4,6 +4,7 @@ const {registration ,activate, login,logout, refresh ,changePassword,changePassw
 const ApiError = require("../middleware/apiError");
 const User = require("../models/userModel");
 const { redisGetModelsWithPaginating,onDataChanged,redisGetModels } = require("../middleware/paginateMiddleware");
+const { logger } = require("express-winston");
 
 
 const getUsers = asyncHandler(async (req, res, next) => {
@@ -78,6 +79,8 @@ const logoutUser = asyncHandler(async (req,res,next) =>{
 const refreshTokenUser = asyncHandler(async (req,res,next) =>{
         try {
         const {refreshToken} = req.cookies;
+        console.log(refreshToken);
+
         const userData = await refresh(refreshToken);
         res.cookie("refreshToken", userData.refreshToken, {maxAge: process.env.COOKIE_MAX_AGE, secure: true,sameSite: 'None'});
         return res.json(userData);   
