@@ -83,8 +83,7 @@ const refreshTokenUser = asyncHandler(async (req,res,next) =>{
         return res.json(userData);   
     } catch (error) {
             next(error);
-        }
-
+    }
 });
 
 //@desc Activate a user
