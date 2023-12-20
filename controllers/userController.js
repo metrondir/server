@@ -79,8 +79,6 @@ const logoutUser = asyncHandler(async (req,res,next) =>{
 const refreshTokenUser = asyncHandler(async (req,res,next) =>{
         try {
         const {refreshToken} = req.cookies;
-        console.log(refreshToken);
-
         const userData = await refresh(refreshToken);
         res.cookie("refreshToken", userData.refreshToken, {maxAge: process.env.COOKIE_MAX_AGE, secure: true,sameSite: 'None'});
         return res.json(userData);   

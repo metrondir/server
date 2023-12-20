@@ -3,7 +3,7 @@ const asyncHandler = require("express-async-handler");
 const tokenModel = require("../models/tokenModel");
 const ApiError = require("../middleware/apiError");
 function generateTokens (payload) {
-	const accessToken = jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '30s' });
+	const accessToken = jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '3000s' });
 	const refreshToken = jwt.sign(payload, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '7d' });
 	
 	return { accessToken, refreshToken };

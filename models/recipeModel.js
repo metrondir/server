@@ -1,39 +1,80 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
-const recipeSchema = mongoose.Schema({
-    title: {
-        type: String,
-        required: [true, "Please add the title to this recipe"]
-    },
-    ingredients: {
-        type: String,
-        required: [true, "Please add the ingredients to this recipe"]
-    },
-    // Consider using a URL or path to the image instead of Buffer
-    imageUrl: {
-        type: String,
-        required: [false, "Please add the image URL or path to this recipe"]
-    },
-    instructions: {
-        type: String,
-        required: [true, "Please add the instructions to this recipe"]
-    },
-    // Consider using a numerical data type for cookingTime
-    cookingTime: {
-        type: Number,
-        required: [true, "Please add the cooking time (in minutes) to this recipe"]
-    },
-    cuisineType: {
-        type: String,
-        required: [true, "Please add the cuisine type to this recipe"]
-    },
-   },
-   {
-     timestamps: true,
-   }
-);
 
-// Create a model based on the schema
+const extendedIngredientSchema = new mongoose.Schema({
+  id: Number,
+  original: String,
+  originalName: String,
+  amount: Number,
+  meta: [String],
+  measures: {
+    us: {
+      amount: Number,
+      unitShort: String,
+      unitLong: String,
+    },
+    metric: {
+      amount: Number,
+      unitShort: String,
+      unitLong: String,
+    },
+  },
+});
+
+
+const recipeSchema = new mongoose.Schema({
+  vegetarian: Boolean,
+  cheap: Boolean,
+  veryPopular: Boolean,
+  extendedIngredients: [extendedIngredientSchema],
+  id: Number,
+  title: String,
+  readyInMinutes: Number,
+  sourceUrl: String,
+  image: String,
+  imageType: String,
+  cuisine: String,
+  dishType: String,
+  instructions: String,
+  analyzedInstructions: [
+    {
+      name: String,
+      steps: [
+        {
+          number: Number,
+          step: String,
+          ingredients: [
+            {
+              id: Number,
+              name: String,
+              localizedName: String,
+              image: String,
+            },
+          ],
+          equipment: [
+            {
+              id: Number,
+              name: String,
+              localizedName: String,
+              image: String,
+              temperature: {
+                number: Number,
+                unit: String,
+              },
+            },
+          ],
+          length: {
+            number: Number,
+            unit: String,
+          },
+        },
+      ],
+    },
+  ],
+
+});
+
+
 module.exports = mongoose.model("Recipe", recipeSchema);
 
 
