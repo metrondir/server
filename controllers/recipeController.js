@@ -3,6 +3,17 @@ const Recipe = require("../models/recipeModel");
 const { redisGetModels,redisGetModelsWithPaginating, onDataChanged } = require("../middleware/paginateMiddleware");
 const ApiError = require("../middleware/apiError");
 const { check, validationResult } = require('express-validator');
+const multer = require('multer');
+
+const storage = multer.diskStorage({
+	destination: "uploads",
+	filename: function(req, file, cb){
+		cb(null, file.originalname);
+	}
+});
+const upload = multer({
+	storage: Storage}).single("image");
+
 
 
 //@desc Get all contacts
@@ -43,7 +54,7 @@ function parseNestedArray(arr) {
       }
     });
   }
-const createRecipe = [
+  const createRecipe = [
     // Validate request data
     check('title').notEmpty(),
     check('cuisine').notEmpty(),
@@ -53,20 +64,25 @@ const createRecipe = [
     check('cheap').notEmpty(),
     check('instructions').notEmpty(),
     check('image').notEmpty(),
-
+  
+    upload.single('image'),
+  
     asyncHandler(async (req, res) => {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
       }
-
       if (req.body.extendedIngredients) {
         req.body.extendedIngredients = parseNestedArray(req.body.extendedIngredients);
       }
       try {
         // Create new recipe
-
-        const recipe = await Recipe.create(req.body);
+        const recipe = new Recipe(req.body);
+        recipe.image = {
+          data: req.file.filename,
+          contentType: "image/png",
+        };
+        await recipe.save();
   
         // Send response
         res.status(201).json(recipe);
@@ -74,7 +90,7 @@ const createRecipe = [
       } catch (error) {
         res.status(500).json({ error: error.message });
       }
-    }),
+    })
   ];
 
 //@desc Get recipe
