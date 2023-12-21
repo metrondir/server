@@ -34,6 +34,15 @@ const getRecipes = asyncHandler(async (req, res,next) => {
 //@desc Create new recipe
 //@route POST /api/recipe
 //@access public
+function parseNestedArray(arr) {
+    return arr.map(item => {
+      if (Array.isArray(item)) {
+        return parseNestedArray(item);
+      } else {
+        return JSON.parse(item).original;
+      }
+    });
+  }
 const createRecipe = [
     // Validate request data
     check('title').notEmpty(),
@@ -51,7 +60,9 @@ const createRecipe = [
         return res.status(400).json({ errors: errors.array() });
       }
 
-      
+      if (req.body.extendedIngredients) {
+        req.body.extendedIngredients = parseNestedArray(req.body.extendedIngredients);
+      }
       try {
         // Create new recipe
 
