@@ -6,13 +6,15 @@ const { check, validationResult } = require('express-validator');
 const multer = require('multer');
 
 const storage = multer.diskStorage({
-	destination: "uploads",
-	filename: function(req, file, cb){
-		cb(null, file.originalname);
-	}
-});
-const upload = multer({
-	storage: Storage}).single("image");
+    destination: function (req, file, cb) {
+      cb(null, './uploads/');
+    },
+    filename: function (req, file, cb) {
+      cb(null, new Date().toISOString() + file.originalname);
+    }
+  });
+  
+  const upload = multer({ storage: storage });
 
 
 
