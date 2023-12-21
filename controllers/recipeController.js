@@ -4,9 +4,14 @@ const { redisGetModels,redisGetModelsWithPaginating, onDataChanged } = require("
 const ApiError = require("../middleware/apiError");
 const { check, validationResult } = require('express-validator');
 
+
 //@desc Get all contacts
 //@route GET /api/recipe
 //@access public
+
+
+
+
 const getRecipes = asyncHandler(async (req, res,next) => {
     try{
         if(req.query.page && req.query.limit){
@@ -38,15 +43,18 @@ const createRecipe = [
     check('vegetarian').notEmpty(),
     check('cheap').notEmpty(),
     check('instructions').notEmpty(),
-    
+    check('image').notEmpty(),
+
     asyncHandler(async (req, res) => {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
       }
-  
+
+      
       try {
         // Create new recipe
+
         const recipe = await Recipe.create(req.body);
   
         // Send response
