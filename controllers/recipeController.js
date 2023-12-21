@@ -4,6 +4,12 @@ const { redisGetModels,redisGetModelsWithPaginating, onDataChanged } = require("
 const ApiError = require("../middleware/apiError");
 const { check, validationResult } = require('express-validator');
 const multer = require('multer');
+const fs = require('fs');
+const dir = './uploads';
+
+if (!fs.existsSync(dir)){
+    fs.mkdirSync(dir);
+}
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
