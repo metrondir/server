@@ -74,12 +74,11 @@ function parseNestedArray(arr) {
       if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
       }
-      if (req.body.extendedIngredients) {
-        req.body.extendedIngredients = parseNestedArray(req.body.extendedIngredients);
-      }
+      
       try {
         // Create new recipe
         const recipe = new Recipe(req.body);
+        console.log(req);
         recipe.image = {
           data: req.file.filename,
           contentType: "image/png",
