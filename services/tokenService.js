@@ -11,7 +11,7 @@ function generateTokens (payload) {
 
  function validateAccessToken(accessToken){
 	try {
-	
+	console.log(accessToken);
 		const userData = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
 	
 		return userData;

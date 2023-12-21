@@ -43,7 +43,7 @@ app.use(compression());
 
 app.use("/api/recipes", require("./routes/recipeRoutes" ));
 app.use("/api/users", require("./routes/userRoutes"));
-
+app.use(errorHandler);
 
 const myFormat = format.printf(({ level, message, label, timestamp, metadata }) => {
     return `${timestamp} ${level}: ${message} ${metadata ? JSON.stringify(metadata) : ''}`;
@@ -60,7 +60,7 @@ app.use(expressWinston.errorLogger({
         myFormat
     ),
 }));
-app.use(errorHandler);
+
 
 app.listen(port,()=>{
     console.log(`Server running on port ${port}`);
