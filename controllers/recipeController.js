@@ -4,23 +4,8 @@ const { redisGetModels,redisGetModelsWithPaginating, onDataChanged } = require("
 const ApiError = require("../middleware/apiError");
 const { check, validationResult } = require('express-validator');
 const multer = require('multer');
-const fs = require('fs');
-const dir = './uploads';
 
-if (!fs.existsSync(dir)){
-    fs.mkdirSync(dir);
-}
 
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-      cb(null, './uploads/');
-    },
-    filename: function (req, file, cb) {
-      cb(null, new Date().toISOString() + file.originalname);
-    }
-  });
-  
-  const upload = multer({ storage: storage });
 
 
 
@@ -72,7 +57,7 @@ function parseNestedArray(arr) {
     check('cheap').notEmpty(),
     check('instructions').notEmpty(),
   
-    upload.single('image'),
+
   
     asyncHandler(async (req, res) => {
       const errors = validationResult(req);
@@ -83,12 +68,7 @@ function parseNestedArray(arr) {
       try {
         // Create new recipe
         const recipe = new Recipe(req.body);
-        console.log(req);
-        recipe.image = {
-          data: req.file.filename,
-          contentType: "image/png",
-        };
-        await recipe.save();
+      
   
         // Send response
         res.status(201).json(recipe);
