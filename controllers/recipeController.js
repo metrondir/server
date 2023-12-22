@@ -71,7 +71,6 @@ function parseNestedArray(arr) {
     check('vegetarian').notEmpty(),
     check('cheap').notEmpty(),
     check('instructions').notEmpty(),
-    check('image').notEmpty(),
   
     upload.single('image'),
   
