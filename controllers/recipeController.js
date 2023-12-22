@@ -14,7 +14,19 @@ const { check, validationResult } = require('express-validator');
 //@access public
 
 
+function parseNestedArray(arr) {
+  if (!Array.isArray(arr)) {
+    throw new Error('Expected an array');
+  }
 
+  return arr.map(item => {
+    if (Array.isArray(item)) {
+      return parseNestedArray(item);
+    } else {
+      return JSON.parse(item).original;
+    }
+  });
+}
 
 const getRecipes = asyncHandler(async (req, res,next) => {
     try{
@@ -56,7 +68,12 @@ const getRecipes = asyncHandler(async (req, res,next) => {
       if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
       }
-      
+
+      if (req.body.extendedIngredients && typeof req.body.extendedIngredients === 'string') {
+        let parsedIngredients = JSON.parse(req.body.extendedIngredients);
+        req.body.extendedIngredients = parsedIngredients;
+      }
+    
       try {
         const recipe = new Recipe(req.body);
       
