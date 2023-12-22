@@ -107,7 +107,10 @@ const updateRecipe = asyncHandler(async(req, res) => {
         return res.status(404).json({ error: "Recipe not found" });
     }
 
-   
+    if (req.body.extendedIngredients && typeof req.body.extendedIngredients === 'string') {
+      let parsedIngredients = JSON.parse(req.body.extendedIngredients);
+      req.body.extendedIngredients = parsedIngredients;
+    }
 
     const updatedRecipe = await Recipe.findByIdAndUpdate(
         req.params.id,
