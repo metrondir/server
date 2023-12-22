@@ -3,7 +3,7 @@ const Recipe = require("../models/recipeModel");
 const { redisGetModels,redisGetModelsWithPaginating, onDataChanged } = require("../middleware/paginateMiddleware");
 const ApiError = require("../middleware/apiError");
 const { check, validationResult } = require('express-validator');
-const multer = require('multer');
+
 
 
 
@@ -38,15 +38,7 @@ const getRecipes = asyncHandler(async (req, res,next) => {
 //@desc Create new recipe
 //@route POST /api/recipe
 //@access public
-function parseNestedArray(arr) {
-    return arr.map(item => {
-      if (Array.isArray(item)) {
-        return parseNestedArray(item);
-      } else {
-        return JSON.parse(item).original;
-      }
-    });
-  }
+
   const createRecipe = [
     // Validate request data
     check('title').notEmpty(),
@@ -66,11 +58,8 @@ function parseNestedArray(arr) {
       }
       
       try {
-        // Create new recipe
         const recipe = new Recipe(req.body);
       
-  
-        // Send response
         res.status(201).json(recipe);
         onDataChanged('Recipe');
       } catch (error) {
