@@ -3,8 +3,8 @@ const Recipe = require("../models/recipeModel");
 const { redisGetModels,redisGetModelsWithPaginating, onDataChanged } = require("../middleware/paginateMiddleware");
 const ApiError = require("../middleware/apiError");
 const { check, validationResult } = require('express-validator');
-
-
+const FavoriteRecipe = require("../models/favoriteRecipeModel");
+const RefreshToken = require("../models/tokenModel");
 
 
 
@@ -47,6 +47,44 @@ const getRecipes = asyncHandler(async (req, res,next) => {
    
 });
 
+const setFavoriteRecipes = async (req, res, next) => {
+  try {
+    const refreshToken = await RefreshToken.findOne({ refreshToken: req.cookies.refreshToken });
+
+    if (!refreshToken) {
+      return res.status(401).json({ message: 'Invalid refresh token' });
+    }
+
+    const favoriteRecipe = new FavoriteRecipe({ ...req.body, userId: refreshToken.userId });
+    await favoriteRecipe.save();
+
+    res.status(201).json(favoriteRecipe);
+    // onDataChanged('FavoriteRecipe'); // Assuming onDataChanged is a function to handle data changes.
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getFavoriteRecipes = async (req, res, next) => {
+  try {
+    const refreshToken = await RefreshToken.findOne({ refreshToken: req.cookies.refreshToken });
+
+    if (!refreshToken) {
+      return res.status(401).json({ message: 'Invalid refresh token' });
+    }
+
+    const favoriteRecipes = await FavoriteRecipe.find({ userId: refreshToken.userId });
+
+    if (!favoriteRecipes.length) {
+      return res.status(404).json({ message: 'Favorite recipes not found' });
+    }
+
+    res.status(200).json(favoriteRecipes);
+  } catch (error) {
+    next(error);
+  }
+};
+
 //@desc Create new recipe
 //@route POST /api/recipe
 //@access public
@@ -76,7 +114,7 @@ const getRecipes = asyncHandler(async (req, res,next) => {
     
       try {
         const recipe = new Recipe(req.body);
-      
+        await recipe.save();
         res.status(201).json(recipe);
         onDataChanged('Recipe');
       } catch (error) {
@@ -143,6 +181,8 @@ module.exports = {
     getRecipe,
     updateRecipe ,
     deleteRecipe,
+    getFavoriteRecipes,
+    setFavoriteRecipes,
 };
 
 
