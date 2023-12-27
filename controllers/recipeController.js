@@ -114,8 +114,8 @@ const getFavoriteRecipes = async (req, res, next) => {
     
       try {
         const recipe = new Recipe(req.body);
-        console.log(recipe);
-        res.status(201).json(recipe);
+        await recipe.save();
+                res.status(201).json(recipe);
         onDataChanged('Recipe');
       } catch (error) {
         res.status(500).json({ error: error.message });
