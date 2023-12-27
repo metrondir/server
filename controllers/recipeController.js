@@ -53,13 +53,20 @@ const setFavoriteRecipes = async (req, res, next) => {
 
     if (!refreshToken) {
       return res.status(401).json({ message: 'Invalid refresh token' });
+    }console.log(refreshToken.user); 
+
+    const recipeId = req.params.id; // Get the recipe ID from the path
+    const existingFavoriteRecipe = await FavoriteRecipe.findOne({ recipe: recipeId, user: refreshToken.user });
+    if (existingFavoriteRecipe) {
+      const favoriteRecipe = await FavoriteRecipe.findByIdAndDelete(existingFavoriteRecipe._id);
+      return res.status(200).json(favoriteRecipe);
     }
 
-    const favoriteRecipe = new FavoriteRecipe({ ...req.body, userId: refreshToken.userId });
+    const favoriteRecipe = new FavoriteRecipe({ recipe: recipeId, user: refreshToken.user });
+   
     await favoriteRecipe.save();
 
     res.status(201).json(favoriteRecipe);
-    // onDataChanged('FavoriteRecipe'); // Assuming onDataChanged is a function to handle data changes.
   } catch (error) {
     next(error);
   }
@@ -73,10 +80,10 @@ const getFavoriteRecipes = async (req, res, next) => {
       return res.status(401).json({ message: 'Invalid refresh token' });
     }
 
-    const favoriteRecipes = await FavoriteRecipe.find({ userId: refreshToken.userId });
-
+    const favoriteRecipes = await FavoriteRecipe.find({ user: refreshToken.user });
+    console.log(favoriteRecipes);
     if (!favoriteRecipes.length) {
-      return res.status(404).json({ message: 'Favorite recipes not found' });
+      return res.status(404).json({ message: 'This user dont have favorites recipes' });
     }
 
     res.status(200).json(favoriteRecipes);
@@ -115,7 +122,7 @@ const getFavoriteRecipes = async (req, res, next) => {
       try {
         const recipe = new Recipe(req.body);
         await recipe.save();
-                res.status(201).json(recipe);
+        res.status(201).json(recipe);
         onDataChanged('Recipe');
       } catch (error) {
         res.status(500).json({ error: error.message });

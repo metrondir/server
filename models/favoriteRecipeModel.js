@@ -7,12 +7,10 @@ const favoriteRecipeSchema = new mongoose.Schema({
 		required: true
 	},
 	recipe:{
-		type: mongoose.Schema.Types.ObjectId,
+		type: Number,
 		required: true
 	},
 	
 });
 
-const FavoriteRecipe = mongoose.model('FavoriteRecipe', favoriteRecipeSchema);
-
-module.exports = FavoriteRecipe;
+module.exports = mongoose.model('FavoriteRecipe', favoriteRecipeSchema)
