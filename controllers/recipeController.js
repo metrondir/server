@@ -109,17 +109,12 @@ const getFavoriteRecipes = async (req, res, next) => {
 
       if (req.body.extendedIngredients && typeof req.body.extendedIngredients === 'string') {
         let parsedIngredients = JSON.parse(req.body.extendedIngredients);
-        
-        if (typeof parsedIngredients === 'object') {
-          req.body.extendedIngredients = parsedIngredients;
-        } else {
-          return res.status(400).json({ error: 'extendedIngredients must be a stringified JSON object' });
-        }
+        req.body.extendedIngredients = parsedIngredients;
       }
     
       try {
         const recipe = new Recipe(req.body);
-        await recipe.save();
+        console.log(recipe);
         res.status(201).json(recipe);
         onDataChanged('Recipe');
       } catch (error) {
