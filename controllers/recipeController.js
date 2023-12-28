@@ -122,10 +122,10 @@ const createRecipe = [
     //  return res.status(400).json({ errors: errors.array() });
     //}
 
-    if (req.body.extendedIngredients && typeof req.body.extendedIngredients === 'string') {
-      let parsedIngredients = JSON.parse(req.body.extendedIngredients);
-      req.body.extendedIngredients = parsedIngredients;
-    }
+    //if (req.body.extendedIngredients && typeof req.body.extendedIngredients === 'string') {
+    //  let parsedIngredients = JSON.parse(req.body.extendedIngredients);
+    //  req.body.extendedIngredients = parsedIngredients;
+    //}
 
     try {
       const recipe = new Recipe({
