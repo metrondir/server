@@ -16,7 +16,7 @@ const path = require('path');
 
 const storage = multer.diskStorage({
   destination: function(req, file, cb) {
-    cb(null, '../uploads/'); // This is the folder where the files will be saved. Make sure this folder exists.
+    cb(null, './uploads/'); // This is the folder where the files will be saved. Make sure this folder exists.
   },
   filename: function(req, file, cb) {
     cb(null, new Date().toISOString().replace(/:/g, '-') + '-' + file.originalname);
@@ -107,25 +107,25 @@ const getFavoriteRecipes = async (req, res, next) => {
 
 const createRecipe = [
   // Validate request data
-  //check('title').notEmpty(),
-  //check('cuisine').notEmpty(),
-  //check('dishType').notEmpty(),
-  //check('readyInMinutes').notEmpty(),
-  //check('vegetarian').notEmpty(),
-  //check('cheap').notEmpty(),
-  //check('instructions').notEmpty(),
+  check('title').notEmpty(),
+  check('cuisine').notEmpty(),
+  check('dishType').notEmpty(),
+  check('readyInMinutes').notEmpty(),
+  check('vegetarian').notEmpty(),
+  check('cheap').notEmpty(),
+  check('instructions').notEmpty(),
   upload.single('image'),
 
   asyncHandler(async (req, res) => {
-    //const errors = validationResult(req);
-    //if (!errors.isEmpty()) {
-    //  return res.status(400).json({ errors: errors.array() });
-    //}
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
 
-    //if (req.body.extendedIngredients && typeof req.body.extendedIngredients === 'string') {
-    //  let parsedIngredients = JSON.parse(req.body.extendedIngredients);
-    //  req.body.extendedIngredients = parsedIngredients;
-    //}
+    if (req.body.extendedIngredients && typeof req.body.extendedIngredients === 'string') {
+      let parsedIngredients = JSON.parse(req.body.extendedIngredients);
+      req.body.extendedIngredients = parsedIngredients;
+    }
 
     try {
       const recipe = new Recipe({
@@ -138,17 +138,17 @@ const createRecipe = [
         instructions: req.body.instructions,
         extendedIngredients: req.body.extendedIngredients,
         image: {
-          data: fs.readFileSync(path.join(__dirname, '../uploads', req.file.filename)),
+          data: fs.readFileSync(path.join(__dirname, 'uploads', req.file.filename)),
           contentType: req.file.mimetype,
         },
       });
 
       await recipe.save();
-      console.log(req);
+      console.log(req.file);
       res.status(201).json(recipe);
       onDataChanged('Recipe');
     } catch (error) {
-      console.log(req);
+      console.log(req.file);
       res.status(500).json({ error: error.message });
     }
   }),
