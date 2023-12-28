@@ -144,11 +144,11 @@ const createRecipe = [
       });
 
       await recipe.save();
-      console.log(req.file);
+      console.log(req);
       res.status(201).json(recipe);
       onDataChanged('Recipe');
     } catch (error) {
-      console.log(req.file);
+      console.log(req);
       res.status(500).json({ error: error.message });
     }
   }),
