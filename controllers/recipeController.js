@@ -91,7 +91,6 @@ const getFavoriteRecipes = async (req, res, next) => {
     }
 
     const favoriteRecipes = await FavoriteRecipe.find({ user: refreshToken.user });
-    console.log(favoriteRecipes);
     if (!favoriteRecipes.length) {
       return res.status(404).json({ message: 'This user dont have favorites recipes' });
     }
@@ -145,12 +144,11 @@ const createRecipe = [
       });
 
       await recipe.save();
-    
+      console.log(req.file);
       res.status(201).json(recipe);
-      console.log(req);
       onDataChanged('Recipe');
     } catch (error) {
-      console.log(req);
+      console.log(req.file);
       res.status(500).json({ error: error.message });
     }
   }),
