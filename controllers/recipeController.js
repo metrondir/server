@@ -16,7 +16,7 @@ const path = require('path');
 
 const storage = multer.diskStorage({
   destination: function(req, file, cb) {
-    cb(null, './uploads/'); // This is the folder where the files will be saved. Make sure this folder exists.
+    cb(null, '../uploads/'); // This is the folder where the files will be saved. Make sure this folder exists.
   },
   filename: function(req, file, cb) {
     cb(null, new Date().toISOString().replace(/:/g, '-') + '-' + file.originalname);
