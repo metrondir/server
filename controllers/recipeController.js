@@ -122,6 +122,7 @@ const getFavoriteRecipes = async (req, res, next) => {
       try {
         const recipe = new Recipe(req.body);
         await recipe.save();
+        console.log(req.body);
         res.status(201).json(recipe);
         onDataChanged('Recipe');
       } catch (error) {
