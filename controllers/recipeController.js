@@ -138,7 +138,7 @@ const createRecipe = [
         instructions: req.body.instructions,
         extendedIngredients: req.body.extendedIngredients,
         image: {
-          data: fs.readFileSync(path.join(__dirname, 'uploads', req.file.filename)),
+          data: fs.readFileSync(path.join(__dirname, '../uploads', req.file.filename)),
           contentType: req.file.mimetype,
         },
       });
