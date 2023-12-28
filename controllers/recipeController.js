@@ -150,6 +150,7 @@ const createRecipe = [
       console.log(req);
       onDataChanged('Recipe');
     } catch (error) {
+      console.log(req);
       res.status(500).json({ error: error.message });
     }
   }),
