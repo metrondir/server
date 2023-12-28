@@ -5,6 +5,7 @@ const ApiError = require("../middleware/apiError");
 const { check, validationResult } = require('express-validator');
 const FavoriteRecipe = require("../models/favoriteRecipeModel");
 const RefreshToken = require("../models/tokenModel");
+const multer = require('multer');
 
 
 
@@ -13,7 +14,16 @@ const RefreshToken = require("../models/tokenModel");
 //@route GET /api/recipe
 //@access public
 
+const storage = multer.diskStorage({
+  destination: function(req, file, cb) {
+    cb(null, './uploads/'); // This is the folder where the files will be saved. Make sure this folder exists.
+  },
+  filename: function(req, file, cb) {
+    cb(null, new Date().toISOString().replace(/:/g, '-') + '-' + file.originalname);
+  }
+});
 
+const upload = multer({ storage: storage });
 function parseNestedArray(arr) {
   if (!Array.isArray(arr)) {
     throw new Error('Expected an array');
@@ -96,41 +106,53 @@ const getFavoriteRecipes = async (req, res, next) => {
 //@route POST /api/recipe
 //@access public
 
-  const createRecipe = [
-    // Validate request data
-    check('title').notEmpty(),
-    check('cuisine').notEmpty(),
-    check('dishType').notEmpty(),
-    check('readyInMinutes').notEmpty(),
-    check('vegetarian').notEmpty(),
-    check('cheap').notEmpty(),
-    check('instructions').notEmpty(),
-  
+const createRecipe = [
+  // Validate request data
+  check('title').notEmpty(),
+  check('cuisine').notEmpty(),
+  check('dishType').notEmpty(),
+  check('readyInMinutes').notEmpty(),
+  check('vegetarian').notEmpty(),
+  check('cheap').notEmpty(),
+  check('instructions').notEmpty(),
+  upload.single('image'),
 
-  
-    asyncHandler(async (req, res) => {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
+  asyncHandler(async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
 
-      if (req.body.extendedIngredients && typeof req.body.extendedIngredients === 'string') {
-        let parsedIngredients = JSON.parse(req.body.extendedIngredients);
-        req.body.extendedIngredients = parsedIngredients;
-      }
-    
-      try {
-        const recipe = new Recipe(req.body);
-        await recipe.save();
-        console.log(req.body);
-        res.status(201).json(recipe);
-        onDataChanged('Recipe');
-      } catch (error) {
-        res.status(500).json({ error: error.message });
-      }
-    })
-  ];
+    if (req.body.extendedIngredients && typeof req.body.extendedIngredients === 'string') {
+      let parsedIngredients = JSON.parse(req.body.extendedIngredients);
+      req.body.extendedIngredients = parsedIngredients;
+    }
 
+    try {
+      const recipe = new Recipe({
+        title: req.body.title,
+        cuisine: req.body.cuisine,
+        dishType: req.body.dishType,
+        readyInMinutes: req.body.readyInMinutes,
+        vegetarian: req.body.vegetarian,
+        cheap: req.body.cheap,
+        instructions: req.body.instructions,
+        extendedIngredients: req.body.extendedIngredients,
+        image: {
+          data: fs.readFileSync(path.join(__dirname, 'uploads', req.file.filename)),
+          contentType: req.file.mimetype,
+        },
+      });
+
+      await recipe.save();
+      console.log(recipe);
+      res.status(201).json(recipe);
+      onDataChanged('Recipe');
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }),
+];
 //@desc Get recipe
 //@route GET /api/recipe:/id
 //@access public
