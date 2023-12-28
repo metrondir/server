@@ -145,8 +145,9 @@ const createRecipe = [
       });
 
       await recipe.save();
-      console.log(recipe);
+    
       res.status(201).json(recipe);
+      console.log(req);
       onDataChanged('Recipe');
     } catch (error) {
       res.status(500).json({ error: error.message });
