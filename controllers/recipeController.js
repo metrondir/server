@@ -16,7 +16,7 @@ const path = require('path');
 
 const storage = multer.diskStorage({
   destination: function(req, file, cb) {
-    cb(null, './uploads/'); // This is the folder where the files will be saved. Make sure this folder exists.
+    cb(null, './uploads'); // This is the folder where the files will be saved. Make sure this folder exists.
   },
   filename: function(req, file, cb) {
     cb(null, new Date().toISOString().replace(/:/g, '-') + '-' + file.originalname);
@@ -106,7 +106,7 @@ const getFavoriteRecipes = async (req, res, next) => {
 //@access public
 
 const createRecipe = [
-  // Validate request data
+  
   check('title').notEmpty(),
   check('cuisine').notEmpty(),
   check('dishType').notEmpty(),
@@ -138,7 +138,7 @@ const createRecipe = [
         instructions: req.body.instructions,
         extendedIngredients: req.body.extendedIngredients,
         image: {
-          data: fs.readFileSync(path.join(__dirname, 'uploads', req.file.filename)),
+          data: fs.readFileSync(path.join(__dirname, '../uploads', req.file.filename)),
           contentType: req.file.mimetype,
         },
       });
