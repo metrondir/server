@@ -72,6 +72,7 @@ async function sendActivationEmail(to, link) {
 		return token;
 	});
 	const  refresh = asyncHandler(async (refreshToken) => {
+		console.log(refreshToken);
 		if(!refreshToken) {
 			throw ApiError.UnauthorizedError("User unauthorized");
 		}
