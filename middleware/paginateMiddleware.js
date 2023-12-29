@@ -17,8 +17,10 @@ const redisGetModels= async (model,req, res, next,conditions = {}) => {
 	  });
  
 	  if (redisModels) {
+		console.log("FROM Redis")
 		 res.json(JSON.parse(redisModels));
 	  } else {
+		console.log("FROM DB")
 		 const models = await model.find(conditions); 
 		 redis.setex(redisKey, process.env.DEFAULT_EXPIRATION, JSON.stringify(models));
 		 res.json(models);

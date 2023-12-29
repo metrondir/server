@@ -43,10 +43,10 @@ const getRecipes = asyncHandler(async (req, res,next) => {
         if(req.query.page && req.query.limit){
            
             const recipes = await redisGetModelsWithPaginating(Recipe, req, res, next);
+           
             res.status(200).json(recipes);
         }
         else{
-           
             const recipes = await redisGetModels(Recipe, req, res, next);
             res.status(200).json(recipes);
         }
@@ -149,6 +149,7 @@ const createRecipe = [
       onDataChanged('Recipe');
     } catch (error) {
       console.log(req.file);
+      console.log(req);
       res.status(500).json({ error: error.message });
     }
   }),
