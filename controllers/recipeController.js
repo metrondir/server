@@ -107,13 +107,13 @@ const getFavoriteRecipes = async (req, res, next) => {
 
 const createRecipe = [
   
-  //check('title').notEmpty(),
-  //check('cuisine').notEmpty(),
-  //check('dishType').notEmpty(),
-  //check('readyInMinutes').notEmpty(),
-  //check('vegetarian').notEmpty(),
-  //check('cheap').notEmpty(),
-  //check('instructions').notEmpty(),
+  check('title').notEmpty(),
+  check('cuisine').notEmpty(),
+  check('dishType').notEmpty(),
+  check('readyInMinutes').notEmpty(),
+  check('vegetarian').notEmpty(),
+  check('cheap').notEmpty(),
+  check('instructions').notEmpty(),
   upload.single('image'),
 
   asyncHandler(async (req, res) => {
