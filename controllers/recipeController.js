@@ -15,7 +15,7 @@ const path = require('path');
 
 const storage = multer.diskStorage({
   destination: function(req, file, cb) {
-    cb(null, './uploads'); // This is the folder where the files will be saved. Make sure this folder exists.
+    cb(null, './uploads'); 
   },
   filename: function(req, file, cb) {
     cb(null, new Date().toISOString().replace(/:/g, '-') + '-' + file.originalname);
@@ -62,9 +62,9 @@ const setFavoriteRecipes = async (req, res, next) => {
 
     if (!refreshToken) {
       return res.status(401).json({ message: 'Invalid refresh token' });
-    }console.log(refreshToken.user);
+    };
 
-    const recipeId = req.params.id; // Get the recipe ID from the path
+    const recipeId = req.params.id; 
     const existingFavoriteRecipe = await FavoriteRecipe.findOne({ recipe: recipeId, user: refreshToken.user });
     if (existingFavoriteRecipe) {
       const favoriteRecipe = await FavoriteRecipe.findByIdAndDelete(existingFavoriteRecipe._id);
@@ -134,12 +134,11 @@ const createRecipe = [
       });
 
       await recipe.save();
-      console.log(req.file);
+     
       res.status(201).json(recipe);
       onDataChanged('Recipe');
     } catch (error) {
-      console.log(req.file);
-      console.log(req);
+     
       res.status(500).json({ error: error.message });
     }
   }),
