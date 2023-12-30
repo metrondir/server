@@ -2,6 +2,7 @@ const asyncHandler = require("express-async-handler");
 const Recipe = require("../models/recipeModel");
 const { redisGetModels,redisGetModelsWithPaginating, onDataChanged } = require("../middleware/paginateMiddleware");
 const ApiError = require("../middleware/apiError");
+const { check, validationResult } = require('express-validator');
 const FavoriteRecipe = require("../models/favoriteRecipeModel");
 const RefreshToken = require("../models/tokenModel");
 const multer = require('multer');
@@ -15,7 +16,7 @@ const path = require('path');
 
 const storage = multer.diskStorage({
   destination: function(req, file, cb) {
-    cb(null, './uploads'); 
+    cb(null, './uploads'); // This is the folder where the files will be saved. Make sure this folder exists.
   },
   filename: function(req, file, cb) {
     cb(null, new Date().toISOString().replace(/:/g, '-') + '-' + file.originalname);
@@ -62,9 +63,9 @@ const setFavoriteRecipes = async (req, res, next) => {
 
     if (!refreshToken) {
       return res.status(401).json({ message: 'Invalid refresh token' });
-    };
+    }console.log(refreshToken.user);
 
-    const recipeId = req.params.id; 
+    const recipeId = req.params.id; // Get the recipe ID from the path
     const existingFavoriteRecipe = await FavoriteRecipe.findOne({ recipe: recipeId, user: refreshToken.user });
     if (existingFavoriteRecipe) {
       const favoriteRecipe = await FavoriteRecipe.findByIdAndDelete(existingFavoriteRecipe._id);
@@ -110,7 +111,10 @@ const createRecipe = [
   upload.single('image'),
 
   asyncHandler(async (req, res) => {
-   
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
 
     if (req.body.extendedIngredients && typeof req.body.extendedIngredients === 'string') {
       let parsedIngredients = JSON.parse(req.body.extendedIngredients);
@@ -134,11 +138,12 @@ const createRecipe = [
       });
 
       await recipe.save();
-     
+      console.log(req.file);
       res.status(201).json(recipe);
       onDataChanged('Recipe');
     } catch (error) {
-     
+      console.log(req.file);
+      console.log(req);
       res.status(500).json({ error: error.message });
     }
   }),
