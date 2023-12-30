@@ -23,8 +23,8 @@ const extendedIngredientSchema = new mongoose.Schema({
 
 
 const recipeSchema = new mongoose.Schema({
-  vegetarian: Boolean,
-  cheap: Boolean,
+  vegetarian: ['vegetarian','non-vegetarian'],
+  cheap: ['cheap','expensive'],
   veryPopular: Boolean,
   extendedIngredients: [extendedIngredientSchema],
   id: Number,
