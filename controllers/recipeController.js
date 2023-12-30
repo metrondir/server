@@ -2,7 +2,6 @@ const asyncHandler = require("express-async-handler");
 const Recipe = require("../models/recipeModel");
 const { redisGetModels,redisGetModelsWithPaginating, onDataChanged } = require("../middleware/paginateMiddleware");
 const ApiError = require("../middleware/apiError");
-const { check, validationResult } = require('express-validator');
 const FavoriteRecipe = require("../models/favoriteRecipeModel");
 const RefreshToken = require("../models/tokenModel");
 const multer = require('multer');
@@ -41,9 +40,9 @@ function parseNestedArray(arr) {
 const getRecipes = asyncHandler(async (req, res,next) => {
     try{
         if(req.query.page && req.query.limit){
-           
+
             const recipes = await redisGetModelsWithPaginating(Recipe, req, res, next);
-           
+
             res.status(200).json(recipes);
         }
         else{
@@ -54,7 +53,7 @@ const getRecipes = asyncHandler(async (req, res,next) => {
     catch(error){
         next(error);
     }
-   
+
 });
 
 const setFavoriteRecipes = async (req, res, next) => {
@@ -63,7 +62,7 @@ const setFavoriteRecipes = async (req, res, next) => {
 
     if (!refreshToken) {
       return res.status(401).json({ message: 'Invalid refresh token' });
-    }console.log(refreshToken.user); 
+    }console.log(refreshToken.user);
 
     const recipeId = req.params.id; // Get the recipe ID from the path
     const existingFavoriteRecipe = await FavoriteRecipe.findOne({ recipe: recipeId, user: refreshToken.user });
@@ -73,7 +72,7 @@ const setFavoriteRecipes = async (req, res, next) => {
     }
 
     const favoriteRecipe = new FavoriteRecipe({ recipe: recipeId, user: refreshToken.user });
-   
+
     await favoriteRecipe.save();
 
     res.status(201).json(favoriteRecipe);
@@ -106,21 +105,12 @@ const getFavoriteRecipes = async (req, res, next) => {
 //@access public
 
 const createRecipe = [
+
   
-  check('title').notEmpty(),
-  check('cuisine').notEmpty(),
-  check('dishType').notEmpty(),
-  check('readyInMinutes').notEmpty(),
-  check('vegetarian').notEmpty(),
-  check('cheap').notEmpty(),
-  check('instructions').notEmpty(),
   upload.single('image'),
 
   asyncHandler(async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
+   
 
     if (req.body.extendedIngredients && typeof req.body.extendedIngredients === 'string') {
       let parsedIngredients = JSON.parse(req.body.extendedIngredients);
@@ -164,7 +154,7 @@ const getRecipe = asyncHandler(async (req, res) => {
         throw ApiError.BadRequest("Recipe not found");
     }
     res.status(200).json(recipe);
-    
+
   });
 
 //@desc Update recipe
@@ -189,7 +179,7 @@ const updateRecipe = asyncHandler(async(req, res) => {
 
     res.status(200).json(updatedRecipe);
     onDataChanged('Recipe');
- 
+
 });
 
 //@desc Delete recipe
