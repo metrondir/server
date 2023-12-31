@@ -118,7 +118,7 @@ const onDataChanged = (modelName) => {
 	const pattern = `${modelName.toLowerCase() + 's'}:*`;
 	redis.keys(pattern, (err, keys) => {
 	  if (err) throw err;
- 
+
 	  keys.forEach((key) => {
 		 redis.del(key, (err) => {
 			if (err) throw err;

@@ -31,10 +31,7 @@ const recipeSchema = new mongoose.Schema({
   title: String,
   readyInMinutes: Number,
   sourceUrl: String,
-  image: {
-    data: Buffer,
-    contentType: String,
-  },
+  image: String,
   imageType: String,
   cuisine: String,
   dishType: String,

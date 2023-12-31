@@ -8,6 +8,7 @@ const RefreshToken = require("../models/tokenModel");
 const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
+const imgur = require('imgur');
 
 
 //@desc Get all contacts
@@ -75,7 +76,7 @@ const setFavoriteRecipes = async (req, res, next) => {
     const favoriteRecipe = new FavoriteRecipe({ recipe: recipeId, user: refreshToken.user });
 
     await favoriteRecipe.save();
-
+    onDataChanged('FavoriteRecipe');
     res.status(201).json(favoriteRecipe);
   } catch (error) {
     next(error);
@@ -94,12 +95,20 @@ const getFavoriteRecipes = async (req, res, next) => {
     if (!favoriteRecipes.length) {
       return res.status(404).json({ message: 'This user dont have favorites recipes' });
     }
-
-    res.status(200).json(favoriteRecipes);
+    if(req.query.page && req.query.limit){
+      const paginatedResult = await redisGetModelsWithPaginating(FavoriteRecipe, req, res, next, { user: refreshToken.user });
+      return res.status(200).json(paginatedResult);
+    }
+      else{
+        const favoriteRecipes = await redisGetModels(FavoriteRecipe, req, res, next, { user: refreshToken.user });
+        return res.status(200).json(favoriteRecipes);
+      }
+   
   } catch (error) {
     next(error);
   }
 };
+
 
 //@desc Create new recipe
 //@route POST /api/recipe
@@ -120,7 +129,8 @@ const createRecipe = [
       let parsedIngredients = JSON.parse(req.body.extendedIngredients);
       req.body.extendedIngredients = parsedIngredients;
     }
-
+    
+    const imgurLink = await imgur.uploadFile(req.file.path);
     try {
       const recipe = new Recipe({
         title: req.body.title,
@@ -131,16 +141,15 @@ const createRecipe = [
         cheap: req.body.cheap,
         instructions: req.body.instructions,
         extendedIngredients: req.body.extendedIngredients,
-        image: {
-          data: fs.readFileSync(path.join(__dirname, '../uploads', req.file.filename)),
-          contentType: req.file.mimetype,
-        },
+        image : imgurLink.link,
+
       });
 
       await recipe.save();
       console.log(req.file);
-      res.status(201).json(recipe);
       onDataChanged('Recipe');
+      res.status(201).json(recipe);
+   
     } catch (error) {
       console.log(req.file);
       console.log(req);
