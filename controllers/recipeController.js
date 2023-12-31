@@ -41,16 +41,18 @@ function parseNestedArray(arr) {
 
 const getRecipes = asyncHandler(async (req, res,next) => {
     try{
-        if(req.query.page && req.query.limit){
+        //if(req.query.page && req.query.limit){
 
-            const recipes = await redisGetModelsWithPaginating(Recipe, req, res, next);
+        //    const recipes = await redisGetModelsWithPaginating(Recipe, req, res, next);
 
-            res.status(200).json(recipes);
-        }
-        else{
-            const recipes = await redisGetModels(Recipe, req, res, next);
-            res.status(200).json(recipes);
-        }
+        //    res.status(200).json(recipes);
+        //}
+        //else{
+        //    const recipes = await redisGetModels(Recipe, req, res, next);
+        //    res.status(200).json(recipes);
+        //}
+        const recipes = await Recipe.find();
+        res.status(200).json(recipes);
     }
     catch(error){
         next(error);
@@ -95,14 +97,15 @@ const getFavoriteRecipes = async (req, res, next) => {
     if (!favoriteRecipes.length) {
       return res.status(404).json({ message: 'This user dont have favorites recipes' });
     }
-    if(req.query.page && req.query.limit){
-      const paginatedResult = await redisGetModelsWithPaginating(FavoriteRecipe, req, res, next, { user: refreshToken.user });
-      return res.status(200).json(paginatedResult);
-    }
-      else{
-        const favoriteRecipes = await redisGetModels(FavoriteRecipe, req, res, next, { user: refreshToken.user });
-        return res.status(200).json(favoriteRecipes);
-      }
+    //if(req.query.page && req.query.limit){
+    //  const paginatedResult = await redisGetModelsWithPaginating(FavoriteRecipe, req, res, next, { user: refreshToken.user });
+    //  return res.status(200).json(paginatedResult);
+    //}
+    //  else{
+    //    const favoriteRecipes = await redisGetModels(FavoriteRecipe, req, res, next, { user: refreshToken.user });
+    //    return res.status(200).json(favoriteRecipes);
+    //  }
+    return res.status(200).json(favoriteRecipes);
    
   } catch (error) {
     next(error);
