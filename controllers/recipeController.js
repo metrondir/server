@@ -2,23 +2,20 @@ const asyncHandler = require("express-async-handler");
 const Recipe = require("../models/recipeModel");
 const { redisGetModels,redisGetModelsWithPaginating, onDataChanged } = require("../middleware/paginateMiddleware");
 const ApiError = require("../middleware/apiError");
-const { check, validationResult } = require('express-validator');
+const { validationResult } = require('express-validator');
 const FavoriteRecipe = require("../models/favoriteRecipeModel");
-const RefreshToken = require("../models/tokenModel");
+
 const multer = require('multer');
-const fs = require('fs');
-const path = require('path');
+
 const imgur = require('imgur');
-const { on } = require("events");
 
 
-//@desc Get all contacts
-//@route GET /api/recipe
-//@access public
+
+
 
 const storage = multer.diskStorage({
   destination: function(req, file, cb) {
-    cb(null, './uploads'); // This is the folder where the files will be saved. Make sure this folder exists.
+    cb(null, './uploads'); 
   },
   filename: function(req, file, cb) {
     cb(null, new Date().toISOString().replace(/:/g, '-') + '-' + file.originalname);
@@ -40,43 +37,42 @@ function parseNestedArray(arr) {
   });
 }
 
-const getRecipes = asyncHandler(async (req, res,next) => {
-    try{
-        if(req.query.page && req.query.limit){
 
-            const recipes = await redisGetModelsWithPaginating(Recipe, req, res, next);
+//@desc Get all recipes
+//@route GET /api/recipe/
+//@access private
 
-            res.status(200).json(recipes);
-        }
-        else{
-            const recipes = await redisGetModels(Recipe, req, res, next);
-            res.status(200).json(recipes);
-        }
-      
-     
+const getRecipes = asyncHandler(async (req, res, next) => {
+  try {
+   
+    const userId = req.user.id;
+    if (req.query.page && req.query.limit) {
+      const recipes = await redisGetModelsWithPaginating(Recipe, req, res, next, { userId });
+      res.status(200).json(recipes);
+    } else {
+      const recipes = await redisGetModels(Recipe, req, res, next, { userId });
+      res.status(200).json(recipes);
     }
-    catch(error){
-        next(error);
-    }
-
+  } catch (error) {
+    next(error);
+  }
 });
+ 
+
+//@desc Create new Favorite recipe
+//@route POST /api/recipe/favourite/:id
+//@access private
 
 const setFavoriteRecipes = async (req, res, next) => {
   try {
-    const refreshToken = await RefreshToken.findOne({ refreshToken: req.cookies.refreshToken });
-
-    if (!refreshToken) {
-      return res.status(401).json({ message: 'Invalid refresh token' });
-    }console.log(refreshToken.user);
-
-    const recipeId = req.params.id; // Get the recipe ID from the path
-    const existingFavoriteRecipe = await FavoriteRecipe.findOne({ recipe: recipeId, user: refreshToken.user });
+    const recipeId = req.params.id; 
+    const existingFavoriteRecipe = await FavoriteRecipe.findOne({ recipe: recipeId, user: req.user.id });
     if (existingFavoriteRecipe) {
       const favoriteRecipe = await FavoriteRecipe.findByIdAndDelete(existingFavoriteRecipe._id);
       return res.status(200).json(favoriteRecipe);
     }
 
-    const favoriteRecipe = new FavoriteRecipe({ recipe: recipeId, user: refreshToken.user });
+    const favoriteRecipe = new FavoriteRecipe({ recipe: recipeId, user: req.user.id });
 
     await favoriteRecipe.save();
     onDataChanged('Favoriterecipe');
@@ -88,22 +84,13 @@ const setFavoriteRecipes = async (req, res, next) => {
 
 const getFavoriteRecipes = async (req, res, next) => {
   try {
-    const refreshToken = await RefreshToken.findOne({ refreshToken: req.cookies.refreshToken });
 
-    if (!refreshToken) {
-      return res.status(401).json({ message: 'Invalid refresh token' });
-    }
-
-    const favoriteRecipes = await FavoriteRecipe.find({ user: refreshToken.user });
-    if (!favoriteRecipes.length) {
-      return res.status(404).json({ message: 'This user dont have favorites recipes' });
-    }
     if(req.query.page && req.query.limit){
-      const paginatedResult = await redisGetModelsWithPaginating(FavoriteRecipe, req, res, next, { user: refreshToken.user });
-      return res.status(200).json(paginatedResult);
+      const favoriteRecipes = await redisGetModelsWithPaginating(FavoriteRecipe, req, res, next, { user: req.user.id });
+      return res.status(200).json(favoriteRecipes);
     }
       else{
-        const favoriteRecipes = await redisGetModels(FavoriteRecipe, req, res, next, { user: refreshToken.user });
+        const favoriteRecipes = await redisGetModels(FavoriteRecipe, req, res, next, { user: req.user.id });
         return res.status(200).json(favoriteRecipes);
       }
   
@@ -135,11 +122,7 @@ const createRecipe = [
       req.body.extendedIngredients = parsedIngredients;
     }
     
-    const refreshToken = await RefreshToken.findOne({ refreshToken: req.cookies.refreshToken });
-
-    if (!refreshToken) {
-      return res.status(401).json({ message: 'Invalid refresh token' });
-    }
+    
 
     const imgurLink = await imgur.uploadFile(req.file.path);
     try {
@@ -153,7 +136,7 @@ const createRecipe = [
         instructions: req.body.instructions,
         extendedIngredients: req.body.extendedIngredients,
         image : imgurLink.link,
-        userId: refreshToken.user,
+        userId: req.user.id,
       });
 
       await recipe.save();
@@ -167,9 +150,12 @@ const createRecipe = [
     }
   }),
 ];
+
+
 //@desc Get recipe
 //@route GET /api/recipe:/id
 //@access public
+
 const getRecipe = asyncHandler(async (req, res) => {
     const recipe = await Recipe.findById(req.params.id);
     if(!recipe){
@@ -180,9 +166,11 @@ const getRecipe = asyncHandler(async (req, res) => {
 
   });
 
+
 //@desc Update recipe
 //@route PUT /api/recipe:/id
 //@access public
+
 const updateRecipe = asyncHandler(async(req, res) => {
     const recipe = await Recipe.findById(req.params.id);
     if(!recipe){

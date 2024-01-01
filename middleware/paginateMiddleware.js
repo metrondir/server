@@ -23,7 +23,7 @@ const redisGetModels= async (model,req, res, next,conditions = {}) => {
 		console.log("FROM Redis")
 		 res.json(JSON.parse(redisModels));
 	  } else {
-		console.log("FROM DB")
+		 console.log("FROM DB")
 		 const models = await model.find(conditions); 
 		 redis.setex(redisKey, process.env.DEFAULT_EXPIRATION, JSON.stringify(models));
 		 res.json(models);
@@ -124,16 +124,13 @@ const onDataChanged = async (modelName) => {
 		console.log(patern);
 	  const keys = await redis.keys(patern);
  
-	
- 
 	  const deletePromises = keys.map((key) => {
 		
 		 return redis.del(key);
 	  });
- 
+
 	  await Promise.all(deletePromises);
- 
-	 
+
 	} catch (error) {
 	  res.json('Error deleting keys:', error.message);
 	}
