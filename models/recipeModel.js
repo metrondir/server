@@ -28,6 +28,10 @@ const recipeSchema = new mongoose.Schema({
   veryPopular: Boolean,
   extendedIngredients: [extendedIngredientSchema],
   id: Number,
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    required: true,
+    ref: "User"},
   title: String,
   readyInMinutes: Number,
   sourceUrl: String,

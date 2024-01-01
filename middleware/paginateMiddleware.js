@@ -5,12 +5,15 @@ const redis = require('../config/redisClient');
 
 const redisGetModels= async (model,req, res, next,conditions = {}) => {
 	try {
-	  const redisKey = `${model.modelName.toLowerCase() + 's'}`;
+
+	  const redisKey = `${model.modelName.toLowerCase()}`;
 	  const redisModels = await new Promise((resolve, reject) => {
 		 redis.get(redisKey, (err, redisModels) => {
+			console.log(redisKey)
 			if (err) {
 			  reject(err);
 			} else {
+				
 			  resolve(redisModels);
 			}
 		 });
@@ -41,6 +44,7 @@ const redisGetModelsWithPaginating = async (model, req, res, next,conditions={})
 			if (err) {
 			  reject(err);
 			} else {
+		
 			  resolve(redisModels);
 			}
 		 });
@@ -114,17 +118,25 @@ function calculatePagination(page, limit, totalDocuments) {
         }
     });
 };
-const onDataChanged = (modelName) => {
-	const pattern = `${modelName.toLowerCase() + 's'}:*`;
-	redis.keys(pattern, (err, keys) => {
-	  if (err) throw err;
-
-	  keys.forEach((key) => {
-		 redis.del(key, (err) => {
-			if (err) throw err;
-		 });
+const onDataChanged = async (modelName) => {
+	try {
+		const patern = `${modelName.toLowerCase()}`;
+		console.log(patern);
+	  const keys = await redis.keys(patern);
+ 
+	
+ 
+	  const deletePromises = keys.map((key) => {
+		
+		 return redis.del(key);
 	  });
-	});
+ 
+	  await Promise.all(deletePromises);
+ 
+	 
+	} catch (error) {
+	  res.json('Error deleting keys:', error.message);
+	}
  };
 
 module.exports = { paginate,redisGetModelsWithPaginating, redisGetModels,onDataChanged };

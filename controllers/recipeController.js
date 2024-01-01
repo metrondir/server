@@ -9,6 +9,7 @@ const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
 const imgur = require('imgur');
+const { on } = require("events");
 
 
 //@desc Get all contacts
@@ -41,18 +42,18 @@ function parseNestedArray(arr) {
 
 const getRecipes = asyncHandler(async (req, res,next) => {
     try{
-        //if(req.query.page && req.query.limit){
+        if(req.query.page && req.query.limit){
 
-        //    const recipes = await redisGetModelsWithPaginating(Recipe, req, res, next);
+            const recipes = await redisGetModelsWithPaginating(Recipe, req, res, next);
 
-        //    res.status(200).json(recipes);
-        //}
-        //else{
-        //    const recipes = await redisGetModels(Recipe, req, res, next);
-        //    res.status(200).json(recipes);
-        //}
-        const recipes = await Recipe.find();
-        res.status(200).json(recipes);
+            res.status(200).json(recipes);
+        }
+        else{
+            const recipes = await redisGetModels(Recipe, req, res, next);
+            res.status(200).json(recipes);
+        }
+      
+     
     }
     catch(error){
         next(error);
@@ -78,7 +79,7 @@ const setFavoriteRecipes = async (req, res, next) => {
     const favoriteRecipe = new FavoriteRecipe({ recipe: recipeId, user: refreshToken.user });
 
     await favoriteRecipe.save();
-    onDataChanged('FavoriteRecipe');
+    onDataChanged('Favoriterecipe');
     res.status(201).json(favoriteRecipe);
   } catch (error) {
     next(error);
@@ -97,15 +98,15 @@ const getFavoriteRecipes = async (req, res, next) => {
     if (!favoriteRecipes.length) {
       return res.status(404).json({ message: 'This user dont have favorites recipes' });
     }
-    //if(req.query.page && req.query.limit){
-    //  const paginatedResult = await redisGetModelsWithPaginating(FavoriteRecipe, req, res, next, { user: refreshToken.user });
-    //  return res.status(200).json(paginatedResult);
-    //}
-    //  else{
-    //    const favoriteRecipes = await redisGetModels(FavoriteRecipe, req, res, next, { user: refreshToken.user });
-    //    return res.status(200).json(favoriteRecipes);
-    //  }
-    return res.status(200).json(favoriteRecipes);
+    if(req.query.page && req.query.limit){
+      const paginatedResult = await redisGetModelsWithPaginating(FavoriteRecipe, req, res, next, { user: refreshToken.user });
+      return res.status(200).json(paginatedResult);
+    }
+      else{
+        const favoriteRecipes = await redisGetModels(FavoriteRecipe, req, res, next, { user: refreshToken.user });
+        return res.status(200).json(favoriteRecipes);
+      }
+  
    
   } catch (error) {
     next(error);
@@ -124,6 +125,7 @@ const createRecipe = [
 
   asyncHandler(async (req, res) => {
     const errors = validationResult(req);
+    
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
@@ -133,6 +135,12 @@ const createRecipe = [
       req.body.extendedIngredients = parsedIngredients;
     }
     
+    const refreshToken = await RefreshToken.findOne({ refreshToken: req.cookies.refreshToken });
+
+    if (!refreshToken) {
+      return res.status(401).json({ message: 'Invalid refresh token' });
+    }
+
     const imgurLink = await imgur.uploadFile(req.file.path);
     try {
       const recipe = new Recipe({
@@ -145,17 +153,16 @@ const createRecipe = [
         instructions: req.body.instructions,
         extendedIngredients: req.body.extendedIngredients,
         image : imgurLink.link,
-
+        userId: refreshToken.user,
       });
 
       await recipe.save();
-      console.log(req.file);
+     
       onDataChanged('Recipe');
       res.status(201).json(recipe);
    
     } catch (error) {
-      console.log(req.file);
-      console.log(req);
+    
       res.status(500).json({ error: error.message });
     }
   }),
@@ -192,9 +199,9 @@ const updateRecipe = asyncHandler(async(req, res) => {
         req.body,
         {new : true}
     );
-
-    res.status(200).json(updatedRecipe);
     onDataChanged('Recipe');
+    res.status(200).json(updatedRecipe);
+ 
 
 });
 

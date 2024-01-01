@@ -37,8 +37,8 @@ const registerUser = asyncHandler(async (req,res,next) =>{
         res.cookie("refreshToken", userData.refreshToken, {maxAge: process.env.COOKIE_MAX_AGE, secure: true, sameSite: 'None'});
       
         onDataChanged('User');
-        return res.json(userData);
-        
+        return res.status(201).json(userData);
+       
     } catch (error) {
         next(error);
     }
@@ -53,7 +53,7 @@ const loginUser = asyncHandler(async (req,res,next) =>{
         const userData = await login(email, password);
         res.cookie("refreshToken", userData.refreshToken, {maxAge: process.env.COOKIE_MAX_AGE, secure: true,sameSite: 'None'});
         
-        return res.json(userData);
+        return res.status(200).json(userData);
     } catch (eror) {
         next(eror);
     }
@@ -67,7 +67,7 @@ const logoutUser = asyncHandler(async (req,res,next) =>{
         const {refreshToken} = req.cookies;
         const token = await logout(refreshToken);
         res.clearCookie("refreshToken");
-        return res.json(token);
+        return res.status(200).json(token);
     }
     catch(error){
         next(error);
@@ -81,7 +81,7 @@ const refreshTokenUser = asyncHandler(async (req,res,next) =>{
         const {refreshToken} = req.cookies;
         const userData = await refresh(refreshToken);
         res.cookie("refreshToken", userData.refreshToken, {maxAge: process.env.COOKIE_MAX_AGE, secure: true,sameSite: 'None'});
-        return res.json(userData);   
+        return res.status(200).json(userData);   
     } catch (error) {
             next(error);
     }
@@ -109,7 +109,7 @@ const changePasswordUser = asyncHandler(async (req,res,next) =>{
        const {email,password} = req.body;
        await changePassword(email,password);
        onDataChanged('User');   
-       return res.json("Password changed successfully");
+       return res.status(200).json("Password changed successfully");
        
     } catch (error) {
         next(error);
@@ -128,7 +128,7 @@ const forgetPasswordUser = asyncHandler(async (req,res,next) =>{
         const {email} = req.body;
         await forgetPassword(email);
         onDataChanged('User');
-        return res.json("Forget password link has been sent to your email");
+        return res.status(200).json("Forget password link has been sent to your email");
     } catch (error) {
         next(error);
     }
