@@ -68,7 +68,8 @@ const logoutUser = asyncHandler(async (req,res,next) =>{
         const token = await logout(refreshToken);
         
         res.clearCookie("refreshToken");
-        return res.status(200).json(token,"User logged out successfully");
+        return res.status(200).json({ token: token, message: "User logged out successfully" });
+
     }
     catch(error){
         next(error);
