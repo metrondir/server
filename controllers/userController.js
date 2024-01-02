@@ -73,6 +73,7 @@ const logoutUser = asyncHandler(async (req,res,next) =>{
             sameSite: 'None',
             maxAge: 0,
           });
+          req.session.destroy();
         return res.status(200).json({ token: token, message: "User logged out successfully" });
 
     }
