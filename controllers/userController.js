@@ -51,7 +51,7 @@ const loginUser = asyncHandler(async (req,res,next) =>{
     try {
         const {email,password} = req.body;
         const userData = await login(email, password);
-        res.cookie("refreshToken", userData.refreshToken, {maxAge: process.env.COOKIE_MAX_AGE});
+        res.cookie("refreshToken", userData.refreshToken, {maxAge: process.env.COOKIE_MAX_AGE, secure: true,sameSite: 'None'});
         
         return res.status(200).json(userData);
     } catch (eror) {
@@ -62,20 +62,33 @@ const loginUser = asyncHandler(async (req,res,next) =>{
 //@desc logoutUser a user
 //@route POST /api/users/logout
 //@access private with refreshtoken
-const logoutUser = asyncHandler(async (req,res,next) =>{
-    try{
-        const {refreshToken} = req.cookies;
-        const token = await logout(refreshToken);
-        
+const logoutUser = asyncHandler(async (req, res, next) => {
+    try {
+      const { refreshToken } = req.cookies;
+      const logoutResult = await logout(refreshToken);
+  
+      if (logoutResult.success) {
+        // Successfully logged out, clear the cookie
         res.clearCookie("refreshToken", {
-          });
-        return res.status(200).json({ token: token, message: "User logged out successfully" });
-
+          path: '/',
+          secure: true,
+          sameSite: 'None',
+        });
+  
+        return res.status(200).json({ token: null, message: "User logged out successfully" });
+      } else {
+        // Logout failed, handle accordingly
+        return res.status(500).json({ message: "Logout failed" });
+      }
+    } catch (error) {
+      // Log the error for debugging purposes
+      console.error("Error in logoutUser handler:", error);
+  
+      // Pass the error to the next middleware
+      next(error);
     }
-    catch(error){
-        next(error);
-    }
-});
+  });
+  
 //@desc refreshToken from user
 //@route POST /api/users/refresh
 //@access private with refreshtoken
