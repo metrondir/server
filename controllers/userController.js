@@ -51,7 +51,7 @@ const loginUser = asyncHandler(async (req,res,next) =>{
     try {
         const {email,password} = req.body;
         const userData = await login(email, password);
-        res.cookie("refreshToken", userData.refreshToken, {maxAge: process.env.COOKIE_MAX_AGE, secure: true,sameSite: 'None'});
+        res.cookie("refreshToken", userData.refreshToken, {maxAge: process.env.COOKIE_MAX_AGE});
         
         return res.status(200).json(userData);
     } catch (eror) {
@@ -68,10 +68,6 @@ const logoutUser = asyncHandler(async (req,res,next) =>{
         const token = await logout(refreshToken);
         
         res.clearCookie("refreshToken", {
-            path: '/',
-            secure: true,
-            sameSite: 'None',
-            maxAge: 0,
           });
         return res.status(200).json({ token: token, message: "User logged out successfully" });
 
