@@ -44,23 +44,25 @@ function parseNestedArray(arr) {
 
 const getRecipes = asyncHandler(async (req, res, next) => {
   try {
-   
-    const userId = req.user.id;
-    if (req.query.page && req.query.limit) {
-      const recipes = await redisGetModelsWithPaginating(Recipe, req, res, next, { userId });
-      res.status(200).json(recipes);
-    } else {
-      const recipes = await redisGetModels(Recipe, req, res, next, { userId });
-      res.status(200).json(recipes);
+
+    if(req.query.page && req.query.limit){
+      const recipes = await redisGetModelsWithPaginating(Recipe, req, res, next);
+      return res.status(200).json(recipes);
     }
+      else{
+        const recipes = await redisGetModels(Recipe, req, res, next);
+        return res.status(200).json(recipes);
+      }
+  
+   
   } catch (error) {
     next(error);
   }
-});
+})
  
 
 //@desc Create new Favorite recipe
-//@route POST /api/recipe/favourite/:id
+//@route GET /api/recipe/favourite/:id
 //@access private
 
 const setFavoriteRecipes = async (req, res, next) => {
@@ -81,6 +83,10 @@ const setFavoriteRecipes = async (req, res, next) => {
     next(error);
   }
 };
+
+//@desc Get  Favorite recipe
+//@route GET /api/recipe/favourite
+//@access private
 
 const getFavoriteRecipes = async (req, res, next) => {
   try {
@@ -103,7 +109,7 @@ const getFavoriteRecipes = async (req, res, next) => {
 
 //@desc Create new recipe
 //@route POST /api/recipe
-//@access public
+//@access private
 
 const createRecipe = [
 
@@ -136,7 +142,7 @@ const createRecipe = [
         instructions: req.body.instructions,
         extendedIngredients: req.body.extendedIngredients,
         image : imgurLink.link,
-        userId: req.user.id,
+        user: req.user.id,
       });
 
       await recipe.save();
@@ -154,7 +160,7 @@ const createRecipe = [
 
 //@desc Get recipe
 //@route GET /api/recipe:/id
-//@access public
+//@access private
 
 const getRecipe = asyncHandler(async (req, res) => {
     const recipe = await Recipe.findById(req.params.id);
@@ -169,7 +175,7 @@ const getRecipe = asyncHandler(async (req, res) => {
 
 //@desc Update recipe
 //@route PUT /api/recipe:/id
-//@access public
+//@access private
 
 const updateRecipe = asyncHandler(async(req, res) => {
     const recipe = await Recipe.findById(req.params.id);
@@ -195,7 +201,7 @@ const updateRecipe = asyncHandler(async(req, res) => {
 
 //@desc Delete recipe
 //@route DELETE /api/recipe:/id
-//@access public
+//@access private
 const deleteRecipe = asyncHandler(async (req, res) => {
     const recipe = await Recipe.findById(req.params.id);
     if (!recipe) {

@@ -12,7 +12,7 @@ body("email").isEmail()
 
 router.post("/login", loginUser);
 
-router.post("/logout",logoutUser );
+router.get("/logout",logoutUser );
 
 router.get("/activate/:link",activateUser );
 
@@ -23,7 +23,7 @@ router.get("/change-password/:link",changePasswordUserLink);
 router.post("/change-password",
 body("password").isLength({min:7,max:50}),changePasswordUser);
 
-router.post("/refresh",refreshTokenUser );
+router.get("/refresh",refreshTokenUser );
 
 router.get("/allusers",authMiddleware,getUsers)
 

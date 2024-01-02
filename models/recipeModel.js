@@ -28,7 +28,7 @@ const recipeSchema = new mongoose.Schema({
   veryPopular: Boolean,
   extendedIngredients: [extendedIngredientSchema],
   id: Number,
-  userId: {
+  user: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,
     ref: "User"},
