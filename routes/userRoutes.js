@@ -12,7 +12,7 @@ body("email").isEmail()
 
 router.post("/login", loginUser);
 
-router.get("/logout",logoutUser );
+router.post("/logout",logoutUser );
 
 router.get("/activate/:link",activateUser );
 
