@@ -67,7 +67,7 @@ const logoutUser = asyncHandler(async (req,res,next) =>{
         const {refreshToken} = req.cookies;
         const token = await logout(refreshToken);
         
-        res.clearCookie('refreshToken', {
+        res.clearCookie("refreshToken", {
             secure: true,
             sameSite: 'none',
           });
