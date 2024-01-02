@@ -68,6 +68,7 @@ async function sendActivationEmail(to, link) {
 	});
 
 	const logout = asyncHandler(async(refreshToken) => {
+		console.log(refreshToken);
 		const token= await removeToken(refreshToken);
 		console.log(token);
 		return token;
