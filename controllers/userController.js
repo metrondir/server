@@ -71,6 +71,7 @@ const logoutUser = asyncHandler(async (req,res,next) =>{
             path: '/',
             secure: true,
             sameSite: 'None',
+            maxAge: 0,
           });
         return res.status(200).json({ token: token, message: "User logged out successfully" });
 
