@@ -69,7 +69,7 @@ const logoutUser = asyncHandler(async (req,res,next) =>{
         
         res.clearCookie("refreshToken", {
             secure: true,
-            sameSite: 'none',
+            sameSite: 'None',
           });
         return res.status(200).json({ token: token, message: "User logged out successfully" });
 
