@@ -38,10 +38,7 @@ async function validateRefreshToken(refreshToken) {
 		return token;
 	});
   const removeToken = asyncHandler(async(refreshToken) =>{
-	console.log(refreshToken);
 	const tokenData = await tokenModel.deleteOne({ refreshToken });
-	
-	console.log(tokenData);
 	return tokenData;
 });
 

@@ -68,20 +68,18 @@ async function sendActivationEmail(to, link) {
 	});
 
 	const logout = asyncHandler(async(refreshToken) => {
-		console.log(refreshToken);
 		const token= await removeToken(refreshToken);
-		console.log(token);
 		return token;
 	});
 	const  refresh = asyncHandler(async (refreshToken) => {
 	
 		if(!refreshToken) {
-			throw ApiError.UnauthorizedError("User unauthorized");
+			throw ApiError.Forbbiden("User unauthenticated");
 		}
 		const userData = validateRefreshToken(refreshToken);
 		const tokenFromDb = await findToken(refreshToken);
 		if(!userData || !tokenFromDb) {
-			throw ApiError.UnauthorizedError("User unauthorized");
+			throw ApiError.Forbbiden("User unauthenticated");
 		}
 		const user = await User.findById(tokenFromDb.user);
 		const userDto = new UserDto(user);
