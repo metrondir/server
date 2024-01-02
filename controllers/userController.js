@@ -65,6 +65,7 @@ const loginUser = asyncHandler(async (req,res,next) =>{
 const logoutUser = asyncHandler(async (req,res,next) =>{
     try{
         const {refreshToken} = req.cookies;
+        console.log(refreshToken);
         const token = await logout(refreshToken);
         
         res.clearCookie("refreshToken", {
