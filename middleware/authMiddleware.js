@@ -13,7 +13,7 @@ module.exports = function ( req, res, next) {
 			throw ApiError.UnauthorizedError("User unauthorized");
 		}
 		const userData = validateAccessToken(accessToken);
-	
+	   
 		if (!userData) {
 			throw ApiError.UnauthorizedError("User unauthorized");
 		}

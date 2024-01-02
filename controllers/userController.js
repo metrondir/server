@@ -80,6 +80,7 @@ const logoutUser = asyncHandler(async (req,res,next) =>{
 //@access private with refreshtoken
 const refreshTokenUser = asyncHandler(async (req,res,next) =>{
         try {
+        console.log(req.cookies);
         const {refreshToken} = req.cookies;
         const userData = await refresh(refreshToken);
         res.cookie("refreshToken", userData.refreshToken, {maxAge: process.env.COOKIE_MAX_AGE, secure: true,sameSite: 'None'});
