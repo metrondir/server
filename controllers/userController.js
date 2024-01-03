@@ -38,6 +38,7 @@ const registerUser = asyncHandler(async (req,res,next) =>{
       
         onDataChanged('User');
         onDataChanged('Recipe');
+        onDataChanged('Favoriterecipe');
         return res.status(201).json(userData);
        
     } catch (error) {
@@ -54,6 +55,7 @@ const loginUser = asyncHandler(async (req,res,next) =>{
         const userData = await login(email, password);
         res.cookie("refreshToken", userData.refreshToken, {maxAge: process.env.COOKIE_MAX_AGE, secure: true,sameSite: 'None'});
         onDataChanged('Recipe');
+        onDataChanged('Favoriterecipe');
         return res.status(200).json(userData);
     } catch (eror) {
         next(eror);
