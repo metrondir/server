@@ -6,11 +6,11 @@ module.exports = function ( req, res, next) {
 	
 		const authHeader = req.headers.authorization;
 		if (!authHeader) {
-			throw ApiError.Forbbiden("User dont sent token");
+			throw ApiError.Forbbiden("User unauthenticated");
 		}
 		const accessToken = authHeader.split(' ')[1];
 		if (!accessToken) {
-			throw ApiError.UnauthorizedError("User unauthorized");
+			throw ApiError.Forbbiden("User unauthenticated");
 		}
 		const userData = validateAccessToken(accessToken);
 	   
@@ -22,7 +22,7 @@ module.exports = function ( req, res, next) {
 		next();
 		
 	} catch (error) {
-		return next(ApiError.UnauthorizedError("User unauthorized", error));
+		return next(ApiError.UnauthorizedError( error));
 	}
 	
 }
