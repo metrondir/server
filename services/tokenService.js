@@ -16,7 +16,7 @@ function generateTokens (payload) {
 		return userData;
 		
 	} catch (error) {
-		throw ApiError.BadRequest('Invalid access token');
+		throw ApiError.UnauthorizedError('Invalid access token');
 	}	
 }
 async function validateRefreshToken(refreshToken) {
