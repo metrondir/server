@@ -5,10 +5,12 @@ module.exports = function ( req, res, next) {
 	try {
 	
 		const authHeader = req.headers.authorization;
+		
 		if (!authHeader) {
 			throw ApiError.Forbbiden("User unauthenticated");
 		}
 		const accessToken = authHeader.split(' ')[1];
+		console.log(accessToken)
 		if (!accessToken || accessToken === "null" || accessToken === "undefined" || accessToken === "" || accessToken === undefined || accessToken === null) {
 			throw ApiError.Forbbiden("User unauthenticated");
 		}
