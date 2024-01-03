@@ -9,7 +9,7 @@ module.exports = function ( req, res, next) {
 			throw ApiError.Forbbiden("User unauthenticated");
 		}
 		const accessToken = authHeader.split(' ')[1];
-		if (!accessToken || accessToken === "null") {
+		if (!accessToken || accessToken === "null" || accessToken === "undefined" || accessToken === "" || accessToken === undefined || accessToken === null) {
 			throw ApiError.Forbbiden("User unauthenticated");
 		}
 		const userData = validateAccessToken(accessToken);
