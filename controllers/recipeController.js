@@ -46,11 +46,11 @@ const getRecipes = asyncHandler(async (req, res, next) => {
   try {
 
     if(req.query.page && req.query.limit){
-      const recipes = await redisGetModelsWithPaginating(Recipe, req, res, next);
+      const recipes = await redisGetModelsWithPaginating(Recipe, req, res, next, { user: req.user.id });
       return res.status(200).json(recipes);
     }
       else{
-        const recipes = await redisGetModels(Recipe, req, res, next);
+        const recipes = await redisGetModels(Recipe, req, res, next, { user: req.user.id });
         return res.status(200).json(recipes);
       }
   
