@@ -37,6 +37,7 @@ const registerUser = asyncHandler(async (req,res,next) =>{
         res.cookie("refreshToken", userData.refreshToken, {maxAge: process.env.COOKIE_MAX_AGE, secure: true, sameSite: 'None'});
       
         onDataChanged('User');
+        onDataChanged('Recipe');
         return res.status(201).json(userData);
        
     } catch (error) {
@@ -52,7 +53,7 @@ const loginUser = asyncHandler(async (req,res,next) =>{
         const {email,password} = req.body;
         const userData = await login(email, password);
         res.cookie("refreshToken", userData.refreshToken, {maxAge: process.env.COOKIE_MAX_AGE, secure: true,sameSite: 'None'});
-        
+        onDataChanged('Recipe');
         return res.status(200).json(userData);
     } catch (eror) {
         next(eror);
