@@ -121,7 +121,7 @@ function calculatePagination(page, limit, totalDocuments) {
 const onDataChanged = async (modelName) => {
 	try {
 		const patern = `${modelName.toLowerCase()}`;
-		console.log(patern);
+
 	  const keys = await redis.keys(patern);
  
 	  const deletePromises = keys.map((key) => {

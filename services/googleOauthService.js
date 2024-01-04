@@ -53,15 +53,14 @@ const getGoogleOauthTokens = asyncHandler(async (code) => {
 
  const googleOauthHandler = asyncHandler(async (req, res, next) => {
 	const code = req.query.code;
-	console.log("code",code);
+
 	try {
 	
 	  const { id_token, access_token } = await getGoogleOauthTokens(code);	
-	  console.log("idToken",id_token);
-	  console.log("access_token",access_token);
+
 
 	  const googleUserData = await getGoogleUser({ id_token, access_token }); 
-	  console.log("googleUSERDATA",googleUserData);
+
 	  if (!googleUserData.verified_email) {
 		 return res.status(403).json({ error: "Email is not verified" });
 	  } 
@@ -74,14 +73,12 @@ const getGoogleOauthTokens = asyncHandler(async (code) => {
 		},
 		{ upsert: true, new: true }
 	 );
-	 console.log("user",user);
+	
 	  const userDto = new UserDto(user);
-	console.log("userDTO",userDto);
+	
 	  const tokens = generateTokens({ ...userDto });
-		console.log("TOKENS",tokens);
+	
 	  await saveTokens(userDto.id, tokens.refreshToken);
-		console.log("accestokentokens",tokens.accessToken)
-		console.log("refreshtoken",tokens.refreshToken);
 
 	  	res.cookie("refreshToken", tokens.refreshToken, { maxAge: process.env.COOKIE_MAX_AGE, secure: true,sameSite: 'None' });
 	  
