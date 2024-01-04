@@ -9,8 +9,8 @@ module.exports = function ( req, res, next) {
 			throw ApiError.Forbbiden("User unauthenticated");
 		}
 		const accessToken = authHeader.split(' ')[1];
-		console.log("refreshToken",req.cookie.refreshToken);
-		if (!accessToken || accessToken === 'null' && !req.cookie.refreshToken) {
+		console.log("refreshToken",req.cookies.refreshToken);
+		if (!accessToken || accessToken === 'null' && !req.cookies.refreshToken) {
 			throw ApiError.Forbbiden("User unauthenticated");
 		}
 		const userData = validateAccessToken(accessToken);
