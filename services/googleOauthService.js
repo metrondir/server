@@ -83,7 +83,7 @@ const getGoogleOauthTokens = asyncHandler(async (code) => {
 		console.log("accestokentokens",tokens.accessToken)
 		console.log("refreshtoken",tokens.refreshToken);
 	  res.cookie("refreshToken", tokens.refreshToken, { maxAge: process.env.COOKIE_MAX_AGE, secure: true,sameSite: 'None' });
-	 res.redirect(`${process.env.API_URL}`); 
+	 res.redirect(`${process.env.CLIENT_URL}}`); 
 	  return res.json({ ...tokens, user: userDto });
 	} catch (error) {
 
