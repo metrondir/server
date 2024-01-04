@@ -27,11 +27,11 @@ const recipeSchema = new mongoose.Schema({
   cheap: { type: String, enum: ['cheap', 'expensive'] },
   veryPopular: Boolean,
   extendedIngredients: [extendedIngredientSchema],
-  id: Number,
   user: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,
     ref: "User"},
+  id: Number,
   title: String,
   readyInMinutes: Number,
   sourceUrl: String,

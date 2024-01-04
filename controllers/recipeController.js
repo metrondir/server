@@ -209,9 +209,12 @@ const deleteRecipe = asyncHandler(async (req, res) => {
         throw ApiError.BadRequest("Recipe not found");
     }
     await Recipe.deleteOne({ _id: req.params.id });
-    res.status(200).json(recipe);
     onDataChanged('Recipe');
+    res.status(200).json(recipe);
+  
 });
+
+
 
 module.exports = {
     getRecipes,
