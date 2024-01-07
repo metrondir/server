@@ -14,11 +14,11 @@ const getRecipe = async (req) => {
  };
 
 
-const getRecipes = async (req) => {
+const getRecipes = async (req,res,next) => {
 	if(req.query.page && req.query.limit){
-	  return await redisGetModelsWithPaginating(Recipe, req, { user: req.user.id });
+	  return await redisGetModelsWithPaginating(Recipe, req,res,next, { user: req.user.id });
 	} else {
-	  return await redisGetModels(Recipe, req, { user: req.user.id });
+	  return await redisGetModels(Recipe, req,res,next, { user: req.user.id });
 	}
  };
 
@@ -69,12 +69,12 @@ const getRecipes = async (req) => {
  };
  
 
- const getFavoriteRecipes = async (req) => {
+ const getFavoriteRecipes = async (req,res,next) => {
 	if(req.query.page && req.query.limit){
-	  return await redisGetModelsWithPaginating(FavoriteRecipe, req, { user: req.user.id });
-	} else {
-	  return await redisGetModels(FavoriteRecipe, req, { user: req.user.id });
-	}
+      return await redisGetModelsWithPaginating(FavoriteRecipe, req,res,next, { user: req.user.id });
+   }else{
+        return await redisGetModels(FavoriteRecipe, req,res,next, { user: req.user.id });   
+      }
  };
 
 

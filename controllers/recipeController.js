@@ -4,6 +4,7 @@ const multer = require('multer');
 
 
 // multer configuration for file upload
+
 const storage = multer.diskStorage({
   destination: function(req, file, cb) {
     cb(null, './uploads'); 
@@ -78,8 +79,8 @@ const getFavoriteRecipes = asyncHandler(async (req, res, next) => {
 
 const setFavoriteRecipes = asyncHandler(async (req, res, next) => {
   try {
-    const favoriteRecipe = await recipeService.setFavoriteRecipes(req);
-    return res.status(201).json(favoriteRecipe.data);
+    await recipeService.setFavoriteRecipes(req);
+    return res.status(201).json("Favorite recipe created");
   } catch (error) {
     next(error);
   }
@@ -92,8 +93,8 @@ const setFavoriteRecipes = asyncHandler(async (req, res, next) => {
 
 const createRecipe = [upload.single('image'), asyncHandler(async (req, res, next) => {
   try {
-    const recipe = await recipeService.createRecipe(req);
-    return res.status(201).json(recipe);
+    await recipeService.createRecipe(req);
+    return res.status(201).json("Recipe created");
   } catch (error) {
     next(error);
   }
@@ -106,8 +107,8 @@ const createRecipe = [upload.single('image'), asyncHandler(async (req, res, next
 
 const updateRecipe = asyncHandler(async (req, res, next) => {
   try {
-    const updatedRecipe = await recipeService.updateRecipe(req);
-    return res.status(200).json(updatedRecipe);
+    await recipeService.updateRecipe(req);
+    return res.status(200).json("Recipe updated");
   } catch (error) {
     next(error);
   }
@@ -120,8 +121,8 @@ const updateRecipe = asyncHandler(async (req, res, next) => {
 
 const deleteRecipe = asyncHandler(async (req, res, next) => {
   try {
-    const recipe = await recipeService.deleteRecipe(req);
-    return res.status(200).json(recipe);
+    await recipeService.deleteRecipe(req);
+    return res.status(200).json("Recipe deleted");
   } catch (error) {
     next(error);
   }

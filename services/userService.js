@@ -7,23 +7,8 @@ const gmailService = new EmailService();
 const { generateTokens, saveTokens, removeToken,validateRefreshToken,findToken } = require('./tokenService');
 const UserDto = require('../dtos/userDtos');
 const ApiError = require('../middleware/apiError');
+const { redisGetModelsWithPaginating,onDataChanged,redisGetModels } = require("../middleware/paginateMiddleware");
 
-
-const registration = asyncHandler(async (username, email, password) => {
-	await validateEmailUniqueness(email);
-
-	const hashedPassword = await bcrypt.hash(password, 10);
-	const activationLink = uuid.v4();
-
-	const user = await createUser(username, email, hashedPassword, activationLink);
-	await sendActivationEmail(email, `${process.env.API_URL}/api/users/activate/${activationLink}`);
-
-	const userDto = new UserDto(user);
-	const tokens = generateTokens({ ...userDto });
-	await saveTokens(userDto.id, tokens.refreshToken);
-	return { ...tokens, user: userDto };
-	
-});
 
 async function validateEmailUniqueness(email) {
 	const candidate = await User.findOne({ email });
@@ -41,46 +26,91 @@ async function sendActivationEmail(to, link) {
 }
 
 
-	const activate = asyncHandler(async(activationLink)=> {
+const getAllUsers = asyncHandler(async (req,res,next) => {
+	if(req.query.page && req.query.limit){
+		return await redisGetModelsWithPaginating(User,req,res,next);
+	 } else {
+		return await redisGetModels(User);
+	 }
+});
+
+
+const registration = asyncHandler(async (username, email, password) => {
+
+	await validateEmailUniqueness(email);
+
+	const hashedPassword = await bcrypt.hash(password, 10);
+	const activationLink = uuid.v4();
+
+	const user = await createUser(username, email, hashedPassword, activationLink);
+	await sendActivationEmail(email, `${process.env.API_URL}/api/users/activate/${activationLink}`);
+
+	const userDto = new UserDto(user);
+	const tokens = generateTokens({ ...userDto });
+	await saveTokens(userDto.id, tokens.refreshToken);
+
+   onDataChanged('User');
+   onDataChanged('Recipe');
+   onDataChanged('Favoriterecipe');
+
+	return { ...tokens, user: userDto };
+	
+});
+
+
+const activate = asyncHandler(async(activationLink)=> {
 	const user = await User.findOne({activationLink: activationLink});
+
 	if(!user) {
 		throw ApiError.BadRequest('Incorrect activation link');
 	}
+
 	user.isActivated = true;
 	await user.save();
+	onDataChanged('User');
 	});
 
-	const login = asyncHandler(async(email,password) => {
-		const user = await User.findOne({email});
-			if(!user) {
-				throw ApiError.BadRequest(`User with this email ${email} not found`);
-			}
-			
-			const isPassEquals = await bcrypt.compare(password,user.password);
-			if(!isPassEquals) {
-				throw ApiError.BadRequest('Incorrect password');
-			}
-			const userDto = new UserDto(user);
-			const tokens = generateTokens({...userDto});
-			await saveTokens(userDto.id, tokens.refreshToken);
 
-			return {...tokens,user: userDto};
+const login = asyncHandler(async(email,password) => {
+	const user = await User.findOne({email});
+
+	if(!user) {
+		throw ApiError.BadRequest(`User with this email ${email} not found`);
+	}
+
+	const isPassEquals = await bcrypt.compare(password,user.password);
+	if(!isPassEquals) {
+		throw ApiError.BadRequest('Incorrect password');
+	}
+	const userDto = new UserDto(user);
+	const tokens = generateTokens({...userDto});
+	await saveTokens(userDto.id, tokens.refreshToken);
+
+   onDataChanged('Recipe');
+   onDataChanged('Favoriterecipe');
+
+	return {...tokens,user: userDto};
 	});
+
 
 	const logout = asyncHandler(async(refreshToken) => {
 		const token= await removeToken(refreshToken);
 		return token;
 	});
+
+
 	const  refresh = asyncHandler(async (refreshToken) => {
-	
 		if(!refreshToken) {
 			throw ApiError.Forbbiden("User unauthenticated");
 		}
+
 		const userData = validateRefreshToken(refreshToken);
 		const tokenFromDb = await findToken(refreshToken);
+
 		if(!userData || !tokenFromDb) {
 			throw ApiError.Forbbiden("User unauthenticated");
 		}
+
 		const user = await User.findById(tokenFromDb.user);
 		const userDto = new UserDto(user);
 		const tokens = generateTokens({...userDto});
@@ -93,23 +123,26 @@ async function sendActivationEmail(to, link) {
 
 	const forgetPassword = asyncHandler(async(email) => {
 		const user = await User.findOne({email});
-			if(!user) {
-				throw ApiError.BadRequest(`User with this email ${email} not found`);
-			}
+		if(!user) {
+			throw ApiError.BadRequest(`User with this email ${email} not found`);
+		}
 			
-			if(!user.isActivated) {
-				throw ApiError.BadRequest('User is not activated');
-			}
-			const changePasswordLink = uuid.v4();
-			await gmailService.sendChangePasswordUser(email,`${process.env.API_URL}/api/users/change-password/${changePasswordLink}`);
-			user.changePasswordLink = changePasswordLink;
-			user.isChagePasswordLink = false;
-			await user.save();
-			return changePasswordLink;
+		if(!user.isActivated) {
+			throw ApiError.BadRequest('User is not activated');
+		}
+
+		const changePasswordLink = uuid.v4();
+		await gmailService.sendChangePasswordUser(email,`${process.env.API_URL}/api/users/change-password/${changePasswordLink}`);
+		user.changePasswordLink = changePasswordLink;
+		user.isChagePasswordLink = false;
+		await user.save();
+
+		onDataChanged('User');
+		return changePasswordLink;
 	});
 
-	const changePassword = asyncHandler(async(email,password)=> {
 
+	const changePassword = asyncHandler(async(email,password)=> {
 		if(!password) {
 			 throw ApiError.BadRequest('Incorrect new password');
 		}
@@ -136,18 +169,23 @@ async function sendActivationEmail(to, link) {
 		const userDto = new UserDto(user);
 		const tokens = generateTokens({...userDto});
 		await saveTokens(userDto.id, tokens.refreshToken);
+
+		onDataChanged('User');
+
 		return {...tokens,user: userDto};
 
   });
-		const changePasswordLink = asyncHandler(async(changePasswordLink)=> {
-			const user = await User.findOne({changePasswordLink: changePasswordLink});
-			if (!user) {
-				throw ApiError.BadRequest('Invalid change password link');
-			 }
-				user.isChangePasswordLink = true;
-				await user.save();
+
+
+	const changePasswordLink = asyncHandler(async(changePasswordLink)=> {
+		const user = await User.findOne({changePasswordLink: changePasswordLink});
+		if (!user) {
+			throw ApiError.BadRequest('Invalid change password link');
+			}
+			user.isChangePasswordLink = true;
+			await user.save();
 		});
 
 
 		 
-module.exports= {registration,activate,login,logout,refresh,forgetPassword,changePassword,changePasswordLink};
+module.exports= {getAllUsers,registration,activate,login,logout,refresh,forgetPassword,changePassword,changePasswordLink};

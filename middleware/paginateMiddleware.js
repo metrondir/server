@@ -112,9 +112,9 @@ function calculatePagination(page, limit, totalDocuments) {
 
             res.paginatedResult = result;
             next();
-        } catch (e) {
-            console.error(e.message);
-            res.status(400).send(e.message);
+        } catch (error) {
+            throw ApiError.BadRequest(error.message);
+          
         }
     });
 };
