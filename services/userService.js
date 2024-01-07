@@ -30,7 +30,7 @@ const getAllUsers = asyncHandler(async (req,res,next) => {
 	if(req.query.page && req.query.limit){
 		await redisGetModelsWithPaginating(User,req,res,next);
 	 } else {
-		await redisGetModels(User);
+		await redisGetModels(User, req,res,next,);
 	 }
 });
 

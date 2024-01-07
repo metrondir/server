@@ -9,7 +9,7 @@ const redisGetModels= async (model,req, res, next,conditions = {}) => {
 	  const redisKey = `${model.modelName.toLowerCase()}`;
 	  const redisModels = await new Promise((resolve, reject) => {
 		 redis.get(redisKey, (err, redisModels) => {
-			console.log(redisKey)
+			
 			if (err) {
 			  reject(err);
 			} else {
