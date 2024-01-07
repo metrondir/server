@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
-const {getRecipes,createRecipe,getRecipe,updateRecipe ,deleteRecipe,setFavoriteRecipes,getFavoriteRecipes} = require("../controllers/recipeController");
+const {getRecipe,getRecipes,getFavoriteRecipes,setFavoriteRecipes,
+		 createRecipe,updateRecipe,deleteRecipe,} = require("../controllers/recipeController");
 const authMiddleware = require("../middleware/authMiddleware");
 const convertFieldsToBooleans = require("../middleware/convertFields");
 
