@@ -28,9 +28,9 @@ async function sendActivationEmail(to, link) {
 
 const getAllUsers = asyncHandler(async (req,res,next) => {
 	if(req.query.page && req.query.limit){
-		return await redisGetModelsWithPaginating(User,req,res,next);
+		await redisGetModelsWithPaginating(User,req,res,next);
 	 } else {
-		return await redisGetModels(User);
+		await redisGetModels(User);
 	 }
 });
 
