@@ -9,7 +9,7 @@ const {validationResult} = require("express-validator");
 
 const getUsers = asyncHandler(async (req, res, next) => {
     try {
-        const users = await getAllUsers(req);
+        const users = await getAllUsers(req,res,next);
         return res.status(200).json(users);
     } catch (error) {
         next(error);

@@ -51,7 +51,7 @@ const getRecipe = asyncHandler(async (req, res, next) => {
 
 const getRecipes = asyncHandler(async (req, res, next) => {
   try {
-    const recipes = await recipeService.getRecipes(req);
+    const recipes = await recipeService.getRecipes(req,res,next);
     return res.status(200).json(recipes);
   } catch (error) {
     next(error);
@@ -65,7 +65,7 @@ const getRecipes = asyncHandler(async (req, res, next) => {
 
 const getFavoriteRecipes = asyncHandler(async (req, res, next) => {
   try {
-    const favoriteRecipes = await recipeService.getFavoriteRecipes(req);
+    const favoriteRecipes = await recipeService.getFavoriteRecipes(req,res,next);
     return res.status(200).json(favoriteRecipes);
   } catch (error) {
     next(error);
