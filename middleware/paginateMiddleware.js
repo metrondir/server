@@ -54,9 +54,10 @@ const redisGetModelsWithPaginating = async (model, req, res, next,conditions={})
 		 res.json(JSON.parse(redisModels));
 	  } else {
 		 await paginate(model,conditions)(req, res, () => {});
+		 
 		 const paginatedResult = res.paginatedResult;
 		 if (!paginatedResult) {
-			throw ApiError.BadRequest('Error: paginatedResult is undefined');
+			throw ApiError.BadRequest('Too low results in model');
 		 } else {
 			redis.setex(redisKey, process.env.DEFAULT_EXPIRATION_REDIS_KEY_TIME, JSON.stringify(paginatedResult));
 			res.json(paginatedResult);
