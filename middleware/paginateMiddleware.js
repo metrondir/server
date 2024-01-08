@@ -25,7 +25,7 @@ const redisGetModels= async (model,req, res, next,conditions = {}) => {
 	  } else {
 		 console.log("FROM DB")
 		 const models = await model.find(conditions); 
-		 redis.setex(redisKey, process.env.DEFAULT_EXPIRATION, JSON.stringify(models));
+		 redis.setex(redisKey, process.env.DEFAULT_EXPIRATION_REDIS_KEY_TIME, JSON.stringify(models));
 		 res.json(models);
 	  }
 	} catch (error) {
@@ -58,7 +58,7 @@ const redisGetModelsWithPaginating = async (model, req, res, next,conditions={})
 		 if (!paginatedResult) {
 			throw ApiError.BadRequest('Error: paginatedResult is undefined');
 		 } else {
-			redis.setex(redisKey, process.env.DEFAULT_EXPIRATION, JSON.stringify(paginatedResult));
+			redis.setex(redisKey, process.env.DEFAULT_EXPIRATION_REDIS_KEY_TIME, JSON.stringify(paginatedResult));
 			res.json(paginatedResult);
 		 }
 	  }
@@ -136,4 +136,4 @@ const onDataChanged = async (modelName) => {
 	}
  };
 
-module.exports = { paginate,redisGetModelsWithPaginating, redisGetModels,onDataChanged };
+module.exports = {redisGetModelsWithPaginating, redisGetModels,onDataChanged };

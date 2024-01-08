@@ -107,8 +107,8 @@ const createRecipe = [upload.single('image'), asyncHandler(async (req, res, next
 
 const updateRecipe = asyncHandler(async (req, res, next) => {
   try {
-    await recipeService.updateRecipe(req);
-    return res.status(200).json("Recipe updated");
+  const recipe =  await recipeService.updateRecipe(req);
+  return res.status(200).json({ recipe, message: "Recipe updated" });
   } catch (error) {
     next(error);
   }

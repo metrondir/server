@@ -7,7 +7,7 @@ const gmailService = new EmailService();
 const { generateTokens, saveTokens, removeToken,validateRefreshToken,findToken } = require('./tokenService');
 const UserDto = require('../dtos/userDtos');
 const ApiError = require('../middleware/apiError');
-const { redisGetModelsWithPaginating,onDataChanged,redisGetModels } = require("../middleware/paginateMiddleware");
+const { redisGetModelsWithPaginating, redisGetModels,onDataChanged} = require("../middleware/paginateMiddleware");
 
 
 async function validateEmailUniqueness(email) {

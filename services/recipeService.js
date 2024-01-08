@@ -1,6 +1,6 @@
 const Recipe = require("../models/recipeModel");
 const FavoriteRecipe = require("../models/favoriteRecipeModel");
-const { redisGetModels, redisGetModelsWithPaginating, onDataChanged } = require("../middleware/paginateMiddleware");
+const { redisGetModelsWithPaginating, redisGetModels,onDataChanged} = require("../middleware/paginateMiddleware");
 const imgur = require('imgur');
 const ApiError = require("../middleware/apiError");
 
@@ -89,11 +89,16 @@ const getRecipes = async (req,res,next) => {
 	  req.body.extendedIngredients = parsedIngredients;
 	}
  
+	if (req.file) {
+		const imgurLink = await imgur.uploadFile(req.file.path);
+		req.body.image = imgurLink.link;
+	 }
 	const updatedRecipe = await Recipe.findByIdAndUpdate(
 		 req.params.id,
 		 req.body,
 		 {new : true}
 	);
+	await updatedRecipe.save();
 	onDataChanged('Recipe');
 	return updatedRecipe;
  };
