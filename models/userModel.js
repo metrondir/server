@@ -20,12 +20,12 @@ const userSchema = mongoose.Schema({
    },
    picture:{
     type: String,
-    required: [false, "Please add the user picture"],
+    required: false,
     default: "https://i.imgur.com/4jtCVcy.png"
    },
     activationLink: {
      type: String,
-     required: [true, "Please add the user activation link"]
+     required: false
     },
     isChangePasswordLink: {
         type: Boolean,

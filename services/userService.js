@@ -138,7 +138,18 @@ const login = asyncHandler(async(email,password) => {
 		await gmailService.sendChangePasswordUser(email,`${process.env.API_URL}/api/users/change-password/${changePasswordLink}`);
 		user.changePasswordLink = changePasswordLink;
 		user.isChangePasswordLink = false;
-		await user.save();
+		console.log(changePasswordLink);
+		console.log(user.changePasswordLink);
+		console.log(user.isChangePasswordLink);
+		try
+		{
+			await user.save();
+		}
+		catch(err)
+		{
+			console.log(err);
+		}
+
 		
 		onDataChanged('User');
 		return changePasswordLink;
