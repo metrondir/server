@@ -139,11 +139,7 @@ const login = asyncHandler(async(email,password) => {
 		user.changePasswordLink = changePasswordLink;
 		user.isChangePasswordLink = false;
 		await user.save();
-		try {
-			await user.save();
-	  } catch (error) {
-			console.error('Error saving user:', error);
-	  }
+		
 		onDataChanged('User');
 		return changePasswordLink;
 	});
