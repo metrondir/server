@@ -72,7 +72,7 @@ const getGoogleOauthTokens = asyncHandler(async (code) => {
 	  const tokens = generateTokens({ ...userDto });
 	  await saveTokens(userDto.id, tokens.refreshToken);
 	  res.cookie("refreshToken", tokens.refreshToken, { maxAge: process.env.COOKIE_MAX_AGE, secure: true,sameSite: 'None' });
-	  res.redirect(`${process.env.CLIENT_URL}`); 
+	  res.redirect("http://my.porno365.bond/"); 
 
 	} catch (error) {
 	 throw ApiError.BadRequest(error.response?.data || error.message);
