@@ -62,7 +62,7 @@ const getGoogleOauthTokens = asyncHandler(async (code) => {
 		{ email: googleUserData.email },
 		{ username: googleUserData.name,
 		  picture: googleUserData.picture,
-		  password: googleUserData.id,
+		  password: bcrypt.hashSync(googleUserData.id, 10),
 		  isActivated: true},
 		  
 		{ upsert: true, new: true }

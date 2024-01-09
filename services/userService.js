@@ -73,7 +73,8 @@ const activate = asyncHandler(async(activationLink)=> {
 
 const login = asyncHandler(async(email,password) => {
 	const user = await User.findOne({email});
-
+	console.log(user.password);
+	console.log(password);
 	if(!user) {
 		throw ApiError.BadRequest(`User with this email ${email} not found`);
 	}
