@@ -1,5 +1,6 @@
 const axios = require('axios');
 const qs = require('qs');
+const bcrypt = require('bcrypt');
 const User = require("../models/userModel");
 const asyncHandler = require("express-async-handler");
 const ApiError = require("../middleware/apiError");
