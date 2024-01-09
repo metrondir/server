@@ -124,6 +124,7 @@ const login = asyncHandler(async(email,password) => {
 	const forgetPassword = asyncHandler(async(email) => {
 		console.log(email);
 		const user = await User.findOne({email:email});
+		console.log(user);
 		if(!user) {
 			throw ApiError.BadRequest(`User with this email ${email} not found`);
 		}
