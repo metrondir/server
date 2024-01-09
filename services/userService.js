@@ -73,12 +73,12 @@ const activate = asyncHandler(async(activationLink)=> {
 
 const login = asyncHandler(async(email,password) => {
 	const user = await User.findOne({email});
-	console.log(user.password);
-	console.log(password);
 	if(!user) {
 		throw ApiError.BadRequest(`User with this email ${email} not found`);
 	}
-
+	if(!password){
+		throw ApiError.BadRequest('Password must be not empty');
+	}
 	const isPassEquals = await bcrypt.compare(password,user.password);
 	if(!isPassEquals) {
 		throw ApiError.BadRequest('Incorrect password');
@@ -123,9 +123,7 @@ const login = asyncHandler(async(email,password) => {
 
 
 	const forgetPassword = asyncHandler(async(email) => {
-		console.log(email);
 		const user = await User.findOne({email:email});
-		console.log(user);
 		if(!user) {
 			throw ApiError.BadRequest(`User with this email ${email} not found`);
 		}
@@ -138,18 +136,7 @@ const login = asyncHandler(async(email,password) => {
 		await gmailService.sendChangePasswordUser(email,`${process.env.API_URL}/api/users/change-password/${changePasswordLink}`);
 		user.changePasswordLink = changePasswordLink;
 		user.isChangePasswordLink = false;
-		console.log(changePasswordLink);
-		console.log(user.changePasswordLink);
-		console.log(user.isChangePasswordLink);
-		try
-		{
-			await user.save();
-		}
-		catch(err)
-		{
-			console.log(err);
-		}
-
+		await user.save();
 		
 		onDataChanged('User');
 		return changePasswordLink;
