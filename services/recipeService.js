@@ -24,14 +24,13 @@ const getRecipes = async (req,res,next) => {
 
 
  const createRecipe = async (req) => {
- 
 	if (req.body.extendedIngredients && typeof req.body.extendedIngredients === 'string') {
 	  let parsedIngredients = JSON.parse(req.body.extendedIngredients);
 	  req.body.extendedIngredients = parsedIngredients;
 	}
- 
-	const imgurLink = await imgur.uploadFile(req.file.path);
- 
+
+	const imgurLink = await imgur.uploadFile(req.file.path)
+
 	const recipe = new Recipe({
 	  title: req.body.title,
 	  cuisine: req.body.cuisine,
@@ -61,7 +60,6 @@ const getRecipes = async (req,res,next) => {
 	  onDataChanged('Favoriterecipe');
 	  return { isDeleted: true, data: favoriteRecipe };
 	}
- 
 	const favoriteRecipe = new FavoriteRecipe({ recipe: recipeId, user: req.user.id });
 	await favoriteRecipe.save();
 	onDataChanged('Favoriterecipe');
