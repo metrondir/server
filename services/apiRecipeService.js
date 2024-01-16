@@ -17,9 +17,25 @@ async function translateText(text) {
 
  const fetchRecipes = async (query, limit, type, diet, maxReadyTime, language) => {
 	let apiKey = getApiKey();
-	const url = `${baseUrl}/complexSearch?apiKey=${apiKey}&query=${query}&number=${limit}&type=${type}&diet=${diet}&maxReadyTime=${maxReadyTime}&addRecipeNutrition=true`;
+
+	let url = `${baseUrl}/complexSearch?apiKey=${apiKey}&query=${query}&number=${limit}&addRecipeNutrition=true`;
+
+	if (type) {
+		url += `&type=${type}`;
+	 }
+  
+	 if (diet) {
+		url += `&diet=${diet}`;
+	 }
+  
+	 if (maxReadyTime) {
+		url += `&maxReadyTime=${maxReadyTime}`;
+	 }
+
 	try{
+
 		const response = await axios.get(url);
+
 		return response.data.results.map(recipe => ({
 			id: recipe.id,
 			title: recipe.title,
@@ -27,9 +43,10 @@ async function translateText(text) {
 			readyInMinutes: recipe.readyInMinutes + ' min',
 			dishTypes: recipe.dishTypes || [], 
 		 }));
+
 	}
 	catch(error){
-		console.log(error);	
+		
 		if (error.response && error.response.status === 404) { 
 			getApiKey(true);
 			return fetchRecipes(query, limit, type, diet, maxReadyTime, language);  
@@ -62,8 +79,10 @@ async function translateText(text) {
 }
  
  const fetchRandomRecipes = async (limit) => {
-	const url = `${baseUrl}/random?apiKey=${getApiKey()}&number=${limit}`;
-
+	let apiKey = getApiKey();
+	const url = `${baseUrl}/random?apiKey=${apiKey}&number=${limit}`;
+	console.log(url);
+	try{
 	const response = await axios.get(url);
 	
 	return response.data.recipes.map(recipe => ({
@@ -73,13 +92,23 @@ async function translateText(text) {
 		readyInMinutes: recipe.readyInMinutes + ' min',
 		dishTypes: recipe.dishTypes || [], 
 	 }));
+	}
+	catch(error){
+		if (error.response && error.response.status === 404) { 
+			getApiKey(true);
+			return fetchRandomRecipes(limit);  
+		 } else {
+			throw error; 
+		 }
+	}
 }
 
 const fetchRecommendedRecipes = async (id) => {
-	
-	const url = `${baseUrl}/${id}/similar?apiKey=${getApiKey()}`;
-	const response = await axios.get(url);
-	const stringId = id.toString();
+	let apiKey = getApiKey();
+	const url = `${baseUrl}/${id}/similar?apiKey=${apiKey}`;
+	try{
+		const response = await axios.get(url);
+		const stringId = id.toString();
 
 	if(stringId.length < 7){
 		const data =response.data;
@@ -95,40 +124,71 @@ const fetchRecommendedRecipes = async (id) => {
 			readyInMinutes: recipe.readyInMinutes,
 			dishTypes: recipe.dishTypes || [], 
 		 }));
-	}
+		}
 	
+}
+catch(error){
+	if (error.response && error.response.status === 404) { 
+		getApiKey(true);
+		return fetchRecommendedRecipes(id);  
+	 } else {
+		throw error; 
+	 }
+}
 }
 const fetchInformationById = async (id) => {
-	const url = `${baseUrl}/${id}/information?includeNutrition=false&apiKey=${getApiKey()}`;
-	const response = await axios.get(url);
-
-	return {
-		id: response.data.id,
-		title: response.data.title,
-		extendedIngredients: response.data.extendedIngredients || [],
-		cuisines: response.data.cuisines || [],
-		dishTypes: response.data.dishTypes || [],
-		instructions: response.data.instructions || [],
-		cheap: response.data.cheap,
-		vegetarian: response.data.vegetarian,
-		image: response.data.image,
-		readyInMinutes: response.data.readyInMinutes + ' min',
-	 };
-	
-}
-
-const fetchFavoriteRecipes = async (id) => {
-	const favoriteRecipes = await FavoriteRecipe.find({ user: id });
-	const recipes = await Promise.all(favoriteRecipes.map(async (favoriteRecipe) => {
-		const url = `${baseUrl}/${favoriteRecipe.recipe}/information?includeNutrition=false&apiKey=${getApiKey()}`;
+	let apiKey = getApiKey();
+	const url = `${baseUrl}/${id}/information?includeNutrition=false&apiKey=${apiKey}`;
+	try{
 		const response = await axios.get(url);
 		return {
 			id: response.data.id,
 			title: response.data.title,
+			extendedIngredients: response.data.extendedIngredients || [],
+			cuisines: response.data.cuisines || [],
+			dishTypes: response.data.dishTypes || [],
+			instructions: response.data.instructions || [],
+			cheap: response.data.cheap,
+			vegetarian: response.data.vegetarian,
 			image: response.data.image,
 			readyInMinutes: response.data.readyInMinutes + ' min',
-			dishTypes: response.data.dishTypes || [], 
 		 };
+	}
+	catch(error){
+		if (error.response && error.response.status === 404) { 
+			getApiKey(true);
+			return fetchInformationById(id);  
+		 } else {
+			throw error; 
+		 }
+	}
+	
+}
+
+const fetchFavoriteRecipes = async (id) => {
+	let apiKey = getApiKey();
+	const favoriteRecipes = await FavoriteRecipe.find({ user: id });
+	const recipes = await Promise.all(favoriteRecipes.map(async (favoriteRecipe) => {
+		const url = `${baseUrl}/${favoriteRecipe.recipe}/information?includeNutrition=false&apiKey=${apiKey}`;
+		try{
+			const response = await axios.get(url);
+			return {
+				id: response.data.id,
+				title: response.data.title,
+				image: response.data.image,
+				readyInMinutes: response.data.readyInMinutes + ' min',
+				dishTypes: response.data.dishTypes || [], 
+			 };
+		}
+		catch(error){
+			if (error.response && error.response.status === 404) { 
+				getApiKey(true);
+				return fetchFavoriteRecipes(id);  
+			 } else {
+				throw error; 
+			 }
+		}
+		
 	}));
 	return recipes;
 }
