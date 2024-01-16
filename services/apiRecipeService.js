@@ -48,7 +48,7 @@ const fetchRecommendedRecipes = async (id) => {
 			id: recipe.id,
 			title: recipe.title,
 			image: recipe.image,
-			readyInMinutes: recipe.readyInMinutes + ' min',
+			readyInMinutes: recipe.readyInMinutes,
 			dishTypes: recipe.dishTypes || [], 
 		 }));
 	}
