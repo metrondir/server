@@ -3,9 +3,17 @@
 
 let keys = process.env.SPOONACULAR_API_KEY.split(',');
 
-function getApiKey() {
+function getApiKey(isExpired = false) {
   const key = keys[0];
-  keys = [...keys.slice(1), key];
+  if (isExpired) {
+
+    keys = keys.slice(1);
+  } else {
+   
+    keys = [...keys.slice(1), key];
+    console.log(keys);
+  }
+  console.log('Using key:', key); 
   return key;
 }
 

@@ -2,21 +2,65 @@ const axios = require('axios');
 const ApiError = require("../middleware/apiError");
 const { baseUrl, getApiKey } = require('../config/configApiHandler');
 const FavoriteRecipe = require("../models/favoriteRecipeModel");
+const {Translate} = require('@google-cloud/translate').v2;
+const projectId = 'recipes-406419';
+const translate = new Translate({projectId});
 
-const fetchRecipes = async (query, limit) => {
+async function translateText(text) {
 
-	const url = `${baseUrl}/complexSearch?apiKey=${getApiKey()}&query=${query}&number=${limit}&addRecipeNutrition=true`;
-	const response = await axios.get(url);
-	console.log(response);
-	return response.data.results.map(recipe => ({
-		id: recipe.id,
-		title: recipe.title,
-		image: recipe.image,
-		readyInMinutes: recipe.readyInMinutes + ' min',
-		dishTypes: recipe.dishTypes || [], 
-	 }));
- };
+	const target = 'uk';
 
+	const [translation] = await translate.translate(text, target);
+	console.log(`Text: ${text}`);
+	return translation;
+ }
+
+ const fetchRecipes = async (query, limit, type, diet, maxReadyTime, language) => {
+	let apiKey = getApiKey();
+	const url = `${baseUrl}/complexSearch?apiKey=${apiKey}&query=${query}&number=${limit}&type=${type}&diet=${diet}&maxReadyTime=${maxReadyTime}&addRecipeNutrition=true`;
+	try{
+		const response = await axios.get(url);
+		return response.data.results.map(recipe => ({
+			id: recipe.id,
+			title: recipe.title,
+			image: recipe.image,
+			readyInMinutes: recipe.readyInMinutes + ' min',
+			dishTypes: recipe.dishTypes || [], 
+		 }));
+	}
+	catch(error){
+		console.log(error);	
+		if (error.response && error.response.status === 404) { 
+			getApiKey(true);
+			return fetchRecipes(query, limit, type, diet, maxReadyTime, language);  
+		 } else {
+			throw error; 
+		 }
+	}
+	
+	//if(language === "en"){
+	//	return response.data.results.map(recipe => ({
+	//		id: recipe.id,
+	//		title: recipe.title,
+	//		image: recipe.image,
+	//		readyInMinutes: recipe.readyInMinutes + ' min',
+	//		dishTypes: recipe.dishTypes || [], 
+	//	 }));
+	//}
+	//else{
+	//  return Promise.all(response.data.results.map(async (recipe) => {
+	//	 const translatedTitle = await translateText(recipe.title);
+	//	 const translatedReadyInMinutes = await translateText(recipe.readyInMinutes + ' min');
+	//	 const translatedDishTypes = await Promise.all((recipe.dishTypes || []).map(translateText));
+	//	 return {
+	//		id: recipe.id,
+	//		title: translatedTitle,
+	//		image: recipe.image,
+	//		readyInMinutes: translatedReadyInMinutes,
+	//		dishTypes: translatedDishTypes, 
+	//	 };
+}
+ 
  const fetchRandomRecipes = async (limit) => {
 	const url = `${baseUrl}/random?apiKey=${getApiKey()}&number=${limit}`;
 

@@ -8,8 +8,8 @@ const ApiError = require('../middleware/apiError');
 
 const getRecipes = asyncHandler(async (req, res, next) =>{
 	try{
-		const { query, limit } = req.query;
-		const recipes = await fetchRecipes(query, limit);
+		const { query, limit,type,diet,maxReadyTime,language } = req.query;
+		const recipes = await fetchRecipes(query, limit,type,diet,maxReadyTime,language);
 		res.status(200).json(recipes);
 	}
 	catch(error){

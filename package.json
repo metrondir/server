@@ -12,6 +12,7 @@
 	"author": "Roman",
 	"license": "MIT",
 	"dependencies": {
+		"@google-cloud/translate": "^8.0.3",
 		"async_hooks": "^1.0.0",
 		"axios": "^1.6.2",
 		"bcrypt": "^5.1.1",
