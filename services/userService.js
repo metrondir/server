@@ -4,6 +4,8 @@ const asyncHandler = require('express-async-handler');
 const uuid = require('uuid');
 const EmailService = require('./gmailService');
 const gmailService = new EmailService();
+const Recipe = require('../models/recipeModel');
+const FavoriteRecipe = require('../models/favoriteRecipeModel');
 const { generateTokens, saveTokens, removeToken,validateRefreshToken,findToken } = require('./tokenService');
 const UserDto = require('../dtos/userDtos');
 const ApiError = require('../middleware/apiError');
@@ -188,5 +190,19 @@ const login = asyncHandler(async(email,password) => {
 		});
 
 
+	const deleteUser = asyncHandler(async(id)=> {
+		const user = await User.findByIdAndDelete(id);	
+		await Recipe.deleteMany({user: id});
+		await FavoriteRecipe.deleteMany({user: id});
+		await removeToken(user.refreshToken);
+		if(!user) {
+			throw ApiError.BadRequest('User not found');
+		}
+		onDataChanged('User');
+		onDataChanged('Recipe');
+		onDataChanged('Favoriterecipe');
+	
+	});
+
 		 
-module.exports= {getAllUsers,registration,activate,login,logout,refresh,forgetPassword,changePassword,changePasswordLink};
+module.exports= {getAllUsers,registration,activate,login,logout,refresh,forgetPassword,changePassword,changePasswordLink,deleteUser};

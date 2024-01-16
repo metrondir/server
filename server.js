@@ -44,6 +44,7 @@ app.use(compression());
 app.use("/api/recipes", require("./routes/recipeRoutes" ));
 app.use("/api/users", require("./routes/userRoutes"));
 app.use("/api/spoonacular/recipes",require("./routes/apiRoutes"));
+
 app.use(errorHandler);
 
 const myFormat = format.printf(({ level, message, label, timestamp, metadata }) => {

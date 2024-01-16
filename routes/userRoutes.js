@@ -1,8 +1,9 @@
 const express = require("express");
-const { registerUser, loginUser,logoutUser,refreshTokenUser,activateUser ,forgetPasswordUser,changePasswordUserLink,changePasswordUser, getUsers } = require("../controllers/userController");
+const { registerUser, loginUser,logoutUser,refreshTokenUser,activateUser ,forgetPasswordUser,changePasswordUserLink,changePasswordUser, getUsers,deleteUserById } = require("../controllers/userController");
 const {googleOauthHandler} = require("../services/googleOauthService");
 const authMiddleware = require("../middleware/authMiddleware");
 const {body} = require("express-validator");
+
 const router = express.Router();
 
 
@@ -25,5 +26,7 @@ router.get("/refresh",refreshTokenUser );
 router.get("/allusers",authMiddleware,getUsers);
 
 router.get("/sessions/oauth/google", googleOauthHandler);
+
+router.delete("/delete-user",authMiddleware,deleteUserById);
 
 module.exports = router;
