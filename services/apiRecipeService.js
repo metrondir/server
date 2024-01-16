@@ -32,16 +32,27 @@ const fetchRecipes = async (query, limit) => {
 }
 
 const fetchRecommendedRecipes = async (id) => {
-	const url = `${baseUrl}/${id}/similar?apiKey=${getApiKey()}&addRecipeNutrition=true&addRecipeInformation=true&`;
+	
+	const url = `${baseUrl}/${id}/similar?apiKey=${getApiKey()}`;
 	const response = await axios.get(url);
+	const stringId = id.toString();
 
-	return response.data.map(recipe => ({
-		id: recipe.id,
-		title: recipe.title,
-		image: recipe.image,
-		readyInMinutes: recipe.readyInMinutes + ' min',
-		dishTypes: recipe.dishTypes || [], 
-	 }));
+	if(stringId.length < 7){
+		const data =response.data;
+		const recipePromises = data.map(async( recipe) => {
+			const recipeData = await fetchInformationById(recipe.id);
+			return recipeData;
+		});
+		const recipes = await Promise.all(recipePromises)
+		return recipes.map(recipe => ({
+			id: recipe.id,
+			title: recipe.title,
+			image: recipe.image,
+			readyInMinutes: recipe.readyInMinutes + ' min',
+			dishTypes: recipe.dishTypes || [], 
+		 }));
+	}
+	
 }
 const fetchInformationById = async (id) => {
 	const url = `${baseUrl}/${id}/information?includeNutrition=false&apiKey=${getApiKey()}`;
@@ -77,7 +88,11 @@ const fetchFavoriteRecipes = async (id) => {
 	}));
 	return recipes;
 }
+
  
+
+ 
+  
 module.exports = {
 	fetchRecipes,
 	fetchRandomRecipes,
