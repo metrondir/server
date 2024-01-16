@@ -1,18 +1,18 @@
 const axios = require('axios');
 const ApiError = require("../middleware/apiError");
 const { baseUrl, getApiKey } = require('../config/configApiHandler');
+const FavoriteRecipe = require("../models/favoriteRecipeModel");
 
 const fetchRecipes = async (query, limit) => {
 
-	const url = `${baseUrl}/complexSearch?apiKey=${getApiKey()}&query=${query}&number=${limit}`;
-
+	const url = `${baseUrl}/complexSearch?apiKey=${getApiKey()}&query=${query}&number=${limit}&addRecipeNutrition=true`;
 	const response = await axios.get(url);
-
+	console.log(response);
 	return response.data.results.map(recipe => ({
 		id: recipe.id,
 		title: recipe.title,
 		image: recipe.image,
-		readyInMinutes: recipe.readyInMinutes,
+		readyInMinutes: recipe.readyInMinutes + ' min',
 		dishTypes: recipe.dishTypes || [], 
 	 }));
  };
@@ -26,20 +26,20 @@ const fetchRecipes = async (query, limit) => {
 		id: recipe.id,
 		title: recipe.title,
 		image: recipe.image,
-		readyInMinutes: recipe.readyInMinutes,
+		readyInMinutes: recipe.readyInMinutes + ' min',
 		dishTypes: recipe.dishTypes || [], 
 	 }));
 }
 
-const fetchRecomendedRecipes = async (id) => {
-	const url = `${baseUrl}/${id}/similar?apiKey=${getApiKey()}`;
+const fetchRecommendedRecipes = async (id) => {
+	const url = `${baseUrl}/${id}/similar?apiKey=${getApiKey()}&addRecipeNutrition=true&addRecipeInformation=true&`;
 	const response = await axios.get(url);
 
 	return response.data.map(recipe => ({
 		id: recipe.id,
 		title: recipe.title,
 		image: recipe.image,
-		readyInMinutes: recipe.readyInMinutes,
+		readyInMinutes: recipe.readyInMinutes + ' min',
 		dishTypes: recipe.dishTypes || [], 
 	 }));
 }
@@ -57,16 +57,31 @@ const fetchInformationById = async (id) => {
 		cheap: response.data.cheap,
 		vegetarian: response.data.vegetarian,
 		image: response.data.image,
-		readyInMinutes: response.data.readyInMinutes,
+		readyInMinutes: response.data.readyInMinutes + ' min',
 	 };
 	
 }
 
-
+const fetchFavoriteRecipes = async (id) => {
+	const favoriteRecipes = await FavoriteRecipe.find({ user: id });
+	const recipes = await Promise.all(favoriteRecipes.map(async (favoriteRecipe) => {
+		const url = `${baseUrl}/${favoriteRecipe.recipe}/information?includeNutrition=false&apiKey=${getApiKey()}`;
+		const response = await axios.get(url);
+		return {
+			id: response.data.id,
+			title: response.data.title,
+			image: response.data.image,
+			readyInMinutes: response.data.readyInMinutes + ' min',
+			dishTypes: response.data.dishTypes || [], 
+		 };
+	}));
+	return recipes;
+}
  
 module.exports = {
 	fetchRecipes,
 	fetchRandomRecipes,
-	fetchRecomendedRecipes,
+	fetchRecommendedRecipes,
 	fetchInformationById,
+	fetchFavoriteRecipes,
  };

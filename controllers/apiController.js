@@ -1,8 +1,9 @@
 const asyncHandler = require('express-async-handler');
 const { fetchRecipes,
 	fetchRandomRecipes,
-	fetchRecomendedRecipes,
-	fetchInformationById,} = require('../services/apiRecipeService');
+	fetchRecommendedRecipes,
+	fetchInformationById,
+	fetchFavoriteRecipes,} = require('../services/apiRecipeService');
 const ApiError = require('../middleware/apiError');
 
 const getRecipes = asyncHandler(async (req, res, next) =>{
@@ -41,10 +42,10 @@ const getInformationById =asyncHandler(async (req, res, next) =>{
 	}
 });
 
-const getRecomendedrecipes =asyncHandler(async (req, res, next) =>{
+const getRecommendedRecipes =asyncHandler(async (req, res, next) =>{
 	try{
 		const { id } = req.params;
-		const recipes = await fetchRecomendedRecipes(id);
+		const recipes = await fetchRecommendedRecipes(id);
 		res.status(200).json(recipes);
 	}
 	catch(error){
@@ -52,9 +53,22 @@ const getRecomendedrecipes =asyncHandler(async (req, res, next) =>{
 	}
 });
 
+const getFavouriteRecipes =asyncHandler(async (req, res, next) =>{
+	try{
+		const  id  = req.user.id;
+		const recipes = await fetchFavoriteRecipes(id);
+		res.status(200).json(recipes);
+	}
+	catch(error){
+		next(error);
+	}
+});
+
+
 module.exports = {
 	getRecipes,
 	getRandomRecipes,
 	getInformationById,
-	getRecomendedrecipes,
+	getRecommendedRecipes,
+	getFavouriteRecipes,
 };

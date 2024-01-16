@@ -67,15 +67,6 @@ const getRecipes = async (req,res,next) => {
  };
  
 
- const getFavoriteRecipes = async (req,res,next) => {
-	if(req.query.page && req.query.limit){
-     	 await redisGetModelsWithPaginating(FavoriteRecipe, req,res,next, { user: req.user.id });
-   	}else{
-        await redisGetModels(FavoriteRecipe, req,res,next, { user: req.user.id });   
-      }
- };
-
-
  const updateRecipe = async (req) => {
 	const recipe = await Recipe.findById(req.params.id);
 	if(!recipe){
@@ -116,7 +107,6 @@ const getRecipes = async (req,res,next) => {
 module.exports = {
 	getRecipe,
 	getRecipes,
-	getFavoriteRecipes,
 	setFavoriteRecipes,
 	createRecipe,
 	updateRecipe,

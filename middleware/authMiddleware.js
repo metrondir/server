@@ -9,7 +9,6 @@ module.exports = function ( req, res, next) {
 			throw ApiError.Forbbiden("User unauthenticated");
 		}
 		const accessToken = authHeader.split(' ')[1];
-		
 		if (!accessToken || accessToken === 'null' && !req.cookies.refreshToken) {
 			throw ApiError.Forbbiden("User unauthenticated");
 		}
