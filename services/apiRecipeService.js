@@ -53,7 +53,7 @@ async function handleApiError(error, retryFunction, ...args) {
 		 id: recipe.id,
 		 title: recipe.title,
 		 image: recipe.image,
-		 readyInMinutes: recipe.readyInMinutes,
+		 readyInMinutes: recipe.readyInMinutes + ' min',
 		 dishTypes: recipe.dishTypes || [],
 	  }));
 	} else {
@@ -69,11 +69,12 @@ async function handleApiError(error, retryFunction, ...args) {
  }
 
 
- const fetchRecipes = async (query, limit, type, diet, maxReadyTime, language) => {
+ const fetchRecipes = async (query, limit, type, diet,cuisine, maxReadyTime, language) => {
 	let apiKey = getApiKey();
 	let url = `${baseUrl}/complexSearch?apiKey=${apiKey}&query=${query}&number=${limit}&addRecipeNutrition=true`;
 	if (type) url += `&type=${type}`;
 	if (diet) url += `&diet=${diet}`;
+	if(cuisine) url += `&cuisine=${cuisine}`;
 	if (maxReadyTime) url += `&maxReadyTime=${maxReadyTime}`;
  
 	try {

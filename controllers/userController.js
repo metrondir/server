@@ -158,7 +158,6 @@ const changePasswordUserLink = asyncHandler(async (req,res,next) =>{
 
  const deleteUserById = asyncHandler(async (req,res,next) =>{
     try {
-        console.log(req.user.id);
         await deleteUser(req.user.id);
         res.clearCookie("refreshToken");
         return res.status(200).json("User deleted successfully");
