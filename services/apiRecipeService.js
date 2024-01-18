@@ -2,6 +2,7 @@ const axios = require('axios');
 const { baseUrl, getApiKey } = require('../config/configApiHandler');
 const FavoriteRecipe = require("../models/favoriteRecipeModel");
 const {Translate} = require('@google-cloud/translate').v2;
+const { getRecipesFromDatabase } = require('./recipeService')
 //const deepl = require('deepl-node');
 //const authKey = "a45bd3e2-2f56-321b-aea3-103f0d3cbccf:fx";
 //const translator = new deepl.Translator(authKey);
@@ -31,7 +32,7 @@ async function handleApiError(error, retryFunction, ...args) {
 	  getApiKey(true);
 	  return retryFunction(...args);
 	} else {
-	  throw error;
+	  throw ApiError.BadRequest(error.message);
 	}
  }
 
@@ -71,15 +72,19 @@ async function handleApiError(error, retryFunction, ...args) {
 
  const fetchRecipes = async (query, limit, type, diet,cuisine, maxReadyTime, language) => {
 	let apiKey = getApiKey();
-	let url = `${baseUrl}/complexSearch?apiKey=${apiKey}&query=${query}&number=${limit}&addRecipeNutrition=true`;
+	let url = `${baseUrl}/complexSearch?apiKey=${apiKey}&query=${query}&number=${limit/2}&addRecipeNutrition=true`;
+	console.log(url);
 	if (type) url += `&type=${type}`;
 	if (diet) url += `&diet=${diet}`;
 	if(cuisine) url += `&cuisine=${cuisine}`;
 	if (maxReadyTime) url += `&maxReadyTime=${maxReadyTime}`;
- 
+	console.log(url);
 	try {
 	  const response = await axios.get(url);
-	  return fetchRecipesData(response.data.results, language);
+	  const recipes = await getRecipesFromDatabase(limit, type, diet, cuisine, maxReadyTime);
+	  const allRecipes = response.data.results.concat(recipes);
+	  
+	  return fetchRecipesData(allRecipes, language);
 	} catch (error) {
 	  return handleApiError(error, fetchRecipes, query, limit, type, diet, maxReadyTime, language);
 	}
@@ -90,7 +95,11 @@ async function handleApiError(error, retryFunction, ...args) {
   const url = `${baseUrl}/random?apiKey=${apiKey}&number=${limit}`;
   try {
     const response = await axios.get(url);
-    return fetchRecipesData(response.data.recipes, language);
+	
+	 const recipes = await getRecipesFromDatabase(limit, null, null, null, null);
+	 
+	 const allRecipes = response.data.recipes.concat(recipes);
+    return fetchRecipesData(allRecipes, language);
   } catch (error) {
     return handleApiError(error, fetchRandomRecipes, limit, language);
   }
@@ -146,6 +155,7 @@ const fetchInformationById = async (id,language) => {
 	const url = `${baseUrl}/${id}/information?includeNutrition=false&apiKey=${apiKey}`;
 	try{
 		const response = await axios.get(url);
+		console.log(response.data);
 		if(language === "en"|| !language)
 		{
 		return {

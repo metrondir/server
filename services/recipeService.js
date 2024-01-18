@@ -13,6 +13,41 @@ const getRecipe = async (req) => {
 	return recipe;
  };
 
+ const getRecipesFromDatabase = async (limit, dishType, diet, cuisine, readyInMinutes) => {
+	const pipeline = [
+	  { $match: {} }, // Add any initial matching criteria if needed
+	  { $sample: { size: Math.floor(limit / 2) } },
+	];
+ 
+	if (dishType) {
+	  pipeline[0].$match.dishType = dishType;
+	}
+ 
+	if (diet) {
+	  pipeline[0].$match.diet = diet;
+	}
+ 
+	if (cuisine) {
+	  pipeline[0].$match.cuisine = cuisine;
+	}
+ 
+	if (readyInMinutes) {
+	  pipeline[0].$match.readyInMinutes = { $lte: readyInMinutes };
+	}
+
+	try {
+	  const recipes = await Recipe.aggregate(pipeline);
+	
+	  return recipes;
+	}
+	catch (error) {
+		console.log(error);
+		throw ApiError.BadRequest(error.message);
+	}
+
+ };
+ 
+ 
 
 const getRecipes = async (req,res,next) => {
 	if(req.query.page && req.query.limit){
@@ -111,4 +146,5 @@ module.exports = {
 	createRecipe,
 	updateRecipe,
 	deleteRecipe,
+	getRecipesFromDatabase,
  };
