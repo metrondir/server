@@ -22,8 +22,8 @@ const getRecipes = asyncHandler(async (req, res, next) =>{
 const getRandomRecipes =asyncHandler(async (req, res, next) =>{
 
 	try{
-		const { limit } = req.query;
-		const recipes = await fetchRandomRecipes(limit);
+		const { limit,language } = req.query;
+		const recipes = await fetchRandomRecipes(limit,language);
 		res.status(200).json(recipes);
 	}
 	catch(error){
@@ -35,7 +35,8 @@ const getInformationById =asyncHandler(async (req, res, next) =>{
 
 	try{
 		const { id } = req.params;
-		const recipes = await fetchInformationById(id);
+		const {language} = req.query;
+		const recipes = await fetchInformationById(id,language);
 		res.status(200).json(recipes);
 	}
 	catch(error){
@@ -45,8 +46,10 @@ const getInformationById =asyncHandler(async (req, res, next) =>{
 
 const getRecommendedRecipes =asyncHandler(async (req, res, next) =>{
 	try{
-		const { id } = req.params;
-		const recipes = await fetchRecommendedRecipes(id);
+		const { id} = req.params;
+		const {language} = req.query;
+
+		const recipes = await fetchRecommendedRecipes(id,language);
 		res.status(200).json(recipes);
 	}
 	catch(error){
@@ -57,7 +60,8 @@ const getRecommendedRecipes =asyncHandler(async (req, res, next) =>{
 const getFavouriteRecipes =asyncHandler(async (req, res, next) =>{
 	try{
 		const  id  = req.user.id;
-		const recipes = await fetchFavoriteRecipes(id);
+		const {language} = req.query;
+		const recipes = await fetchFavoriteRecipes(id,language);
 		res.status(200).json(recipes);
 	}
 	catch(error){

@@ -8,9 +8,7 @@ function getApiKey(isExpired = false) {
   if (isExpired) {
     keys = keys.slice(1);
   } else {
-   
     keys = [...keys.slice(1), key];
-    console.log(keys);
   }
   return key;
 }
