@@ -13,14 +13,28 @@ const getRecipe = async (req) => {
 	return recipe;
  };
 
- const getRecipesFromDatabase = async (limit, dishType, diet, cuisine, readyInMinutes) => {
+ const getRecipesFromDatabaseRandom = async (limit) => {
+	return await Recipe.aggregate([
+	  { $sample: { size: Math.floor(limit / 2) } }
+	]);
+ };
+
+ const getRecipesFromDatabaseByIngridients = async (limit, ingredients) => {
+	ingredients = ingredients.split(',');
+	return await Recipe.aggregate([
+	  { $match: { extendedIngredients: { $elemMatch: { original: { $in: ingredients } } } } },
+	  { $sample: { size: Math.floor(limit / 2) } }
+	]);
+ };
+
+ const getRecipesFromDatabaseComplex = async (limit, type, diet, cuisine, maxReadyTime) => {
 	const pipeline = [
-	  { $match: {} }, // Add any initial matching criteria if needed
+	  { $match: {} },
 	  { $sample: { size: Math.floor(limit / 2) } },
 	];
  
-	if (dishType) {
-	  pipeline[0].$match.dishType = dishType;
+	if (type) {
+	  pipeline[0].$match.dishType = type;
 	}
  
 	if (diet) {
@@ -30,14 +44,12 @@ const getRecipe = async (req) => {
 	if (cuisine) {
 	  pipeline[0].$match.cuisine = cuisine;
 	}
- 
-	if (readyInMinutes) {
-	  pipeline[0].$match.readyInMinutes = { $lte: readyInMinutes };
+	if (maxReadyTime) {
+	  pipeline[0].$match.readyInMinutes = { $lte: Number(maxReadyTime) };
 	}
-
 	try {
+		console.log(pipeline);
 	  const recipes = await Recipe.aggregate(pipeline);
-	
 	  return recipes;
 	}
 	catch (error) {
@@ -146,5 +158,7 @@ module.exports = {
 	createRecipe,
 	updateRecipe,
 	deleteRecipe,
-	getRecipesFromDatabase,
+	getRecipesFromDatabaseComplex,
+	getRecipesFromDatabaseRandom,
+	getRecipesFromDatabaseByIngridients,
  };
