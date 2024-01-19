@@ -72,9 +72,9 @@ const getFavouriteRecipes =asyncHandler(async (req, res, next) =>{
 
 const getRecipesByIngridients =asyncHandler(async (req, res, next) =>{
 	try{
-		const { ingredients,language } = req.query;
+		const { ingredients,number,language } = req.query;
 		console.log(ingredients);
-		const recipes = await fetchRecipesByIngredients(ingredients, language);
+		const recipes = await fetchRecipesByIngredients(ingredients,number, language);
 		res.status(200).json(recipes);
 	}
 	catch(error){

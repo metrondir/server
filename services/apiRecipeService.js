@@ -47,7 +47,6 @@ async function handleApiError(error, retryFunction, ...args) {
 	recipe.readyInMinutes = recipe.readyInMinutes + min;
  }
 
- 
  async function fetchRecipesData(response, language) {
 	if (language === "en" || !language) {
 	  return response.map(recipe => ({
@@ -69,35 +68,31 @@ async function handleApiError(error, retryFunction, ...args) {
 	}
  }
 
-const fetchRecipesByIngredients = async (ingredients,language) => {
+const fetchRecipesByIngredients = async (ingredients,number,language) => {
 	let apiKey = getApiKey();
-	let url = `${baseUrl}/findByIngredients?apiKey=${apiKey}&ingredients=${ingredients}&ignorePantry=true`;
-	console.log(url);
+	let url = `${baseUrl}/findByIngredients?apiKey=${apiKey}&ingredients=${ingredients}&number=${number}&ignorePantry=true`;
 	try {
 	  const response = await axios.get(url);
-	  const recipes = await getRecipesFromDatabaseByIngridients(10,ingredients);
+	  const recipes = await getRecipesFromDatabaseByIngridients(number,ingredients);
 	  const allRecipes = response.data.concat(recipes);
 	  return Promise.all(allRecipes.map(async recipe => fetchInformationByRecomended(recipe.id, language)));
 
 	} catch (error) {
 	  return handleApiError(error, fetchRecipesByIngredients, ingredients, language);
 	}
-
 };
 
  const fetchRecipes = async (query, limit, type, diet,cuisine, maxReadyTime, language) => {
 	let apiKey = getApiKey();
 	let url = `${baseUrl}/complexSearch?apiKey=${apiKey}&query=${query}&number=${limit/2}&addRecipeNutrition=true`;
-	console.log(url);
 	if (type) url += `&type=${type}`;
 	if (diet) url += `&diet=${diet}`;
 	if(cuisine) url += `&cuisine=${cuisine}`;
 	if (maxReadyTime) url += `&maxReadyTime=${maxReadyTime}`;
-	console.log(url);
+
 	try {
 	  const response = await axios.get(url);
 	  const recipes = await getRecipesFromDatabaseComplex(limit, type, diet, cuisine, maxReadyTime);
-	  console.log(recipes);
 	  const allRecipes = response.data.results.concat(recipes);
 	  
 	  return fetchRecipesData(allRecipes, language);
