@@ -4,7 +4,8 @@ const { getRecipes,
 	getInformationById,
 	getRecommendedRecipes,
 	getFavouriteRecipes,
-	getRecipesByIngridients,} = require("../controllers/apiController");
+	getRecipesByIngridients,
+	TranslateRecipe,} = require("../controllers/apiController");
 
 const authMiddleware = require("../middleware/authMiddleware");
 const router = express.Router();
@@ -12,7 +13,7 @@ const router = express.Router();
 
 router.get("/", getRecipes);
 
-
+router.post("/translate", TranslateRecipe);
 
 router.get("/random", getRandomRecipes);
 

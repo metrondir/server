@@ -4,7 +4,8 @@ const { fetchRecipes,
 	fetchRecommendedRecipes,
 	fetchInformationById,
 	fetchFavoriteRecipes,
-	fetchRecipesByIngredients,} = require('../services/apiRecipeService');
+	fetchRecipesByIngredients,
+	TranslateRecipeInformation} = require('../services/apiRecipeService');
 const ApiError = require('../middleware/apiError');
 
 const getRecipes = asyncHandler(async (req, res, next) =>{
@@ -73,7 +74,6 @@ const getFavouriteRecipes =asyncHandler(async (req, res, next) =>{
 const getRecipesByIngridients =asyncHandler(async (req, res, next) =>{
 	try{
 		const { ingredients,number,language } = req.query;
-		console.log(ingredients);
 		const recipes = await fetchRecipesByIngredients(ingredients,number, language);
 		res.status(200).json(recipes);
 	}
@@ -82,6 +82,19 @@ const getRecipesByIngridients =asyncHandler(async (req, res, next) =>{
 	}
 });
 
+const TranslateRecipe= asyncHandler(async (req, res, next) =>{
+	try{
+		const { language } = req.query;
+		const recipes = await TranslateRecipeInformation(req.body,language);
+		res.status(200).json(recipes);
+
+		
+	}
+	catch(error){
+		next(error);
+	}
+
+});
 
 module.exports = {
 	getRecipes,
@@ -90,4 +103,5 @@ module.exports = {
 	getRecommendedRecipes,
 	getFavouriteRecipes,
 	getRecipesByIngridients,
+	TranslateRecipe,
 };

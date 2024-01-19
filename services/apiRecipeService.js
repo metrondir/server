@@ -18,6 +18,7 @@ const translate =new Translate({
 	projectId: CREDENTIALS.project_id});
 
 async function translateText(text,language) {
+	console.log(text);
 	const [translation] = await translate.translate(text, language);
 	return translation;
  }
@@ -67,6 +68,30 @@ async function handleApiError(error, retryFunction, ...args) {
 	  }));
 	}
  }
+
+ const TranslateRecipeInformation = async (recipe, language) => {
+	let translatedRecipe = {};
+	for (let key in recipe) {
+	  if (typeof recipe[key] === 'string') {
+		 translatedRecipe[key] = await translateText(recipe[key], language);
+	  } else if (Array.isArray(recipe[key])) {
+		 translatedRecipe[key] = await Promise.all(recipe[key].map(async item => {
+			if (typeof item === 'string') {
+			  return await translateText(item, language);
+			} else if (typeof item === 'object') {
+			  return await TranslateRecipeInformation(item, language);
+			} else {
+			  return item;
+			}
+		 }));
+	  } else if (typeof recipe[key] === 'object') {
+		 translatedRecipe[key] = await TranslateRecipeInformation(recipe[key], language);
+	  } else {
+		 translatedRecipe[key] = recipe[key];
+	  }
+	}
+	return translatedRecipe;
+ };
 
 const fetchRecipesByIngredients = async (ingredients,number,language) => {
 	let apiKey = getApiKey();
@@ -252,4 +277,5 @@ module.exports = {
 	fetchInformationById,
 	fetchFavoriteRecipes,
 	fetchRecipesByIngredients,
+	TranslateRecipeInformation,
  };
