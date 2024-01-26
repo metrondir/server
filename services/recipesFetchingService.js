@@ -1,52 +1,9 @@
 const axios = require('axios');
 const { baseUrl, getApiKey } = require('../config/configApiHandler');
 const FavoriteRecipe = require("../models/favoriteRecipeModel");
-const {Translate} = require('@google-cloud/translate').v2;
-const { getRecipesFromDatabaseComplex,getRecipesFromDatabaseRandom,getRecipesFromDatabaseByIngridients } = require('./recipeService')
-//const deepl = require('deepl-node');
-//const authKey = "a45bd3e2-2f56-321b-aea3-103f0d3cbccf:fx";
-//const translator = new deepl.Translator(authKey);
-// async function translateTextDeepl(text) {
-// const translation = await translator.translateText(text, 'EN', 'UK');
-// console.log(`Text DEEPL: ${translation.text}`);
-// return translation;
-//}
+const { translateText,handleApiError,translateRecipeInformation, } = require('./translationService');
+const {  getRecipesFromDatabaseRandom, getRecipesFromDatabaseByIngridients, getRecipesFromDatabaseComplex,getRecipesSortByTime} =  require('./databaseRecipeFetchingService');
 
-const CREDENTIALS = JSON.parse(process.env.CREDENTIALS_GOOGLE);
-const translate =new Translate({
-	credentials: CREDENTIALS,
-	projectId: CREDENTIALS.project_id});
-
-async function translateText(text,language) {
-	console.log(text);
-	const [translation] = await translate.translate(text, language);
-	return translation;
- }
-
-async function translateAndAppendMinutes(language) {
-	const min =  await translateText('min', language);
-	return ` ${min}`;
- }
-
-async function handleApiError(error, retryFunction, ...args) {
-	if (error.response && error.response.status === 404) {
-	  getApiKey(true);
-	  return retryFunction(...args);
-	} else {
-	  throw ApiError.BadRequest(error.message);
-	}
- }
-
- async function translateRecipeFields(recipe, language) {
-	recipe.title = await translateText(recipe.title, language);
-	recipe.dishTypes = await Promise.all((recipe.dishTypes || []).map(dishType => translateText(dishType, language)));
- }
- 
- async function translateRecipeInformation(recipe, language) {
-	const min = await translateAndAppendMinutes(language);
-	await translateRecipeFields(recipe, language);
-	recipe.readyInMinutes = recipe.readyInMinutes + min;
- }
 
  async function fetchRecipesData(response, language) {
 	if (language === "en" || !language) {
@@ -69,29 +26,6 @@ async function handleApiError(error, retryFunction, ...args) {
 	}
  }
 
- const TranslateRecipeInformation = async (recipe, language) => {
-	let translatedRecipe = {};
-	for (let key in recipe) {
-	  if (typeof recipe[key] === 'string') {
-		 translatedRecipe[key] = await translateText(recipe[key], language);
-	  } else if (Array.isArray(recipe[key])) {
-		 translatedRecipe[key] = await Promise.all(recipe[key].map(async item => {
-			if (typeof item === 'string') {
-			  return await translateText(item, language);
-			} else if (typeof item === 'object') {
-			  return await TranslateRecipeInformation(item, language);
-			} else {
-			  return item;
-			}
-		 }));
-	  } else if (typeof recipe[key] === 'object') {
-		 translatedRecipe[key] = await TranslateRecipeInformation(recipe[key], language);
-	  } else {
-		 translatedRecipe[key] = recipe[key];
-	  }
-	}
-	return translatedRecipe;
- };
 
 const fetchRecipesByIngredients = async (ingredients,number,language) => {
 	let apiKey = getApiKey();
@@ -106,6 +40,7 @@ const fetchRecipesByIngredients = async (ingredients,number,language) => {
 	  return handleApiError(error, fetchRecipesByIngredients, ingredients, language);
 	}
 };
+
 
  const fetchRecipes = async (query, limit, type, diet,cuisine, maxReadyTime, language) => {
 	let apiKey = getApiKey();
@@ -126,12 +61,24 @@ const fetchRecipesByIngredients = async (ingredients,number,language) => {
 	}
  }
 
+ const fetchRecipesBySort = async (limit, sort, sortDirection, language) => {
+	let apiKey = getApiKey();
+	let url = `${baseUrl}/complexSearch?apiKey=${apiKey}&number=${limit}&sort=${sort}&sortDirection=${sortDirection}&addRecipeNutrition=true`;
+	try {
+	  const response = await axios.get(url);
+	  console.log(response.data.results);
+	  return fetchRecipesData(response.data.results, language);
+	} catch (error) {
+	  return handleApiError(error, fetchRecipesBySort, limit, sort, sortDirection, language);
+	}
+};
+
  const fetchRandomRecipes = async (limit,language) => {
 	let apiKey = getApiKey();
   const url = `${baseUrl}/random?apiKey=${apiKey}&number=${limit}`;
   try {
     const response = await axios.get(url);
-	
+
 	 const recipes = await getRecipesFromDatabaseRandom(limit);
 	 
 	 const allRecipes = response.data.recipes.concat(recipes);
@@ -140,6 +87,7 @@ const fetchRecipesByIngredients = async (ingredients,number,language) => {
     return handleApiError(error, fetchRandomRecipes, limit, language);
   }
 }
+
 
 const fetchRecommendedRecipes = async (id,language) => {
 	let apiKey = getApiKey();
@@ -154,6 +102,7 @@ const fetchRecommendedRecipes = async (id,language) => {
 	  return handleApiError(error, fetchRecommendedRecipes, id, language);
 	}
 }
+
 
 const fetchInformationByRecomended = async (id,language) => {
 	let apiKey = getApiKey();
@@ -186,12 +135,13 @@ const fetchInformationByRecomended = async (id,language) => {
 		}
 	}
 
+
 const fetchInformationById = async (id,language) => {
 	let apiKey = getApiKey();
 	const url = `${baseUrl}/${id}/information?includeNutrition=false&apiKey=${apiKey}`;
 	try{
 		const response = await axios.get(url);
-		console.log(response.data);
+	
 		if(language === "en"|| !language)
 		{
 		return {
@@ -235,6 +185,7 @@ const fetchInformationById = async (id,language) => {
 	  }
 	};
 
+
 const fetchFavoriteRecipes = async (id,language) => {
 	let apiKey = getApiKey();
 	const favoriteRecipes = await FavoriteRecipe.find({ user: id });
@@ -277,5 +228,5 @@ module.exports = {
 	fetchInformationById,
 	fetchFavoriteRecipes,
 	fetchRecipesByIngredients,
-	TranslateRecipeInformation,
+	fetchRecipesBySort,
  };

@@ -5,7 +5,7 @@ const { fetchRecipes,
 	fetchInformationById,
 	fetchFavoriteRecipes,
 	fetchRecipesByIngredients,
-	TranslateRecipeInformation} = require('../services/apiRecipeService');
+	fetchRecipesBySort} = require('../services/recipesFetchingService');
 const ApiError = require('../middleware/apiError');
 
 const getRecipes = asyncHandler(async (req, res, next) =>{
@@ -82,19 +82,28 @@ const getRecipesByIngridients =asyncHandler(async (req, res, next) =>{
 	}
 });
 
-const TranslateRecipe= asyncHandler(async (req, res, next) =>{
+const translateRecipe= asyncHandler(async (req, res, next) =>{
 	try{
 		const { language } = req.query;
-		const recipes = await TranslateRecipeInformation(req.body,language);
+		const recipes = await translateRecipeInformation(req.body,language);
 		res.status(200).json(recipes);
-
-		
 	}
 	catch(error){
 		next(error);
 	}
-
 });
+
+const getRecipesBySort = asyncHandler(async (req, res, next) =>{
+	try{
+		 const { limit, sort, sortDirection, language } = req.query;
+		 const recipes = await fetchRecipesBySort(limit, sort, sortDirection, language);
+		 res.status(200).json(recipes);
+	}
+	catch(error){
+		 next(error);
+	}
+});
+
 
 module.exports = {
 	getRecipes,
@@ -103,5 +112,6 @@ module.exports = {
 	getRecommendedRecipes,
 	getFavouriteRecipes,
 	getRecipesByIngridients,
-	TranslateRecipe,
+	translateRecipe,
+	getRecipesBySort,
 };

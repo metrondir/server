@@ -2,6 +2,7 @@ const Recipe = require("../models/recipeModel");
 const FavoriteRecipe = require("../models/favoriteRecipeModel");
 const { redisGetModelsWithPaginating, redisGetModels,onDataChanged} = require("../middleware/paginateMiddleware");
 const imgur = require('imgur');
+const { detectLanguage,translateRecipePost } = require("../services/translationService");
 const ApiError = require("../middleware/apiError");
 
 
@@ -13,53 +14,6 @@ const getRecipe = async (req) => {
 	return recipe;
  };
 
- const getRecipesFromDatabaseRandom = async (limit) => {
-	return await Recipe.aggregate([
-	  { $sample: { size: Math.floor(limit / 2) } }
-	]);
- };
-
- const getRecipesFromDatabaseByIngridients = async (limit, ingredients) => {
-	ingredients = ingredients.split(',');
-	return await Recipe.aggregate([
-	  { $match: { extendedIngredients: { $elemMatch: { original: { $in: ingredients } } } } },
-	  { $sample: { size: Math.floor(limit / 2) } }
-	]);
- };
-
- const getRecipesFromDatabaseComplex = async (limit, type, diet, cuisine, maxReadyTime) => {
-	const pipeline = [
-	  { $match: {} },
-	  { $sample: { size: Math.floor(limit / 2) } },
-	];
- 
-	if (type) {
-	  pipeline[0].$match.dishType = type;
-	}
- 
-	if (diet) {
-	  pipeline[0].$match.diet = diet;
-	}
- 
-	if (cuisine) {
-	  pipeline[0].$match.cuisine = cuisine;
-	}
-	if (maxReadyTime) {
-	  pipeline[0].$match.readyInMinutes = { $lte: Number(maxReadyTime) };
-	}
-	try {
-		console.log(pipeline);
-	  const recipes = await Recipe.aggregate(pipeline);
-	  return recipes;
-	}
-	catch (error) {
-		console.log(error);
-		throw ApiError.BadRequest(error.message);
-	}
-
- };
- 
- 
 
 const getRecipes = async (req,res,next) => {
 	if(req.query.page && req.query.limit){
@@ -77,26 +31,26 @@ const getRecipes = async (req,res,next) => {
 	}
 
 	const imgurLink = await imgur.uploadFile(req.file.path)
-
-	const recipe = new Recipe({
-	  title: req.body.title,
-	  cuisine: req.body.cuisine,
-	  dishType: req.body.dishType,
-	  readyInMinutes: req.body.readyInMinutes,
-	  vegetarian: req.body.vegetarian,
-	  cheap: req.body.cheap,
-	  instructions: req.body.instructions,
-	  extendedIngredients: req.body.extendedIngredients,
-	  image : imgurLink.link,
-	  user: req.user.id,
-	});
+	const language = await detectLanguage(req.body.title);
+	
+try{
+	let recipe = await translateRecipePost(req.body, language)
+	console.log(recipe)
+	recipe.image = imgurLink.link;
+	recipe.user = req.user.id;
+	recipe = new Recipe(recipe);
  
 	await recipe.save();
 	onDataChanged('Recipe');
  
 	return recipe;
- };
- 
+}	
+catch(error){
+	console.log(error)
+	throw ApiError.BadRequest(error.message);	
+	
+ }
+}
 
  const setFavoriteRecipes = async (req) => {
 	const recipeId = req.params.id; 
@@ -158,7 +112,4 @@ module.exports = {
 	createRecipe,
 	updateRecipe,
 	deleteRecipe,
-	getRecipesFromDatabaseComplex,
-	getRecipesFromDatabaseRandom,
-	getRecipesFromDatabaseByIngridients,
  };
