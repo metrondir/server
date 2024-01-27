@@ -177,13 +177,13 @@ const fetchInformationById = async (id,language) => {
 	const url = `${baseUrl}/${id}/information?includeNutrition=false&apiKey=${apiKey}`;
 	try{
 		const response = await axios.get(url);
-	
 		if(language === "en"|| !language)
 		{
 		return {
 			id: response.data.id,
 			title: response.data.title,
-			extendedIngredients: response.data.extendedIngredients || [],
+			extendedIngredients: response.data.extendedIngredients.map(ingredient => ingredient.original) || [],
+			pricePerServing: Math.ceil((response.data.pricePerServing*response.data.servings)/100),
 			cuisines: response.data.cuisines || [],
 			dishTypes: response.data.dishTypes || [],
 			instructions: response.data.instructions || [],
@@ -197,7 +197,7 @@ const fetchInformationById = async (id,language) => {
 			await translateRecipeInformation(response.data, language);
 			response.data.extendedIngredients = await Promise.all(response.data.extendedIngredients.map(async (ingredient) => {
 				ingredient.original = await translateText(ingredient.original,language);
-				return ingredient;
+				return ingredient.original;
 			 }));
 			response.data.instructions = await translateText(response.data.instructions,language);
 			response.data.vegetarian = await translateText(response.data.vegetarian ? "vegetarian" : "non-vegetarian",language);
@@ -210,6 +210,7 @@ const fetchInformationById = async (id,language) => {
 			  cuisines: response.data.cuisines,
 			  dishTypes: response.data.dishTypes,
 			  instructions: response.data.instructions,
+			  pricePerServing: Math.ceil((response.data.pricePerServing*response.data.servings)/100),
 			  cheap: response.data.cheap,
 			  vegetarian: response.data.vegetarian,
 			  image: response.data.image,

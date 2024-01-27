@@ -56,24 +56,19 @@ catch(error){
  }
 }
 
- const setFavoriteRecipes = async (req) => {
-	try{
-		const recipeId = req.params.id; 
-		const existingFavoriteRecipe = await FavoriteRecipe.findOne({ recipe: recipeId, user: req.user.id });
-	 
-		if (existingFavoriteRecipe) {
-			const favoriteRecipe = new FavoriteRecipe({ recipe: recipeId, user: req.user.id });
-			await favoriteRecipe.save();
-		  return { isDeleted: true, data: favoriteRecipe };
-		}
-		const favoriteRecipe = new FavoriteRecipe({ recipe: recipeId, user: req.user.id });
-		await favoriteRecipe.save();
-		onDataChanged('Favoriterecipe');
-		return { isDeleted: false, data: favoriteRecipe };
-	}catch(error){
-		throw ApiError.BadRequest(error.message);
+const setFavoriteRecipes = async (req) => {
+	const recipeId = req.params.id; 
+	const existingFavoriteRecipe = await FavoriteRecipe.findOne({ recipe: recipeId, user: req.user.id });
+ 
+	if (existingFavoriteRecipe) {
+	  const favoriteRecipe = await FavoriteRecipe.findByIdAndDelete(existingFavoriteRecipe._id);
+	  onDataChanged('Favoriterecipe');
+	  return { isDeleted: true, data: favoriteRecipe };
 	}
-	
+	const favoriteRecipe = new FavoriteRecipe({ recipe: recipeId, user: req.user.id });
+	await favoriteRecipe.save();
+	onDataChanged('Favoriterecipe');
+	return { isDeleted: false, data: favoriteRecipe };
  };
  
 
