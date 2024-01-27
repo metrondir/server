@@ -63,7 +63,6 @@ async function handleApiError(error, retryFunction, ...args) {
     recipe.cuisine = await translateText(recipe.cuisine, language='en');
 	 recipe.dishType = await translateText(recipe.dishType, language='en');
     recipe.diet = await translateText(recipe.diet, language='en');
-    recipe.cheap = await translateText(recipe.cheap , language='en');	
     recipe.extendedIngredients = await Promise.all(recipe.extendedIngredients.map(async ingredient => {
       ingredient.original = await translateText(ingredient.original, language);
       return ingredient;	

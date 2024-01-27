@@ -36,7 +36,6 @@ const getRecipe = async (req) => {
 	
 	const imgurLink = await imgur.uploadFile(req.file.path)
 	const language = await detectLanguage(req.body.title);
-	
 try{
 	let recipe = await translateRecipePost(req.body, language)
 	const cost = await parsedIngredients(recipe.extendedIngredients);
