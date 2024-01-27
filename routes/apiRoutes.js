@@ -6,7 +6,7 @@ const { getRecipes,
 	getFavouriteRecipes,
 	getRecipesByIngridients,
    translateRecipe,
-	getRecipesBySort,} = require("../controllers/apiController");
+	getRecipesByCategories,} = require("../controllers/apiController");
 
 const authMiddleware = require("../middleware/authMiddleware");
 const router = express.Router();
@@ -24,7 +24,7 @@ router.get("/ingredients", getRecipesByIngridients);
 
 router.get("/favourite",authMiddleware, getFavouriteRecipes);
 
-router.get("/top-categories",getRecipesBySort);
+router.get("/top-categories",getRecipesByCategories);
 
 router.get("/:id", getInformationById);
 

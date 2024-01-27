@@ -1,9 +1,10 @@
 const axios = require('axios');
+
 const { baseUrl, getApiKey } = require('../config/configApiHandler');
 const FavoriteRecipe = require("../models/favoriteRecipeModel");
-const { translateText,handleApiError,translateRecipeInformation, } = require('./translationService');
-const {  getRecipesFromDatabaseRandom, getRecipesFromDatabaseByIngridients, getRecipesFromDatabaseComplex,getRecipesSortByTime} =  require('./databaseRecipeFetchingService');
-
+const { translateText,handleApiError,translateRecipeInformation, detectLanguage, } = require('./translationService');
+const {  getRecipesFromDatabaseRandom, getRecipesFromDatabaseByIngridients, getRecipesFromDatabaseComplex,getRecipesByCategories} =  require('./databaseRecipeFetchingService');
+const { findToken } = require('./tokenService');
 
  async function fetchRecipesData(response, language) {
 	if (language === "en" || !language) {
@@ -44,7 +45,12 @@ const fetchRecipesByIngredients = async (ingredients,number,language) => {
 
  const fetchRecipes = async (query, limit, type, diet,cuisine, maxReadyTime, language) => {
 	let apiKey = getApiKey();
+	const lanQuery = await detectLanguage(query);
+	if (lanQuery !== "en") {
+	  query = await translateText(query, "en");
+	}
 	let url = `${baseUrl}/complexSearch?apiKey=${apiKey}&query=${query}&number=${limit/2}&addRecipeNutrition=true`;
+	
 	if (type) url += `&type=${type}`;
 	if (diet) url += `&diet=${diet}`;
 	if(cuisine) url += `&cuisine=${cuisine}`;
@@ -61,25 +67,51 @@ const fetchRecipesByIngredients = async (ingredients,number,language) => {
 	}
  }
 
- const fetchRecipesBySort = async (limit, sort, sortDirection, language) => {
+ const fetchRecipesByCategories = async (limit, sort, sortDirection, language) => {
 	let apiKey = getApiKey();
+	
 	let url = `${baseUrl}/complexSearch?apiKey=${apiKey}&number=${limit}&sort=${sort}&sortDirection=${sortDirection}&addRecipeNutrition=true`;
 	try {
-	  const response = await axios.get(url);
-	  console.log(response.data.results);
-	  return fetchRecipesData(response.data.results, language);
+		const response = await axios.get(url);
+		console.log(response.data.results);
+		if(sort === "time")
+	{
+		const recipesByDB = await	getRecipesByCategories(sortDirection,sort);
+		const allData = response.data.results.concat(recipesByDB);
+		const sortDirectionFactor = sortDirection === 'desc' ? -1 : 1;
+		allData.sort((a, b) => sortDirectionFactor * (a.readyInMinutes - b.readyInMinutes));
+		allData.splice(limit,allData.length-limit);
+		return fetchRecipesData(allData, language);
+	}
+	if(sort === "popularity"){
+		const recipesByDB = await	getRecipesByCatagories(sortDirection,sort);
+		const allData = response.data.results.concat(recipesByDB);
+		const sortDirectionFactor = sortDirection === 'desc' ? -1 : 1;
+		allData.sort((a, b) => sortDirectionFactor * (a.readyInMinutes - b.readyInMinutes));
+		allData.splice(limit,allData.length-limit);
+		return fetchRecipesData(allData, language);
+	}
+	if(sort === "price"){
+		const recipesByDB = await	getRecipesByCatagories(sortDirection,sort);
+		const allData = response.data.results.concat(recipesByDB);
+		const sortDirectionFactor = sortDirection === 'desc' ? -1 : 1;
+		allData.sort((a, b) => sortDirectionFactor * (a.readyInMinutes - b.readyInMinutes));
+		allData.splice(limit,allData.length-limit);
+		return fetchRecipesData(allData, language);
+	}	
 	} catch (error) {
 	  return handleApiError(error, fetchRecipesBySort, limit, sort, sortDirection, language);
 	}
 };
 
- const fetchRandomRecipes = async (limit,language) => {
+ const fetchRandomRecipes = async (limit,language,refreshToken) => {
 	let apiKey = getApiKey();
   const url = `${baseUrl}/random?apiKey=${apiKey}&number=${limit}`;
   try {
     const response = await axios.get(url);
+	 const findtoken = await findToken(refreshToken);
 
-	 const recipes = await getRecipesFromDatabaseRandom(limit);
+	 const recipes = await getRecipesFromDatabaseRandom(limit,findToken.user);
 	 
 	 const allRecipes = response.data.recipes.concat(recipes);
     return fetchRecipesData(allRecipes, language);
@@ -220,6 +252,38 @@ const fetchFavoriteRecipes = async (id,language) => {
 	return recipes;
 }
 
+const parsedIngredients = async (ingredients) => {
+	try {
+	  const apiKey = getApiKey();
+	  console.log(ingredients);
+ 
+	  const url = `${baseUrl}/parseIngredients?includeNutrition=false&apiKey=${apiKey}`;
+	  
+	  const ingredientList = ingredients.map(item => item.original);
+	  console.log(ingredientList);
+ 
+	  const requestData = ingredientList.map((ingredient, index) => `ingredientList[${index}]=${ingredient}`).join('&');
+ 
+	  const response = await axios.post(
+		 url,
+		 requestData,
+		 {
+			headers: {
+			  'Content-Type: application/json': 'charset=utf-8',
+			},
+		 }
+	  );
+ 
+	  // Assuming response.data contains the expected structure
+	  return response.data.pricePerServing;
+	} catch (error) {
+	  console.error('Error while parsing ingredients:', error);
+	  throw error; // Re-throw the error to handle it at the higher level if needed
+	}
+ };
+ 
+ 
+
 
 module.exports = {
 	fetchRecipes,
@@ -228,5 +292,6 @@ module.exports = {
 	fetchInformationById,
 	fetchFavoriteRecipes,
 	fetchRecipesByIngredients,
-	fetchRecipesBySort,
- };
+	fetchRecipesByCategories,
+	parsedIngredients,
+};

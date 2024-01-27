@@ -30,6 +30,11 @@ const recipeSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     required: true,
     ref: "User"},
+  aggregateLikes:{
+        type: Number,
+        default: 0,
+  },
+  pricePerServing: Number,
   id: Number,
   diet: String,
   title: String,

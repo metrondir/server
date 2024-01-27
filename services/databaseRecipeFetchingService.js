@@ -1,18 +1,26 @@
 const Recipe = require('../models/recipeModel');	
 const ApiError = require('../middleware/apiError');
 
-const getRecipesFromDatabaseRandom = async (limit) => {
+const getRecipesFromDatabaseRandom = async (limit, userId) => {
 	return await Recipe.aggregate([
+	  { $match: { user: { $ne: userId } } },
 	  { $sample: { size: Math.floor(limit / 2) } }
 	]);
  };
 
- const getRecipesSortByTime = async (limit,sortDirection) => {
-	return await Recipe.aggregate([
-		{ $match: { readyInMinutes: { $exists: true } } },
-      { $sort: { readyInMinutes: sortDirection === 'desc' ? -1 : 1 } },
-	   { $sample: { size: Math.floor(limit / 2) } }
-	]);
+ const getRecipesByCategories = async (sortDirection, valueSort) => {
+	let sortValue = sortDirection === 'desc' ? -1 : 1;
+ 
+	if (valueSort === 'time') {
+	  valueSort = 'readyInMinutes';
+	} else if (valueSort === 'popularity') {
+	  valueSort = 'aggregateLikes';
+	} else if (valueSort === 'price') {
+	  valueSort = 'pricePerServing';
+	}
+ 
+	const recipes = await Recipe.find().sort({ [valueSort]: sortValue });
+	return recipes;
  };
 
  const getRecipesFromDatabaseByIngridients = async (limit, ingredients) => {
@@ -55,4 +63,4 @@ const getRecipesFromDatabaseRandom = async (limit) => {
 
  };
 
- module.exports = { getRecipesFromDatabaseRandom, getRecipesFromDatabaseByIngridients, getRecipesFromDatabaseComplex,getRecipesSortByTime	}
+ module.exports = { getRecipesFromDatabaseRandom, getRecipesFromDatabaseByIngridients, getRecipesFromDatabaseComplex,getRecipesByCategories	}

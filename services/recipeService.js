@@ -2,6 +2,7 @@ const Recipe = require("../models/recipeModel");
 const FavoriteRecipe = require("../models/favoriteRecipeModel");
 const { redisGetModelsWithPaginating, redisGetModels,onDataChanged} = require("../middleware/paginateMiddleware");
 const imgur = require('imgur');
+const { parsedIngredients } = require("../services/recipesFetchingService");
 const { detectLanguage,translateRecipePost } = require("../services/translationService");
 const ApiError = require("../middleware/apiError");
 
@@ -15,27 +16,30 @@ const getRecipe = async (req) => {
  };
 
 
-const getRecipes = async (req,res,next) => {
-	if(req.query.page && req.query.limit){
-	  return await redisGetModelsWithPaginating(Recipe, req,res,next, { user: req.user.id });
-	} else {
-	  return await redisGetModels(Recipe, req,res,next, { user: req.user.id });
-	}
+ const getRecipes = async (req,res,next) => {
+	const recipes = await Recipe.find({ user: req.user.id });
+	const updatedRecipes = recipes.map(recipe => ({
+	  ...recipe._doc,
+	  readyInMinutes: recipe.readyInMinutes + ' min'
+	}));
+	return updatedRecipes;
  };
 
 
  const createRecipe = async (req) => {
+	
 	if (req.body.extendedIngredients && typeof req.body.extendedIngredients === 'string') {
 	  let parsedIngredients = JSON.parse(req.body.extendedIngredients);
 	  req.body.extendedIngredients = parsedIngredients;
 	}
-
+	
 	const imgurLink = await imgur.uploadFile(req.file.path)
 	const language = await detectLanguage(req.body.title);
 	
 try{
 	let recipe = await translateRecipePost(req.body, language)
-	console.log(recipe)
+	//console.log(recipe.extendedIngredients)
+	//await parsedIngredients(recipe.extendedIngredients);
 	recipe.image = imgurLink.link;
 	recipe.user = req.user.id;
 	recipe = new Recipe(recipe);
@@ -59,10 +63,16 @@ catch(error){
 	if (existingFavoriteRecipe) {
 	  const favoriteRecipe = await FavoriteRecipe.findByIdAndDelete(existingFavoriteRecipe._id);
 	  onDataChanged('Favoriterecipe');
+	  const recipe = await Recipe.findById(favoriteRecipe.recipe);
+	  recipe.favoriteCount = recipe.favoriteCount - 1;
+	  recipe.save();
 	  return { isDeleted: true, data: favoriteRecipe };
 	}
 	const favoriteRecipe = new FavoriteRecipe({ recipe: recipeId, user: req.user.id });
 	await favoriteRecipe.save();
+	const recipe = await Recipe.findById(favoriteRecipe.recipe);
+	  recipe.favoriteCount = recipe.favoriteCount + 1;
+	  recipe.save();
 	onDataChanged('Favoriterecipe');
 	return { isDeleted: false, data: favoriteRecipe };
  };
