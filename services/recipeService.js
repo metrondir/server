@@ -1,8 +1,9 @@
 const Recipe = require("../models/recipeModel");
 const FavoriteRecipe = require("../models/favoriteRecipeModel");
+const spoonacularRecipeModel = require("../models/spoonacularRecipeModel");
 const { redisGetModelsWithPaginating, redisGetModels,onDataChanged} = require("../middleware/paginateMiddleware");
 const imgur = require('imgur');
-const { parsedIngredients } = require("../services/recipesFetchingService");
+const { parsedIngredients,fetchInformationById } = require("../services/recipesFetchingService");
 const { detectLanguage,translateRecipePost } = require("../services/translationService");
 const ApiError = require("../middleware/apiError");
 
@@ -38,15 +39,15 @@ const getRecipe = async (req) => {
 	
 try{
 	let recipe = await translateRecipePost(req.body, language)
-	//console.log(recipe.extendedIngredients)
-	//await parsedIngredients(recipe.extendedIngredients);
+	const cost = await parsedIngredients(recipe.extendedIngredients);
+	recipe.pricePerServing = cost;
 	recipe.image = imgurLink.link;
 	recipe.user = req.user.id;
 	recipe = new Recipe(recipe);
  
 	await recipe.save();
 	onDataChanged('Recipe');
- 
+   console.log(recipe);	
 	return recipe;
 }	
 catch(error){
@@ -57,24 +58,23 @@ catch(error){
 }
 
  const setFavoriteRecipes = async (req) => {
-	const recipeId = req.params.id; 
-	const existingFavoriteRecipe = await FavoriteRecipe.findOne({ recipe: recipeId, user: req.user.id });
- 
-	if (existingFavoriteRecipe) {
-	  const favoriteRecipe = await FavoriteRecipe.findByIdAndDelete(existingFavoriteRecipe._id);
-	  onDataChanged('Favoriterecipe');
-	  const recipe = await Recipe.findById(favoriteRecipe.recipe);
-	  recipe.favoriteCount = recipe.favoriteCount - 1;
-	  recipe.save();
-	  return { isDeleted: true, data: favoriteRecipe };
+	try{
+		const recipeId = req.params.id; 
+		const existingFavoriteRecipe = await FavoriteRecipe.findOne({ recipe: recipeId, user: req.user.id });
+	 
+		if (existingFavoriteRecipe) {
+			const favoriteRecipe = new FavoriteRecipe({ recipe: recipeId, user: req.user.id });
+			await favoriteRecipe.save();
+		  return { isDeleted: true, data: favoriteRecipe };
+		}
+		const favoriteRecipe = new FavoriteRecipe({ recipe: recipeId, user: req.user.id });
+		await favoriteRecipe.save();
+		onDataChanged('Favoriterecipe');
+		return { isDeleted: false, data: favoriteRecipe };
+	}catch(error){
+		throw ApiError.BadRequest(error.message);
 	}
-	const favoriteRecipe = new FavoriteRecipe({ recipe: recipeId, user: req.user.id });
-	await favoriteRecipe.save();
-	const recipe = await Recipe.findById(favoriteRecipe.recipe);
-	  recipe.favoriteCount = recipe.favoriteCount + 1;
-	  recipe.save();
-	onDataChanged('Favoriterecipe');
-	return { isDeleted: false, data: favoriteRecipe };
+	
  };
  
 

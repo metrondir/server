@@ -10,7 +10,7 @@ const getRecipesFromDatabaseRandom = async (limit, userId) => {
 
  const getRecipesByCategories = async (sortDirection, valueSort) => {
 	let sortValue = sortDirection === 'desc' ? -1 : 1;
- 
+	try{
 	if (valueSort === 'time') {
 	  valueSort = 'readyInMinutes';
 	} else if (valueSort === 'popularity') {
@@ -18,9 +18,13 @@ const getRecipesFromDatabaseRandom = async (limit, userId) => {
 	} else if (valueSort === 'price') {
 	  valueSort = 'pricePerServing';
 	}
- 
-	const recipes = await Recipe.find().sort({ [valueSort]: sortValue });
-	return recipes;
+	 const recipes = await Recipe.find().sort({ [valueSort]: sortValue });
+	 return recipes;
+ }catch(error){
+	 console.log(error);
+	 throw ApiError.BadRequest(error.message);
+	  }
+	
  };
 
  const getRecipesFromDatabaseByIngridients = async (limit, ingredients) => {

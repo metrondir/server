@@ -21,7 +21,6 @@ const extendedIngredientSchema = new mongoose.Schema({
   },
 });
 
-
 const recipeSchema = new mongoose.Schema({
   vegetarian: { type: String, enum: ['vegetarian', 'non-vegetarian'] },
   cheap: { type: String, enum: ['cheap', 'expensive'] },

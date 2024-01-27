@@ -73,10 +73,10 @@ const fetchRecipesByIngredients = async (ingredients,number,language) => {
 	let url = `${baseUrl}/complexSearch?apiKey=${apiKey}&number=${limit}&sort=${sort}&sortDirection=${sortDirection}&addRecipeNutrition=true`;
 	try {
 		const response = await axios.get(url);
-		console.log(response.data.results);
 		if(sort === "time")
 	{
 		const recipesByDB = await	getRecipesByCategories(sortDirection,sort);
+		
 		const allData = response.data.results.concat(recipesByDB);
 		const sortDirectionFactor = sortDirection === 'desc' ? -1 : 1;
 		allData.sort((a, b) => sortDirectionFactor * (a.readyInMinutes - b.readyInMinutes));
@@ -84,7 +84,7 @@ const fetchRecipesByIngredients = async (ingredients,number,language) => {
 		return fetchRecipesData(allData, language);
 	}
 	if(sort === "popularity"){
-		const recipesByDB = await	getRecipesByCatagories(sortDirection,sort);
+		const recipesByDB = await	getRecipesByCategories(sortDirection,sort);
 		const allData = response.data.results.concat(recipesByDB);
 		const sortDirectionFactor = sortDirection === 'desc' ? -1 : 1;
 		allData.sort((a, b) => sortDirectionFactor * (a.readyInMinutes - b.readyInMinutes));
@@ -92,7 +92,11 @@ const fetchRecipesByIngredients = async (ingredients,number,language) => {
 		return fetchRecipesData(allData, language);
 	}
 	if(sort === "price"){
-		const recipesByDB = await	getRecipesByCatagories(sortDirection,sort);
+		
+		await Promise.all(response.data.results.map(async (recipe) => {
+			recipe.pricePerServing = Math.ceil((recipe.pricePerServing * recipe.servings) / 100);
+	  }));
+		const recipesByDB = await	getRecipesByCategories(sortDirection,sort);
 		const allData = response.data.results.concat(recipesByDB);
 		const sortDirectionFactor = sortDirection === 'desc' ? -1 : 1;
 		allData.sort((a, b) => sortDirectionFactor * (a.readyInMinutes - b.readyInMinutes));
@@ -255,32 +259,32 @@ const fetchFavoriteRecipes = async (id,language) => {
 const parsedIngredients = async (ingredients) => {
 	try {
 	  const apiKey = getApiKey();
-	  console.log(ingredients);
- 
 	  const url = `${baseUrl}/parseIngredients?includeNutrition=false&apiKey=${apiKey}`;
-	  
-	  const ingredientList = ingredients.map(item => item.original);
-	  console.log(ingredientList);
  
-	  const requestData = ingredientList.map((ingredient, index) => `ingredientList[${index}]=${ingredient}`).join('&');
+	  const ingredientList = ingredients.map(item => item.original).join('\n'); // Convert the array to a newline-separated string
+	  const formData = new URLSearchParams();
+	  formData.append('ingredientList', ingredientList);
  
 	  const response = await axios.post(
 		 url,
-		 requestData,
+		 formData.toString(), // Convert the form data to a string
 		 {
 			headers: {
-			  'Content-Type: application/json': 'charset=utf-8',
+			  'Content-Type': 'application/x-www-form-urlencoded',
 			},
 		 }
 	  );
- 
-	  // Assuming response.data contains the expected structure
-	  return response.data.pricePerServing;
+	  
+	  let totalEstimatedCost = response.data.reduce((total, item) => {
+		return total + item.estimatedCost.value;
+	 }, 0);
+	 	totalEstimatedCost = Math.ceil(totalEstimatedCost/100);
+	  return totalEstimatedCost;
 	} catch (error) {
-	  console.error('Error while parsing ingredients:', error);
 	  throw error; // Re-throw the error to handle it at the higher level if needed
 	}
  };
+ 
  
  
 
