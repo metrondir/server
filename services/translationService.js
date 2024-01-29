@@ -1,5 +1,6 @@
 const {Translate} = require('@google-cloud/translate').v2;
 const ApiError = require("../middleware/apiError");
+const {getApiKey} = require ("../config/configApiHandler")
 
 const CREDENTIALS = JSON.parse(process.env.CREDENTIALS_GOOGLE);
 const translate =new Translate({

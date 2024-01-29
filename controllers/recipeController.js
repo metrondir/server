@@ -50,6 +50,7 @@ const getRecipe = asyncHandler(async (req, res, next) => {
 //@access private
 
 const getRecipes = asyncHandler(async (req, res, next) => {
+  
   try {
     const recipes = await recipeService.getRecipes(req,res,next);
     return res.status(200).json(recipes);
@@ -58,19 +59,6 @@ const getRecipes = asyncHandler(async (req, res, next) => {
   }
 })
  
-
-//@desc Get all favorite recipes
-//@route GET /api/recipe/favourite
-//@access private
-
-const getFavoriteRecipes = asyncHandler(async (req, res, next) => {
-  try {
-    const favoriteRecipes = await recipeService.getFavoriteRecipes(req,res,next);
-    return res.status(200).json(favoriteRecipes);
-  } catch (error) {
-    next(error);
-  }
-});
 
 
 //@desc Create new Favorite recipe
@@ -132,7 +120,6 @@ const deleteRecipe = asyncHandler(async (req, res, next) => {
 module.exports = {
     getRecipe,
     getRecipes,
-    getFavoriteRecipes,
     setFavoriteRecipes,
     createRecipe,
     updateRecipe,

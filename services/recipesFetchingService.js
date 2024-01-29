@@ -2,6 +2,7 @@ const axios = require('axios');
 
 const { baseUrl, getApiKey } = require('../config/configApiHandler');
 const FavoriteRecipe = require("../models/favoriteRecipeModel");
+const Recipe = require("../models/recipeModel");
 const { translateText,handleApiError,translateRecipeInformation, detectLanguage, } = require('./translationService');
 const {  getRecipesFromDatabaseRandom, getRecipesFromDatabaseByIngridients, getRecipesFromDatabaseComplex,getRecipesByCategories} =  require('./databaseRecipeFetchingService');
 const { findToken } = require('./tokenService');
@@ -73,8 +74,7 @@ const fetchRecipesByIngredients = async (ingredients,number,language) => {
 	let url = `${baseUrl}/complexSearch?apiKey=${apiKey}&number=${limit}&sort=${sort}&sortDirection=${sortDirection}&addRecipeNutrition=true`;
 	try {
 		const response = await axios.get(url);
-		if(sort === "time")
-	{
+		if(sort === "time"){
 		const recipesByDB = await	getRecipesByCategories(sortDirection,sort);
 		
 		const allData = response.data.results.concat(recipesByDB);
@@ -113,8 +113,7 @@ const fetchRecipesByIngredients = async (ingredients,number,language) => {
   const url = `${baseUrl}/random?apiKey=${apiKey}&number=${limit}`;
   try {
     const response = await axios.get(url);
-	 const findtoken = await findToken(refreshToken);
-
+	
 	 const recipes = await getRecipesFromDatabaseRandom(limit,findToken.user);
 	 
 	 const allRecipes = response.data.recipes.concat(recipes);
@@ -171,6 +170,18 @@ const fetchInformationByRecomended = async (id,language) => {
 		}
 	}
 
+const fetchAggregateLikesById = async(recipeId) =>{
+		let apiKey = getApiKey();
+	const url = `${baseUrl}/${recipeId}/information?includeNutrition=false&apiKey=${apiKey}`;
+	try{
+		const response = await axios.get(url);
+		return { aggregateLikes: response.data.aggregateLikes };
+	}
+	catch(error){
+		return handleApiError(error, fetchInformationById, id,language);
+	}
+}
+
 
 const fetchInformationById = async (id,language) => {
 	let apiKey = getApiKey();
@@ -223,52 +234,120 @@ const fetchInformationById = async (id,language) => {
 	};
 
 
-const fetchFavoriteRecipes = async (id,language) => {
-	let apiKey = getApiKey();
-	const favoriteRecipes = await FavoriteRecipe.find({ user: id });
-	const recipes = await Promise.all(favoriteRecipes.map(async (favoriteRecipe) => {
-		const url = `${baseUrl}/${favoriteRecipe.recipe}/information?includeNutrition=false&apiKey=${apiKey}`;
-		try{
-			const response = await axios.get(url);
-			if(language === "en"|| !language){
-			return {
-				id: response.data.id,
-				title: response.data.title,
-				image: response.data.image,
-				readyInMinutes: response.data.readyInMinutes + ' min',
-				dishTypes: response.data.dishTypes || [],
-			 };
-			}
-			else{
-				await translateRecipeInformation(response.data, language);
-				return {
-					id: response.data.id,
-					title: response.data.title,
-					image: response.data.image,
-					readyInMinutes: response.data.readyInMinutes,
-					dishTypes: response.data.dishTypes || [],
-				 };
+	const fetchFavoriteRecipes = async (id, language) => {
+		try {
+		  const apiKey = getApiKey();
+		
+		  const allFavoriteRecipes = await FavoriteRecipe.find({ user: id });
+	 
+		  const favoriteRecipes = [];
+		  const favoriteRecipesByDb = [];
+	 
+		  for (const favoriteRecipe of allFavoriteRecipes) {
+			 if (favoriteRecipe.recipe.length === 6) {
+				favoriteRecipes.push(favoriteRecipe);
+			 } else {
+				favoriteRecipesByDb.push(favoriteRecipe);
+			 }
+		  }
+		  
+		
+	 
+		  const recipes = await Promise.all(
+			 favoriteRecipes.map(async (favoriteRecipe) => {
+				const url = `${baseUrl}/${favoriteRecipe.recipe}/information?includeNutrition=false&apiKey=${apiKey}`;
+	 
+				try {
+				  const response = await axios.get(url);
+	 
+				  if (language === "en" || !language) {
+					 return {
+						id: response.data.id,
+						title: response.data.title,
+						image: response.data.image,
+						readyInMinutes: response.data.readyInMinutes + ' min',
+						dishTypes: response.data.dishTypes || [],
+					 };
+				  } else {
+					 await translateRecipeInformation(response.data, language);
+					 return {
+						id: response.data.id,
+						title: response.data.title,
+						image: response.data.image,
+						readyInMinutes: response.data.readyInMinutes,
+						dishTypes: response.data.dishTypes || [],
+					 };
+				  }
+				} catch (error) {
+				  console.log(error);
+				  return handleApiError(error, fetchFavoriteRecipes, id, language);
 				}
+			 })
+		  );
+	 
+		  const fetchRecipes = async (recipeIds) => {
+			try {
+			  const fetchedRecipes = await Recipe.find({ _id: recipeIds });
+			  return fetchedRecipes;
+			} catch (error) {
+			  console.log(error);
+			  throw new Error(error);
+			}
+		 };
+	 
+		  const dbRecipes = await Promise.all(
+			 favoriteRecipesByDb.map(async (favoriteRecipe) => {
+				try {
+					const fetchedRecipes = await fetchRecipes([favoriteRecipe.recipe]);
+
+     			 if (fetchedRecipes.length > 0) {
+        		const fetchedRecipe = fetchedRecipes[0];
+				console.log(fetchedRecipe)
+				  if (language === "en" || !language) {
+					 return {
+						id: fetchedRecipe._id,
+						title: fetchedRecipe.title,
+						image: fetchedRecipe.image,
+						readyInMinutes: `${fetchedRecipe.readyInMinutes} min`,
+						dishType: fetchedRecipe.dishType || [],
+					 };
+				  } else {
+					 await translateRecipeInformation(fetchedRecipe, language);
+					 return {
+						id: fetchedRecipe._id,
+						title: fetchedRecipe.title,
+						image: fetchedRecipe.image,
+						readyInMinutes: fetchedRecipe.readyInMinutes,
+						dishType: fetchedRecipe.dishType|| [],
+					 };
+				  }
+				}
+				} catch (error) {
+				  console.log(error);
+				}
+			 })
+		  );
+			console.log(dbRecipes)
+		  return recipes.concat(dbRecipes);
+		} catch (error) {
+		  console.log(error);
+		  return handleApiError(error, fetchFavoriteRecipes, id, language);
 		}
-		catch(error){
-			return handleApiError(error, fetchFavoriteRecipes, id,language);
-		}
-	}));
-	return recipes;
-}
+	 };
+	 
 
 const parsedIngredients = async (ingredients) => {
 	try {
 	  const apiKey = getApiKey();
 	  const url = `${baseUrl}/parseIngredients?includeNutrition=false&apiKey=${apiKey}`;
  
-	  const ingredientList = ingredients.map(item => item.original).join('\n'); // Convert the array to a newline-separated string
+	  const ingredientList = ingredients.map(item => item.original).join('\n'); 
 	  const formData = new URLSearchParams();
 	  formData.append('ingredientList', ingredientList);
  
 	  const response = await axios.post(
 		 url,
-		 formData.toString(), // Convert the form data to a string
+		 formData.toString(), 
 		 {
 			headers: {
 			  'Content-Type': 'application/x-www-form-urlencoded',
@@ -282,7 +361,7 @@ const parsedIngredients = async (ingredients) => {
 	 	totalEstimatedCost = Math.ceil(totalEstimatedCost/100);
 	  return totalEstimatedCost;
 	} catch (error) {
-	  throw error; // Re-throw the error to handle it at the higher level if needed
+	  throw error; 
 	}
  };
  
@@ -299,4 +378,5 @@ module.exports = {
 	fetchRecipesByIngredients,
 	fetchRecipesByCategories,
 	parsedIngredients,
+	fetchAggregateLikesById,
 };

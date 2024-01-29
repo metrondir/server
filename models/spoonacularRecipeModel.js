@@ -1,8 +1,8 @@
 const mongoose = require('mongoose');
 
 const spoonacularRecipeModel = new mongoose.Schema({
-	user: {
-		type: mongoose.Schema.Types.ObjectId,
+	id: {
+		type: String,
 		ref: 'FavoriteRecipe',
 		required: true
 	},

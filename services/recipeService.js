@@ -1,9 +1,8 @@
 const Recipe = require("../models/recipeModel");
 const FavoriteRecipe = require("../models/favoriteRecipeModel");
-const spoonacularRecipeModel = require("../models/spoonacularRecipeModel");
-const { redisGetModelsWithPaginating, redisGetModels,onDataChanged} = require("../middleware/paginateMiddleware");
+const SpoonacularRecipeModel = require("../models/spoonacularRecipeModel");
 const imgur = require('imgur');
-const { parsedIngredients,fetchInformationById } = require("../services/recipesFetchingService");
+const { parsedIngredients,fetchAggregateLikesById } = require("../services/recipesFetchingService");
 const { detectLanguage,translateRecipePost } = require("../services/translationService");
 const ApiError = require("../middleware/apiError");
 
@@ -43,10 +42,7 @@ try{
 	recipe.image = imgurLink.link;
 	recipe.user = req.user.id;
 	recipe = new Recipe(recipe);
- 
 	await recipe.save();
-	onDataChanged('Recipe');
-   console.log(recipe);	
 	return recipe;
 }	
 catch(error){
@@ -57,20 +53,63 @@ catch(error){
 }
 
 const setFavoriteRecipes = async (req) => {
-	const recipeId = req.params.id; 
-	const existingFavoriteRecipe = await FavoriteRecipe.findOne({ recipe: recipeId, user: req.user.id });
- 
-	if (existingFavoriteRecipe) {
-	  const favoriteRecipe = await FavoriteRecipe.findByIdAndDelete(existingFavoriteRecipe._id);
-	  onDataChanged('Favoriterecipe');
-	  return { isDeleted: true, data: favoriteRecipe };
+	try {
+		 const recipeId = req.params.id;
+		
+		 const existingFavoriteRecipe = await FavoriteRecipe.findOne({ recipe: recipeId, user: req.user.id });
+		 const existedSpoonacularRecipe = await SpoonacularRecipeModel.findOne({ id: recipeId });
+
+		 if (existingFavoriteRecipe) {
+			  const deletedFavoriteRecipe = await deleteFavoriteRecipe(existingFavoriteRecipe, recipeId, existedSpoonacularRecipe);
+			  return { isDeleted: true, data: deletedFavoriteRecipe };
+		 }
+
+		 const newFavoriteRecipe = new FavoriteRecipe({ recipe: recipeId, user: req.user.id });
+		 await newFavoriteRecipe.save();
+
+		 await updateRecipeLikes(recipeId, existedSpoonacularRecipe);
+
+		 return { isDeleted: false, data: newFavoriteRecipe };
+	} catch (error) {
+		 console.error(error);
+		 throw ApiError.BadRequest("Recipe not found");
 	}
-	const favoriteRecipe = new FavoriteRecipe({ recipe: recipeId, user: req.user.id });
-	await favoriteRecipe.save();
-	onDataChanged('Favoriterecipe');
-	return { isDeleted: false, data: favoriteRecipe };
- };
- 
+};
+
+const deleteFavoriteRecipe = async (existingFavoriteRecipe, recipeId, existedSpoonacularRecipe) => {
+	const deletedFavoriteRecipe = await FavoriteRecipe.findByIdAndDelete(existingFavoriteRecipe._id);
+	const likes = await fetchAggregateLikesById(recipeId);
+
+	if (recipeId >= 7) {
+		 await updateSpoonacularRecipeLikes(existedSpoonacularRecipe, recipeId, likes - 1);
+	} else {
+		 await updateRecipeLikes(recipeId, null, -1);
+	}
+
+	return deletedFavoriteRecipe;
+};
+
+const updateRecipeLikes = async (recipeId, existedSpoonacularRecipe, likesDelta = 1) => {
+	if (recipeId >= 7) {
+		 await updateSpoonacularRecipeLikes(existedSpoonacularRecipe, recipeId, likesDelta);
+	} else {
+		 const recipe = await Recipe.findById(recipeId);
+		 recipe.aggregateLikes += likesDelta;
+		 await recipe.save();
+	}
+};
+
+const updateSpoonacularRecipeLikes = async (existedSpoonacularRecipe, recipeId, likesDelta) => {
+	if (existedSpoonacularRecipe) {
+		 existedSpoonacularRecipe.aggregateLikes += likesDelta;
+		 await existedSpoonacularRecipe.save();
+	} else {
+		 const likes = await fetchAggregateLikesById(recipeId);
+		 
+		 const spoonacularRecipe = new SpoonacularRecipeModel({ id: recipeId, aggregateLikes: likes.aggregateLikes + likesDelta });
+		 await spoonacularRecipe.save();
+	}
+};
 
  const updateRecipe = async (req) => {
 	const recipe = await Recipe.findById(req.params.id);
@@ -93,7 +132,7 @@ const setFavoriteRecipes = async (req) => {
 		 {new : true}
 	);
 	await updatedRecipe.save();
-	onDataChanged('Recipe');
+
 	return updatedRecipe;
  };
  
@@ -104,7 +143,7 @@ const setFavoriteRecipes = async (req) => {
 	  throw ApiError.BadRequest("Recipe not found");
 	}
 	await Recipe.deleteOne({ _id: req.params.id });
-	onDataChanged('Recipe');
+
 	return recipe;
  };
 

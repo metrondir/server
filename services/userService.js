@@ -9,7 +9,7 @@ const FavoriteRecipe = require('../models/favoriteRecipeModel');
 const { generateTokens, saveTokens, removeToken,validateRefreshToken,findToken } = require('./tokenService');
 const UserDto = require('../dtos/userDtos');
 const ApiError = require('../middleware/apiError');
-const { redisGetModelsWithPaginating, redisGetModels,onDataChanged} = require("../middleware/paginateMiddleware");
+const { redisGetModelsWithPaginating, redisGetModels} = require("../middleware/paginateMiddleware");
 
 
 async function validateEmailUniqueness(email) {
@@ -51,9 +51,7 @@ const registration = asyncHandler(async (username, email, password) => {
 	const tokens = generateTokens({ ...userDto });
 	await saveTokens(userDto.id, tokens.refreshToken);
 
-   onDataChanged('User');
-   onDataChanged('Recipe');
-   onDataChanged('Favoriterecipe');
+
 
 	return { ...tokens, user: userDto };
 	
@@ -69,7 +67,7 @@ const activate = asyncHandler(async(activationLink)=> {
 
 	user.isActivated = true;
 	await user.save();
-	onDataChanged('User');
+
 	});
 
 
@@ -89,8 +87,6 @@ const login = asyncHandler(async(email,password) => {
 	const tokens = generateTokens({...userDto});
 	await saveTokens(userDto.id, tokens.refreshToken);
 
-   onDataChanged('Recipe');
-   onDataChanged('Favoriterecipe');
 
 	return {...tokens,user: userDto};
 	});
@@ -140,7 +136,7 @@ const login = asyncHandler(async(email,password) => {
 		user.isChangePasswordLink = false;
 		await user.save();
 		
-		onDataChanged('User');
+	
 		return changePasswordLink;
 	});
 
@@ -173,7 +169,7 @@ const login = asyncHandler(async(email,password) => {
 		const tokens = generateTokens({...userDto});
 		await saveTokens(userDto.id, tokens.refreshToken);
 
-		onDataChanged('User');
+	
 
 		return {...tokens,user: userDto};
 
@@ -198,9 +194,7 @@ const login = asyncHandler(async(email,password) => {
 		if(!user) {
 			throw ApiError.BadRequest('User not found');
 		}
-		onDataChanged('User');
-		onDataChanged('Recipe');
-		onDataChanged('Favoriterecipe');
+
 	
 	});
 
