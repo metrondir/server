@@ -294,12 +294,11 @@ const fetchInformationById = async (id,language) => {
 			  throw new Error(error);
 			}
 		 };
-	 
+
 		  const dbRecipes = await Promise.all(
 			 favoriteRecipesByDb.map(async (favoriteRecipe) => {
 				try {
 					const fetchedRecipes = await fetchRecipes([favoriteRecipe.recipe]);
-
      			 if (fetchedRecipes.length > 0) {
         		const fetchedRecipe = fetchedRecipes[0];
 				console.log(fetchedRecipe)
@@ -327,8 +326,9 @@ const fetchInformationById = async (id,language) => {
 				}
 			 })
 		  );
-			console.log(dbRecipes)
-		  return recipes.concat(dbRecipes);
+		  const filteredDbRecipes = dbRecipes.filter((recipe) => recipe);
+
+		  return recipes.concat(filteredDbRecipes);
 		} catch (error) {
 		  console.log(error);
 		  return handleApiError(error, fetchFavoriteRecipes, id, language);
