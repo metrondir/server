@@ -33,7 +33,7 @@ async function translateAndAppendMinutes(language) {
  }
 
 async function handleApiError(error, retryFunction, ...args) {
-	if (error.response && error.response.status === 404) {
+	if (error.response && error.response.status === 404 && error.response.status === 401) {
 	  getApiKey(true);
 	  return retryFunction(...args);
 	} else {
