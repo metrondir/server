@@ -4,7 +4,7 @@ const { baseUrl, getApiKey } = require('../config/configApiHandler');
 const FavoriteRecipe = require("../models/favoriteRecipeModel");
 const Recipe = require("../models/recipeModel");
 const { translateText,handleApiError,translateRecipeInformation, detectLanguage, } = require('./translationService');
-const {  getRecipesFromDatabaseRandom, getRecipesFromDatabaseByIngridients, getRecipesFromDatabaseComplex,getRecipesByCategories,getSpoonAcularChangedLikeRecipe} =  require('./databaseRecipeFetchingService');
+const {  getRecipesFromDatabaseRandom, getRecipesFromDatabaseByIngridients, getRecipesFromDatabaseComplex,getRecipesByCategories,getSpoonAcularChangedLikeRecipe,getRecipesFromDatabaseRandomWithUsers} =  require('./databaseRecipeFetchingService');
 const { findUserByRefreshToken } = require('./userService');
 
 
@@ -94,12 +94,9 @@ const fetchRecipesByIngredients = async (ingredients,number,language) => {
 	if(sort === "popularity"){
 		const recipesByDB = await	getRecipesByCategories(sortDirection,sort);
 		const changeRecipesLike = await getSpoonAcularChangedLikeRecipe();
-		
-		 
 		response.data.results.forEach(recipe => {
 			if (changeRecipesLike.id == recipe.id) {
 			  recipe.aggregateLikes = changeRecipesLike.aggregateLikes;
-			  console.log(recipe.aggregateLikes)
 			}
 		 });
 		
@@ -124,17 +121,24 @@ const fetchRecipesByIngredients = async (ingredients,number,language) => {
 		return fetchRecipesData(allData, language);
 	}	
 	} catch (error) {
-	  return handleApiError(error, fetchRecipesBySort, limit, sort, sortDirection, language);
+	  return handleApiError(error, fetchRecipesByCategories, limit, sort, sortDirection, language);
 	}
 };
 
  const fetchRandomRecipes = async (limit,language,refreshToken) => {
 	let apiKey = getApiKey();
+	
   const url = `${baseUrl}/random?apiKey=${apiKey}&number=${limit}`;
   try {
     const response = await axios.get(url);
+		if(!refreshToken){
+			const recipes = await getRecipesFromDatabaseRandom(limit);
+			const allRecipes = response.data.recipes.concat(recipes);
+	 		const halfRandomSample = getRandomSample(allRecipes, Math.floor(allRecipes.length / 2));
+    		return fetchRecipesData(halfRandomSample, language);
+		}
 	 const user = await findUserByRefreshToken(refreshToken);
-	 const recipes = await getRecipesFromDatabaseRandom(limit,user._id);
+	 const recipes = await getRecipesFromDatabaseRandomWithUsers(limit,user._id);
 	 const allRecipes = response.data.recipes.concat(recipes);
 	 const halfRandomSample = getRandomSample(allRecipes, Math.floor(allRecipes.length / 2));
     return fetchRecipesData(halfRandomSample, language);

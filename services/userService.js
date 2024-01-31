@@ -27,7 +27,9 @@ async function sendActivationEmail(to, link) {
 	await gmailService.sendActivationGmail(to, link);
 }
 const findUserByRefreshToken = async (refreshToken) => {
-	const tokenData = await findToken(refreshToken);
+
+	const tokenData = await findToken(refreshToken)
+	
 	const user = await User.findById(tokenData.user);
 	return user;
 }

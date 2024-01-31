@@ -2,7 +2,13 @@ const Recipe = require('../models/recipeModel');
 const ApiError = require('../middleware/apiError');
 const SpoonacularRecipeModel = require('../models/spoonacularRecipeModel')
 
-const getRecipesFromDatabaseRandom = async (limit, userId) => {
+const getRecipesFromDatabaseRandom = async (limit) => {
+	return await Recipe.aggregate([
+	  { $sample: { size: Math.floor(limit) } }
+	]);
+ };
+
+const getRecipesFromDatabaseRandomWithUsers = async (limit, userId) => {
 	return await Recipe.aggregate([
 	  { $match: { user: { $ne: userId } } },
 	  { $sample: { size: Math.floor(limit) } }
@@ -72,4 +78,4 @@ const getSpoonAcularChangedLikeRecipe = async() =>{
 
  };
 
- module.exports = { getRecipesFromDatabaseRandom, getRecipesFromDatabaseByIngridients, getRecipesFromDatabaseComplex,getRecipesByCategories,getSpoonAcularChangedLikeRecipe}
+ module.exports = { getRecipesFromDatabaseRandomWithUsers, getRecipesFromDatabaseByIngridients, getRecipesFromDatabaseComplex,getRecipesByCategories,getSpoonAcularChangedLikeRecipe,getRecipesFromDatabaseRandom}

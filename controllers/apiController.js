@@ -6,7 +6,6 @@ const { fetchRecipes,
 	fetchFavoriteRecipes,
 	fetchRecipesByIngredients,
 	fetchRecipesByCategories} = require('../services/recipesFetchingService');
-const ApiError = require('../middleware/apiError');
 
 const getRecipes = asyncHandler(async (req, res, next) =>{
 	try{
@@ -27,6 +26,7 @@ const getRandomRecipes =asyncHandler(async (req, res, next) =>{
 		const { limit,language } = req.query;
 		
 		const {refreshToken} = req.cookies;
+	
 		const recipes = await fetchRandomRecipes(limit,language,refreshToken);
 		res.status(200).json(recipes);
 	}
