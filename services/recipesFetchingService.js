@@ -208,6 +208,7 @@ const fetchInformationById = async (id,language) => {
 	const url = `${baseUrl}/${id}/information?includeNutrition=false&apiKey=${apiKey}`;
 	try{
 		const response = await axios.get(url);
+		console.log(response.data)
 		if(language === "en"|| !language)
 		{
 		return {

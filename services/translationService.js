@@ -73,7 +73,11 @@ async function handleApiError(error, retryFunction, ...args) {
 		  return await translateText(cuisine, language);
 		}));
 	 }
-    recipe.diet = await translateText(recipe.diet, language='en');
+    if (Array.isArray(recipe.diets)) {
+		recipe.diets = await Promise.all(recipe.diets.map(async diet => {
+		  return await translateText(diet, language);
+		}));
+	 }
     recipe.extendedIngredients = await Promise.all(recipe.extendedIngredients.map(async ingredient => {
       ingredient.original = await translateText(ingredient.original, language);
       return ingredient;	

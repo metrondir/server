@@ -41,7 +41,7 @@ const getSpoonAcularChangedLikeRecipe = async() =>{
 	]);
  };
 
- const getRecipesFromDatabaseComplex = async (limit, type, diet, cuisines, maxReadyTime) => {
+ const getRecipesFromDatabaseComplex = async (limit, type, diet, cuisine, maxReadyTime) => {
 	const pipeline = [
 	  { $match: {} },
 	  { $sample: { size: Math.floor(limit / 2) } },
@@ -52,11 +52,11 @@ const getSpoonAcularChangedLikeRecipe = async() =>{
 	}
  
 	if (diet) {
-	  pipeline[0].$match.diet = diet;
+	  pipeline[0].$match.diets = diet;
 	}
  
-	if (cuisines) {
-	  pipeline[0].$match.cuisines = cuisines;
+	if (cuisine) {
+	  pipeline[0].$match.cuisines = cuisine;
 	}
 	if (maxReadyTime) {
 	  pipeline[0].$match.readyInMinutes = { $lte: Number(maxReadyTime) };

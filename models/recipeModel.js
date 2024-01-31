@@ -34,7 +34,9 @@ const recipeSchema = new mongoose.Schema({
   },
   pricePerServing: Number,
   id: Number,
-  diet: String,
+  diet: {
+    type:Array,
+  },
   title: String,
   readyInMinutes: Number,
   image: String,

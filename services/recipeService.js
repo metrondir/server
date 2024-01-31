@@ -40,7 +40,10 @@ const getRecipe = async (req) => {
 		let parsedCuisines = JSON.parse(req.body.cuisines);
 		req.body.cuisines = parsedCuisines;
 	 }
-	
+	 if (req.body.diets && typeof req.body.diets === 'string') {
+		let parsedDiets = JSON.parse(req.body.diets);
+		req.body.diets = parsedDiets;
+	 }
 	
 	const imgurLink = await imgur.uploadFile(req.file.path)
 	const language = await detectLanguage(req.body.title);
