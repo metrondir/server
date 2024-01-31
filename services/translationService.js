@@ -41,6 +41,7 @@ async function handleApiError(error, retryFunction, ...args) {
 	}
  }
 
+
  async function translateRecipeFields(recipe, language) {
 	
 	recipe.title = await translateText(recipe.title, language);
@@ -59,16 +60,26 @@ async function handleApiError(error, retryFunction, ...args) {
 	if (language === "en" || !language) {
 	  return recipe;
 	}
-	await translateRecipeFields(recipe, language='en');
+	await translateText(recipe.title, language='en');
+	
 	recipe.instructions = await translateText(recipe.instructions, language='en');
-    recipe.cuisine = await translateText(recipe.cuisine, language='en');
-	 recipe.dishType = await translateText(recipe.dishType, language='en');
+   if (Array.isArray(recipe.dishTypes)) {
+		recipe.dishTypes = await Promise.all(recipe.dishTypes.map(async dishType => {
+		  return await translateText(dishType, language);
+		}));
+	 }
+	 if (Array.isArray(recipe.cuisines)) {
+		recipe.cuisines = await Promise.all(recipe.cuisines.map(async cuisine => {
+		  return await translateText(cuisine, language);
+		}));
+	 }
     recipe.diet = await translateText(recipe.diet, language='en');
     recipe.extendedIngredients = await Promise.all(recipe.extendedIngredients.map(async ingredient => {
       ingredient.original = await translateText(ingredient.original, language);
       return ingredient;	
     }
     ));
+	 console.log(recipe)
     return recipe;
 }
 	

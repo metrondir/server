@@ -26,7 +26,11 @@ async function createUser(username, email, hashedPassword, activationLink) {
 async function sendActivationEmail(to, link) {
 	await gmailService.sendActivationGmail(to, link);
 }
-
+const findUserByRefreshToken = async (refreshToken) => {
+	const tokenData = await findToken(refreshToken);
+	const user = await User.findById(tokenData.user);
+	return user;
+}
 
 const getAllUsers = asyncHandler(async (req,res,next) => {
 	if(req.query.page && req.query.limit){
@@ -199,4 +203,15 @@ const login = asyncHandler(async(email,password) => {
 	});
 
 		 
-module.exports= {getAllUsers,registration,activate,login,logout,refresh,forgetPassword,changePassword,changePasswordLink,deleteUser};
+module.exports= {getAllUsers,
+	registration,
+	activate,
+	login,
+	logout,
+	refresh,
+	forgetPassword,
+	changePassword,
+	changePasswordLink,
+	deleteUser,
+	findUserByRefreshToken};
+

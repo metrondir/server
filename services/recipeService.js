@@ -32,6 +32,15 @@ const getRecipe = async (req) => {
 	  let parsedIngredients = JSON.parse(req.body.extendedIngredients);
 	  req.body.extendedIngredients = parsedIngredients;
 	}
+	if (req.body.dishTypes && typeof req.body.dishTypes === 'string') {
+		let parsedDishTypes = JSON.parse(req.body.dishTypes);
+		req.body.dishTypes = parsedDishTypes;
+	 }
+	 if (req.body.cuisines && typeof req.body.cuisines === 'string') {
+		let parsedCuisines = JSON.parse(req.body.cuisines);
+		req.body.cuisines = parsedCuisines;
+	 }
+	
 	
 	const imgurLink = await imgur.uploadFile(req.file.path)
 	const language = await detectLanguage(req.body.title);

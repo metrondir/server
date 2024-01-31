@@ -1,12 +1,18 @@
 const Recipe = require('../models/recipeModel');	
 const ApiError = require('../middleware/apiError');
+const SpoonacularRecipeModel = require('../models/spoonacularRecipeModel')
 
 const getRecipesFromDatabaseRandom = async (limit, userId) => {
 	return await Recipe.aggregate([
 	  { $match: { user: { $ne: userId } } },
-	  { $sample: { size: Math.floor(limit / 2) } }
+	  { $sample: { size: Math.floor(limit) } }
 	]);
  };
+
+const getSpoonAcularChangedLikeRecipe = async() =>{
+	const recipes = await SpoonacularRecipeModel.find();
+	return recipes;
+}
 
  const getRecipesByCategories = async (sortDirection, valueSort) => {
 	let sortValue = sortDirection === 'desc' ? -1 : 1;
@@ -35,28 +41,27 @@ const getRecipesFromDatabaseRandom = async (limit, userId) => {
 	]);
  };
 
- const getRecipesFromDatabaseComplex = async (limit, type, diet, cuisine, maxReadyTime) => {
+ const getRecipesFromDatabaseComplex = async (limit, type, diet, cuisines, maxReadyTime) => {
 	const pipeline = [
 	  { $match: {} },
 	  { $sample: { size: Math.floor(limit / 2) } },
 	];
  
 	if (type) {
-	  pipeline[0].$match.dishType = type;
+	  pipeline[0].$match.dishTypes = type;
 	}
  
 	if (diet) {
 	  pipeline[0].$match.diet = diet;
 	}
  
-	if (cuisine) {
-	  pipeline[0].$match.cuisine = cuisine;
+	if (cuisines) {
+	  pipeline[0].$match.cuisines = cuisines;
 	}
 	if (maxReadyTime) {
 	  pipeline[0].$match.readyInMinutes = { $lte: Number(maxReadyTime) };
 	}
 	try {
-		console.log(pipeline);
 	  const recipes = await Recipe.aggregate(pipeline);
 	  return recipes;
 	}
@@ -67,4 +72,4 @@ const getRecipesFromDatabaseRandom = async (limit, userId) => {
 
  };
 
- module.exports = { getRecipesFromDatabaseRandom, getRecipesFromDatabaseByIngridients, getRecipesFromDatabaseComplex,getRecipesByCategories	}
+ module.exports = { getRecipesFromDatabaseRandom, getRecipesFromDatabaseByIngridients, getRecipesFromDatabaseComplex,getRecipesByCategories,getSpoonAcularChangedLikeRecipe}

@@ -10,9 +10,9 @@ const ApiError = require('../middleware/apiError');
 
 const getRecipes = asyncHandler(async (req, res, next) =>{
 	try{
-		const { query, limit,type,diet,cuisine,maxReadyTime,language } = req.query;
+		const { query, limit,type,diet,cuisines,maxReadyTime,language } = req.query;
 		
-		const recipes = await fetchRecipes(query, limit,type,diet,cuisine,maxReadyTime,language);
+		const recipes = await fetchRecipes(query, limit,type,diet,cuisines,maxReadyTime,language);
 		res.status(200).json(recipes);
 	}
 	catch(error){
@@ -25,6 +25,7 @@ const getRandomRecipes =asyncHandler(async (req, res, next) =>{
 	
 	try{
 		const { limit,language } = req.query;
+		
 		const {refreshToken} = req.cookies;
 		const recipes = await fetchRandomRecipes(limit,language,refreshToken);
 		res.status(200).json(recipes);

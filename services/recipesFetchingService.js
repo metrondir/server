@@ -4,8 +4,14 @@ const { baseUrl, getApiKey } = require('../config/configApiHandler');
 const FavoriteRecipe = require("../models/favoriteRecipeModel");
 const Recipe = require("../models/recipeModel");
 const { translateText,handleApiError,translateRecipeInformation, detectLanguage, } = require('./translationService');
-const {  getRecipesFromDatabaseRandom, getRecipesFromDatabaseByIngridients, getRecipesFromDatabaseComplex,getRecipesByCategories} =  require('./databaseRecipeFetchingService');
-const { findToken } = require('./tokenService');
+const {  getRecipesFromDatabaseRandom, getRecipesFromDatabaseByIngridients, getRecipesFromDatabaseComplex,getRecipesByCategories,getSpoonAcularChangedLikeRecipe} =  require('./databaseRecipeFetchingService');
+const { findUserByRefreshToken } = require('./userService');
+
+
+const getRandomSample = (array, size) => {
+	const shuffled = array.slice().sort(() => 0.5 - Math.random());
+	return shuffled.slice(0, size);
+ };
 
  async function fetchRecipesData(response, language) {
 	if (language === "en" || !language) {
@@ -80,15 +86,29 @@ const fetchRecipesByIngredients = async (ingredients,number,language) => {
 		const allData = response.data.results.concat(recipesByDB);
 		const sortDirectionFactor = sortDirection === 'desc' ? -1 : 1;
 		allData.sort((a, b) => sortDirectionFactor * (a.readyInMinutes - b.readyInMinutes));
+		
 		allData.splice(limit,allData.length-limit);
+		
 		return fetchRecipesData(allData, language);
 	}
 	if(sort === "popularity"){
 		const recipesByDB = await	getRecipesByCategories(sortDirection,sort);
+		const changeRecipesLike = await getSpoonAcularChangedLikeRecipe();
+		
+		 
+		response.data.results.forEach(recipe => {
+			if (changeRecipesLike.id == recipe.id) {
+			  recipe.aggregateLikes = changeRecipesLike.aggregateLikes;
+			  console.log(recipe.aggregateLikes)
+			}
+		 });
+		
 		const allData = response.data.results.concat(recipesByDB);
 		const sortDirectionFactor = sortDirection === 'desc' ? -1 : 1;
 		allData.sort((a, b) => sortDirectionFactor * (a.readyInMinutes - b.readyInMinutes));
+		
 		allData.splice(limit,allData.length-limit);
+		
 		return fetchRecipesData(allData, language);
 	}
 	if(sort === "price"){
@@ -113,11 +133,11 @@ const fetchRecipesByIngredients = async (ingredients,number,language) => {
   const url = `${baseUrl}/random?apiKey=${apiKey}&number=${limit}`;
   try {
     const response = await axios.get(url);
-	
-	 const recipes = await getRecipesFromDatabaseRandom(limit,findToken.user);
-	 
+	 const user = await findUserByRefreshToken(refreshToken);
+	 const recipes = await getRecipesFromDatabaseRandom(limit,user._id);
 	 const allRecipes = response.data.recipes.concat(recipes);
-    return fetchRecipesData(allRecipes, language);
+	 const halfRandomSample = getRandomSample(allRecipes, Math.floor(allRecipes.length / 2));
+    return fetchRecipesData(halfRandomSample, language);
   } catch (error) {
     return handleApiError(error, fetchRandomRecipes, limit, language);
   }
@@ -269,6 +289,7 @@ const fetchInformationById = async (id,language) => {
 						dishTypes: response.data.dishTypes || [],
 					 };
 				  } else {
+					console.log(response.data.cuisines)
 					 await translateRecipeInformation(response.data, language);
 					 return {
 						id: response.data.id,
@@ -301,36 +322,36 @@ const fetchInformationById = async (id,language) => {
 					const fetchedRecipes = await fetchRecipes([favoriteRecipe.recipe]);
      			 if (fetchedRecipes.length > 0) {
         		const fetchedRecipe = fetchedRecipes[0];
-				console.log(fetchedRecipe)
 				  if (language === "en" || !language) {
 					 return {
 						id: fetchedRecipe._id,
 						title: fetchedRecipe.title,
 						image: fetchedRecipe.image,
 						readyInMinutes: `${fetchedRecipe.readyInMinutes} min`,
-						dishType: fetchedRecipe.dishType || [],
+						dishTypes: fetchedRecipe.dishTypes || [],
 					 };
 				  } else {
 					 await translateRecipeInformation(fetchedRecipe, language);
+					 const min = await translateText('min',language);
+					 console.log(fetchedRecipe)
 					 return {
 						id: fetchedRecipe._id,
 						title: fetchedRecipe.title,
 						image: fetchedRecipe.image,
-						readyInMinutes: fetchedRecipe.readyInMinutes,
-						dishType: fetchedRecipe.dishType|| [],
+						readyInMinutes: `${fetchedRecipe.readyInMinutes} `+min,
+						dishTypes: fetchedRecipe.dishTypes || [],
 					 };
 				  }
 				}
 				} catch (error) {
 				  console.log(error);
+				  return handleApiError(error, fetchFavoriteRecipes, id, language);
 				}
 			 })
 		  );
 		  const filteredDbRecipes = dbRecipes.filter((recipe) => recipe);
-
 		  return recipes.concat(filteredDbRecipes);
 		} catch (error) {
-		  console.log(error);
 		  return handleApiError(error, fetchFavoriteRecipes, id, language);
 		}
 	 };
