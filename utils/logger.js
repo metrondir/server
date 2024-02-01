@@ -1,29 +1,23 @@
-const {createLogger, transports, format} = require('winston');
+const { createLogger, transports, format } = require("winston");
 
-const logger = createLogger({	
-
-		transports: [
-			 new transports.Console(),
-			 new transports.File({ level:'warn' , filename: './logs/logsWarnings.log' }),
-			 new transports.File({ level:'info' , filename: './logs/logsInfo.log' }),
-			 new transports.File({ level:'debug' , filename: './logs/logsDebug.log' }),
-			 new transports.File({ level:'error' , filename: './logs/logsErrors.log' }),
-			
-		],
-		format: format.combine(
-			 format.colorize(),
-			 format.timestamp(),
-			 format.metadata(),
-			 format.prettyPrint(),
-			 format.json()
-		),
-		
-		
+const logger = createLogger({
+  transports: [
+    new transports.Console(),
+    new transports.File({ level: "warn", filename: "./logs/logsWarnings.log" }),
+    new transports.File({ level: "info", filename: "./logs/logsInfo.log" }),
+    new transports.File({ level: "debug", filename: "./logs/logsDebug.log" }),
+    new transports.File({ level: "error", filename: "./logs/logsErrors.log" }),
+  ],
+  format: format.combine(
+    format.colorize(),
+    format.timestamp(),
+    format.metadata(),
+    format.prettyPrint(),
+    format.json(),
+  ),
 });
 
 module.exports = logger;
-
-
 
 //const {format , createLogger,transports} = require('winston');
 //const {v4: uuid} = require('uuid');
@@ -42,7 +36,7 @@ module.exports = logger;
 //  }
 //})
 
-//// Define a middleware and wrap the next() function into 
+//// Define a middleware and wrap the next() function into
 //// the asyncLocalStorage.run() in order to initialize tracing
 //// of the request
 // const loggerMiddleware = (req, res, next) => {
@@ -61,8 +55,7 @@ module.exports = logger;
 //	new transports.File({ level:'info' , filename: './logs/logsInfo.log' }),
 //	new transports.File({ level:'debug' , filename: './logs/logsDebug.log' }),
 //	new transports.File({ level:'error' , filename: './logs/logsErrors.log' }),
-	  
-  
+
 //  ],
 //  format: format.combine(
 //    format.timestamp(),

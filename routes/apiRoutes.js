@@ -1,14 +1,15 @@
 const express = require("express");
-const { getRecipes,
-	getRandomRecipes,
-	getInformationById,
-	getRecommendedRecipes,
-	getRecipesByIngridients,
-   translateRecipe,
-	getRecipesByCategories,} = require("../controllers/apiController");
+const {
+  getRecipes,
+  getRandomRecipes,
+  getInformationById,
+  getRecommendedRecipes,
+  getRecipesByIngridients,
+  translateRecipe,
+  getRecipesByCategories,
+} = require("../controllers/apiController");
 
 const router = express.Router();
-
 
 router.get("/", getRecipes);
 
@@ -20,10 +21,8 @@ router.get("/recommended/:id", getRecommendedRecipes);
 
 router.get("/ingredients", getRecipesByIngridients);
 
-router.get("/top-categories",getRecipesByCategories);
+router.get("/top-categories", getRecipesByCategories);
 
 router.get("/:id", getInformationById);
-
-
 
 module.exports = router;

@@ -1,12 +1,9 @@
 {
-    "env": {
-        "browser": true,
-        "commonjs": true,
-        "es2021": true
-    },
-    "parserOptions": {
-        "ecmaVersion": "latest"
-    },
-    "rules": {
-    }
+  "extends": ["prettier"],
+
+  "parserOptions": {
+    "ecmaVersion": "latest",
+    "sourceType": "script"
+  },
+  "rules": {}
 }

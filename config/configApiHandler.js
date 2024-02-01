@@ -1,7 +1,4 @@
-
-
-
-let keys = process.env.SPOONACULAR_API_KEY.split(',');
+let keys = process.env.SPOONACULAR_API_KEY.split(",");
 
 function getApiKey(isExpired = false) {
   const key = keys[0];

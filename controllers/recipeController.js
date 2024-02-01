@@ -1,28 +1,33 @@
 const asyncHandler = require("express-async-handler");
 const recipeService = require("../services/recipeService");
-const multer = require('multer');
+const multer = require("multer");
 const ApiError = require("../middleware/apiError");
-
 
 // multer configuration for file upload
 
 const storage = multer.diskStorage({
-  destination: function(req, file, cb) {
-    cb(null, './uploads'); 
+  destination: function (req, file, cb) {
+    cb(null, "./uploads");
   },
-  filename: function(req, file, cb) {
-    cb(null, new Date().toISOString().replace(/:/g, '-') + '-' + file.originalname);
-  }
+  filename: function (req, file, cb) {
+    cb(
+      null,
+      new Date().toISOString().replace(/:/g, "-") + "-" + file.originalname,
+    );
+  },
 });
 
-const upload = multer({ storage: storage, limits: { fileSize: 1024 * 1024 * 5 }  });
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 1024 * 1024 * 5 },
+});
 
 function parseNestedArray(arr) {
   if (!Array.isArray(arr)) {
-    throw new Error('Expected an array');
+    throw new Error("Expected an array");
   }
 
-  return arr.map(item => {
+  return arr.map((item) => {
     if (Array.isArray(item)) {
       return parseNestedArray(item);
     } else {
@@ -30,7 +35,6 @@ function parseNestedArray(arr) {
     }
   });
 }
-
 
 //@desc Get recipe
 //@route GET /api/recipe:/id
@@ -45,22 +49,18 @@ const getRecipe = asyncHandler(async (req, res, next) => {
   }
 });
 
-
 //@desc Get all recipes
 //@route GET /api/recipe
 //@access private
 
 const getRecipes = asyncHandler(async (req, res, next) => {
-  
   try {
-    const recipes = await recipeService.getRecipes(req,res,next);
+    const recipes = await recipeService.getRecipes(req, res, next);
     return res.status(200).json(recipes);
   } catch (error) {
     next(error);
   }
-})
- 
-
+});
 
 //@desc Create new Favorite recipe
 //@route GET /api/recipe/favourite/:id
@@ -75,20 +75,21 @@ const setFavoriteRecipes = asyncHandler(async (req, res, next) => {
   }
 });
 
-
 //@desc Create new recipe
 //@route POST /api/recipe
 //@access private
 
-const createRecipe = [upload.single('image'), asyncHandler(async (req, res, next) => {
-  try {
-    await recipeService.createRecipe(req);
-    return res.status(201).json("Recipe created");
-  } catch (error) {
-    next(error);
-  }
-})];
-
+const createRecipe = [
+  upload.single("image"),
+  asyncHandler(async (req, res, next) => {
+    try {
+      await recipeService.createRecipe(req);
+      return res.status(201).json("Recipe created");
+    } catch (error) {
+      next(error);
+    }
+  }),
+];
 
 //@desc Update recipe
 //@route PUT /api/recipe:/id
@@ -96,13 +97,12 @@ const createRecipe = [upload.single('image'), asyncHandler(async (req, res, next
 
 const updateRecipe = asyncHandler(async (req, res, next) => {
   try {
-  const recipe =  await recipeService.updateRecipe(req);
-  return res.status(200).json({ recipe, message: "Recipe updated" });
+    const recipe = await recipeService.updateRecipe(req);
+    return res.status(200).json({ recipe, message: "Recipe updated" });
   } catch (error) {
     next(error);
   }
 });
-
 
 //@desc Delete recipe
 //@route DELETE /api/recipe:/id
@@ -117,7 +117,6 @@ const deleteRecipe = asyncHandler(async (req, res, next) => {
   }
 });
 
-
 const loadDataToSelect = asyncHandler(async (req, res, next) => {
   try {
     const { language } = req.query;
@@ -129,11 +128,11 @@ const loadDataToSelect = asyncHandler(async (req, res, next) => {
 });
 
 module.exports = {
-    getRecipe,
-    getRecipes,
-    setFavoriteRecipes,
-    createRecipe,
-    updateRecipe,
-    deleteRecipe,
-    loadDataToSelect,
+  getRecipe,
+  getRecipes,
+  setFavoriteRecipes,
+  createRecipe,
+  updateRecipe,
+  deleteRecipe,
+  loadDataToSelect,
 };

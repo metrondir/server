@@ -1,5 +1,4 @@
-const mongoose = require('mongoose');
-
+const mongoose = require("mongoose");
 
 const extendedIngredientSchema = new mongoose.Schema({
   id: Number,
@@ -22,30 +21,30 @@ const extendedIngredientSchema = new mongoose.Schema({
 });
 
 const recipeSchema = new mongoose.Schema({
-  vegetarian: { type: String, enum: ['vegetarian', 'non-vegetarian'] },
+  vegetarian: { type: String, enum: ["vegetarian", "non-vegetarian"] },
   extendedIngredients: [extendedIngredientSchema],
   user: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,
-    ref: "User"},
-  aggregateLikes:{
-        type: Number,
-        default: 0,
+    ref: "User",
+  },
+  aggregateLikes: {
+    type: Number,
+    default: 0,
   },
   pricePerServing: Number,
   id: Number,
   diet: {
-    type:Array,
+    type: Array,
   },
   title: String,
   readyInMinutes: Number,
   image: String,
   cuisines: {
-    type: Array
-
+    type: Array,
   },
   dishTypes: {
-    type: Array
+    type: Array,
   },
   instructions: String,
   analyzedInstructions: [
@@ -83,10 +82,6 @@ const recipeSchema = new mongoose.Schema({
       ],
     },
   ],
-
 });
 
-
 module.exports = mongoose.model("Recipe", recipeSchema);
-
-
