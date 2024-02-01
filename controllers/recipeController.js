@@ -1,6 +1,7 @@
 const asyncHandler = require("express-async-handler");
 const recipeService = require("../services/recipeService");
 const multer = require('multer');
+const ApiError = require("../middleware/apiError");
 
 
 // multer configuration for file upload
@@ -117,6 +118,17 @@ const deleteRecipe = asyncHandler(async (req, res, next) => {
 });
 
 
+const loadDataToSelect = asyncHandler(async (req, res, next) => {
+  console.log(req.query);
+  try {
+    const { language } = req.query;
+    const data = await recipeService.loadData(req, language);
+    return res.status(200).json(data);
+  } catch (error) {
+    next(error);
+  }
+});
+
 module.exports = {
     getRecipe,
     getRecipes,
@@ -124,4 +136,5 @@ module.exports = {
     createRecipe,
     updateRecipe,
     deleteRecipe,
+    loadDataToSelect,
 };

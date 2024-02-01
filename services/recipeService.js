@@ -2,8 +2,12 @@ const Recipe = require("../models/recipeModel");
 const FavoriteRecipe = require("../models/favoriteRecipeModel");
 const SpoonacularRecipeModel = require("../models/spoonacularRecipeModel");
 const imgur = require('imgur');
+const fs = require('fs');
+const csv = require('csv-parser');
+const Papa = require('papaparse');
 const { parsedIngredients,fetchAggregateLikesById } = require("../services/recipesFetchingService");
-const { detectLanguage,translateRecipePost } = require("../services/translationService");
+const { detectLanguage,translateRecipePost,TranslateRecipeInformation } = require("../services/translationService");
+const { diets,cuisines,dishTypes} = require("../utils/recipesData")
 const ApiError = require("../middleware/apiError");
 
 
@@ -159,6 +163,21 @@ const updateSpoonacularRecipeLikes = async (existedSpoonacularRecipe, recipeId, 
 	return recipe;
  };
 
+ const loadData = async (req, language) => {
+	const data = {
+		diets,
+		cuisines,
+		dishTypes,
+	 };
+ 
+	if (language === 'en' || language === undefined) {
+	  return data;
+	}
+	const translatedData = await TranslateRecipeInformation(data, language);
+	return translatedData;
+ };
+
+	
 
 module.exports = {
 	getRecipe,
@@ -167,4 +186,6 @@ module.exports = {
 	createRecipe,
 	updateRecipe,
 	deleteRecipe,
+	loadData,
+
  };
