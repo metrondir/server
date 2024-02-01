@@ -83,7 +83,6 @@ async function handleApiError(error, retryFunction, ...args) {
       return ingredient;	
     }
     ));
-	 console.log(recipe)
     return recipe;
 }
 	

@@ -1,5 +1,4 @@
 const axios = require('axios');
-
 const { baseUrl, getApiKey } = require('../config/configApiHandler');
 const FavoriteRecipe = require("../models/favoriteRecipeModel");
 const Recipe = require("../models/recipeModel");
@@ -37,13 +36,16 @@ const getRandomSample = (array, size) => {
 
 const fetchRecipesByIngredients = async (ingredients,number,language) => {
 	let apiKey = getApiKey();
+	const lanIngredients = await detectLanguage(ingredients);
+	if (lanIngredients !== "en") {
+	   ingredients= await translateText(ingredients, "en");
+	}
 	let url = `${baseUrl}/findByIngredients?apiKey=${apiKey}&ingredients=${ingredients}&number=${number}&ignorePantry=true`;
 	try {
 	  const response = await axios.get(url);
 	  const recipes = await getRecipesFromDatabaseByIngridients(number,ingredients);
 	  const allRecipes = response.data.concat(recipes);
 	  return Promise.all(allRecipes.map(async recipe => fetchInformationByRecomended(recipe.id, language)));
-
 	} catch (error) {
 	  return handleApiError(error, fetchRecipesByIngredients, ingredients, language);
 	}
@@ -57,17 +59,14 @@ const fetchRecipesByIngredients = async (ingredients,number,language) => {
 	  query = await translateText(query, "en");
 	}
 	let url = `${baseUrl}/complexSearch?apiKey=${apiKey}&query=${query}&number=${limit/2}&addRecipeNutrition=true`;
-	
 	if (type) url += `&type=${type}`;
 	if (diet) url += `&diet=${diet}`;
 	if(cuisine) url += `&cuisine=${cuisine}`;
 	if (maxReadyTime) url += `&maxReadyTime=${maxReadyTime}`;
-
 	try {
 	  const response = await axios.get(url);
 	  const recipes = await getRecipesFromDatabaseComplex(limit, type, diet, cuisine, maxReadyTime);
 	  const allRecipes = response.data.results.concat(recipes);
-	  
 	  return fetchRecipesData(allRecipes, language);
 	} catch (error) {
 	  return handleApiError(error, fetchRecipes, query, limit, type, diet, maxReadyTime, language);
@@ -76,19 +75,15 @@ const fetchRecipesByIngredients = async (ingredients,number,language) => {
 
  const fetchRecipesByCategories = async (limit, sort, sortDirection, language) => {
 	let apiKey = getApiKey();
-	
 	let url = `${baseUrl}/complexSearch?apiKey=${apiKey}&number=${limit}&sort=${sort}&sortDirection=${sortDirection}&addRecipeNutrition=true`;
 	try {
 		const response = await axios.get(url);
 		if(sort === "time"){
 		const recipesByDB = await	getRecipesByCategories(sortDirection,sort);
-		
 		const allData = response.data.results.concat(recipesByDB);
 		const sortDirectionFactor = sortDirection === 'desc' ? -1 : 1;
 		allData.sort((a, b) => sortDirectionFactor * (a.readyInMinutes - b.readyInMinutes));
-		
 		allData.splice(limit,allData.length-limit);
-		
 		return fetchRecipesData(allData, language);
 	}
 	if(sort === "popularity"){
@@ -99,17 +94,13 @@ const fetchRecipesByIngredients = async (ingredients,number,language) => {
 			  recipe.aggregateLikes = changeRecipesLike.aggregateLikes;
 			}
 		 });
-		
 		const allData = response.data.results.concat(recipesByDB);
 		const sortDirectionFactor = sortDirection === 'desc' ? -1 : 1;
 		allData.sort((a, b) => sortDirectionFactor * (a.readyInMinutes - b.readyInMinutes));
-		
 		allData.splice(limit,allData.length-limit);
-		
 		return fetchRecipesData(allData, language);
 	}
 	if(sort === "price"){
-		
 		await Promise.all(response.data.results.map(async (recipe) => {
 			recipe.pricePerServing = Math.ceil((recipe.pricePerServing * recipe.servings) / 100);
 	  }));
@@ -127,7 +118,6 @@ const fetchRecipesByIngredients = async (ingredients,number,language) => {
 
  const fetchRandomRecipes = async (limit,language,refreshToken) => {
 	let apiKey = getApiKey();
-	
   const url = `${baseUrl}/random?apiKey=${apiKey}&number=${limit}`;
   try {
     const response = await axios.get(url);
@@ -150,6 +140,7 @@ const fetchRecipesByIngredients = async (ingredients,number,language) => {
 
 const fetchRecommendedRecipes = async (id,language) => {
 	let apiKey = getApiKey();
+
 	const url = `${baseUrl}/${id}/similar?apiKey=${apiKey}`;
 	try {
 	  const response = await axios.get(url);
@@ -158,6 +149,7 @@ const fetchRecommendedRecipes = async (id,language) => {
 		 return Promise.all(response.data.map(async recipe => fetchInformationByRecomended(recipe.id, language)));
 	  }
 	} catch (error) {
+		
 	  return handleApiError(error, fetchRecommendedRecipes, id, language);
 	}
 }
@@ -188,14 +180,16 @@ const fetchInformationByRecomended = async (id,language) => {
 				  readyInMinutes: response.data.readyInMinutes,
 				};
 			}
-		}
+		
+	}
 		catch(error){
 			return handleApiError(error, fetchInformationByRecomended, id,language);
 		}
 	}
 
+
 const fetchAggregateLikesById = async(recipeId) =>{
-		let apiKey = getApiKey();
+	let apiKey = getApiKey();
 	const url = `${baseUrl}/${recipeId}/information?includeNutrition=false&apiKey=${apiKey}`;
 	try{
 		const response = await axios.get(url);
@@ -212,7 +206,6 @@ const fetchInformationById = async (id,language) => {
 	const url = `${baseUrl}/${id}/information?includeNutrition=false&apiKey=${apiKey}`;
 	try{
 		const response = await axios.get(url);
-		console.log(response.data)
 		if(language === "en"|| !language)
 		{
 		return {
@@ -223,8 +216,7 @@ const fetchInformationById = async (id,language) => {
 			cuisines: response.data.cuisines || [],
 			dishTypes: response.data.dishTypes || [],
 			instructions: response.data.instructions || [],
-			cheap: response.data.cheap,
-			vegetarian: response.data.vegetarian,
+			diets: response.data.diets || [],
 			image: response.data.image,
 			readyInMinutes: response.data.readyInMinutes + ' min',
 		 };
@@ -235,20 +227,18 @@ const fetchInformationById = async (id,language) => {
 				ingredient.original = await translateText(ingredient.original,language);
 				return ingredient.original;
 			 }));
+			response.data.diets= await Promise.all(response.data.diets.map(diet => translateText(diet,language)));
 			response.data.instructions = await translateText(response.data.instructions,language);
-			response.data.vegetarian = await translateText(response.data.vegetarian ? "vegetarian" : "non-vegetarian",language);
-			response.data.cheap = await translateText(response.data.cheap ? "cheap" : "expensive",language);
 			response.data.cuisines = await Promise.all(response.data.cuisines.map(cuisine => translateText(cuisine,language)));
 			return {
 			  id: response.data.id,
 			  title: response.data.title,
 			  extendedIngredients: response.data.extendedIngredients,
 			  cuisines: response.data.cuisines,
+			  diets: response.data.diets,
 			  dishTypes: response.data.dishTypes,
 			  instructions: response.data.instructions,
 			  pricePerServing: Math.ceil((response.data.pricePerServing*response.data.servings)/100),
-			  cheap: response.data.cheap,
-			  vegetarian: response.data.vegetarian,
 			  image: response.data.image,
 			  readyInMinutes: response.data.readyInMinutes,
 			};
@@ -262,9 +252,7 @@ const fetchInformationById = async (id,language) => {
 	const fetchFavoriteRecipes = async (id, language) => {
 		try {
 		  const apiKey = getApiKey();
-		
 		  const allFavoriteRecipes = await FavoriteRecipe.find({ user: id });
-	 
 		  const favoriteRecipes = [];
 		  const favoriteRecipesByDb = [];
 	 
@@ -275,37 +263,13 @@ const fetchInformationById = async (id,language) => {
 				favoriteRecipesByDb.push(favoriteRecipe);
 			 }
 		  }
-		  
-		
-	 
 		  const recipes = await Promise.all(
 			 favoriteRecipes.map(async (favoriteRecipe) => {
 				const url = `${baseUrl}/${favoriteRecipe.recipe}/information?includeNutrition=false&apiKey=${apiKey}`;
-	 
 				try {
 				  const response = await axios.get(url);
-	 
-				  if (language === "en" || !language) {
-					 return {
-						id: response.data.id,
-						title: response.data.title,
-						image: response.data.image,
-						readyInMinutes: response.data.readyInMinutes + ' min',
-						dishTypes: response.data.dishTypes || [],
-					 };
-				  } else {
-					console.log(response.data.cuisines)
-					 await translateRecipeInformation(response.data, language);
-					 return {
-						id: response.data.id,
-						title: response.data.title,
-						image: response.data.image,
-						readyInMinutes: response.data.readyInMinutes,
-						dishTypes: response.data.dishTypes || [],
-					 };
-				  }
+					return fetchRecipes(response.data,language)
 				} catch (error) {
-				  console.log(error);
 				  return handleApiError(error, fetchFavoriteRecipes, id, language);
 				}
 			 })
@@ -316,7 +280,6 @@ const fetchInformationById = async (id,language) => {
 			  const fetchedRecipes = await Recipe.find({ _id: recipeIds });
 			  return fetchedRecipes;
 			} catch (error) {
-			  console.log(error);
 			  throw new Error(error);
 			}
 		 };
@@ -326,30 +289,10 @@ const fetchInformationById = async (id,language) => {
 				try {
 					const fetchedRecipes = await fetchRecipes([favoriteRecipe.recipe]);
      			 if (fetchedRecipes.length > 0) {
-        		const fetchedRecipe = fetchedRecipes[0];
-				  if (language === "en" || !language) {
-					 return {
-						id: fetchedRecipe._id,
-						title: fetchedRecipe.title,
-						image: fetchedRecipe.image,
-						readyInMinutes: `${fetchedRecipe.readyInMinutes} min`,
-						dishTypes: fetchedRecipe.dishTypes || [],
-					 };
-				  } else {
-					 await translateRecipeInformation(fetchedRecipe, language);
-					 const min = await translateText('min',language);
-					 console.log(fetchedRecipe)
-					 return {
-						id: fetchedRecipe._id,
-						title: fetchedRecipe.title,
-						image: fetchedRecipe.image,
-						readyInMinutes: `${fetchedRecipe.readyInMinutes} `+min,
-						dishTypes: fetchedRecipe.dishTypes || [],
-					 };
-				  }
+        			const fetchedRecipe = fetchedRecipes[0];
+				  return fetchRecipes(fetchedRecipe,language)
 				}
 				} catch (error) {
-				  console.log(error);
 				  return handleApiError(error, fetchFavoriteRecipes, id, language);
 				}
 			 })
@@ -387,14 +330,11 @@ const parsedIngredients = async (ingredients) => {
 	 	totalEstimatedCost = Math.ceil(totalEstimatedCost/100);
 	  return totalEstimatedCost;
 	} catch (error) {
-	  throw error; 
+		return handleApiError(error, parsedIngredients, ingredients, language);
 	}
  };
  
  
- 
-
-
 module.exports = {
 	fetchRecipes,
 	fetchRandomRecipes,

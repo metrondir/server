@@ -119,7 +119,6 @@ const deleteRecipe = asyncHandler(async (req, res, next) => {
 
 
 const loadDataToSelect = asyncHandler(async (req, res, next) => {
-  console.log(req.query);
   try {
     const { language } = req.query;
     const data = await recipeService.loadData(req, language);

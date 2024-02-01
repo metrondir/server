@@ -62,9 +62,7 @@ try{
 	return recipe;
 }	
 catch(error){
-	console.log(error)
 	throw ApiError.BadRequest(error.message);	
-	
  }
 }
 

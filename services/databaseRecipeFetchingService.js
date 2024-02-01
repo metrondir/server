@@ -33,10 +33,8 @@ const getSpoonAcularChangedLikeRecipe = async() =>{
 	 const recipes = await Recipe.find().sort({ [valueSort]: sortValue });
 	 return recipes;
  }catch(error){
-	 console.log(error);
 	 throw ApiError.BadRequest(error.message);
 	  }
-	
  };
 
  const getRecipesFromDatabaseByIngridients = async (limit, ingredients) => {
@@ -72,7 +70,6 @@ const getSpoonAcularChangedLikeRecipe = async() =>{
 	  return recipes;
 	}
 	catch (error) {
-		console.log(error);
 		throw ApiError.BadRequest(error.message);
 	}
 
