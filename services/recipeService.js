@@ -35,12 +35,12 @@ const getRecipes = async (req, res, next) => {
 };
 
 const createRecipe = async (req) => {
+  console.log(req.body);
   if (
     req.body.extendedIngredients &&
     typeof req.body.extendedIngredients === "string"
   ) {
-    let parsedIngredients = JSON.parse(req.body.extendedIngredients);
-    req.body.extendedIngredients = parsedIngredients;
+    req.body.extendedIngredients = JSON.parse(req.body.extendedIngredients);
   }
   if (req.body.dishTypes && Array.isArray(req.body.dishTypes)) {
     req.body.dishTypes = req.body.dishTypes.map((dishtype) => dishtype.label);

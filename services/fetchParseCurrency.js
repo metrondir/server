@@ -19,7 +19,20 @@ const ParseCurrencyExchange = async () => {
       // Check if any tables were found
       if (tables.length > 0) {
         tables.each((index, table) => {
-          console.log($(table).html());
+          const $table = $(table);
+
+          // Find all <td> elements with either <span> or <b>
+          const relevantTds = $table.find("td:has(span), td:has(b)");
+
+          // Check if any relevant <td> elements were found
+          if (relevantTds.length > 0) {
+            relevantTds.each((index, td) => {
+              const $td = $(td);
+              console.log($td.html());
+            });
+          } else {
+            console.log("No relevant <td> elements found in the table");
+          }
         });
       } else {
         console.log(
