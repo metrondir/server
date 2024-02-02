@@ -42,17 +42,14 @@ const createRecipe = async (req) => {
     let parsedIngredients = JSON.parse(req.body.extendedIngredients);
     req.body.extendedIngredients = parsedIngredients;
   }
-  if (req.body.dishTypes && typeof req.body.dishTypes === "string") {
-    let parsedDishTypes = JSON.parse(req.body.dishTypes);
-    req.body.dishTypes = parsedDishTypes;
+  if (req.body.dishTypes && Array.isArray(req.body.dishTypes)) {
+    req.body.dishTypes = req.body.dishTypes.map((dishtype) => dishtype.label);
   }
-  if (req.body.cuisines && typeof req.body.cuisines === "string") {
-    let parsedCuisines = JSON.parse(req.body.cuisines);
-    req.body.cuisines = parsedCuisines;
+  if (req.body.cuisines && Array.isArray(req.body.cuisines)) {
+    req.body.cuisines = req.body.cuisines.map((cuisine) => cuisine.label);
   }
-  if (req.body.diets && typeof req.body.diets === "string") {
-    let parsedDiets = JSON.parse(req.body.diets);
-    req.body.diets = parsedDiets;
+  if (req.body.diets && Array.isArray(req.body.diets)) {
+    req.body.diets = req.body.diets.map((diet) => diet.label);
   }
 
   const imgurLink = await imgur.uploadFile(req.file.path);
