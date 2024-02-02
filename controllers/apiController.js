@@ -36,6 +36,8 @@ const getRandomRecipes = asyncHandler(async (req, res, next) => {
     const { refreshToken } = req.cookies;
 
     const recipes = await fetchRandomRecipes(limit, language, refreshToken);
+    console.log(recipes);
+
     res.status(200).json(recipes);
   } catch (error) {
     next(error);

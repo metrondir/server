@@ -2,6 +2,7 @@ const axios = require("axios");
 const { baseUrl, getApiKey } = require("../config/configApiHandler");
 const FavoriteRecipe = require("../models/favoriteRecipeModel");
 const Recipe = require("../models/recipeModel");
+const { getRecipe } = require("./recipeService.js");
 const {
   translateText,
   handleApiError,
@@ -18,15 +19,32 @@ const {
 } = require("./databaseRecipeFetchingService");
 const { findUserByRefreshToken } = require("./userService");
 
-const getRandomSample = (array, size) => {
-  const shuffled = array.slice().sort(() => 0.5 - Math.random());
-  return shuffled.slice(0, size);
-};
+function eraseRandomRecipes(totalRecipes, limit) {
+  if (limit >= totalRecipes) {
+    console.error("Limit exceeds total number of recipes.");
+    return [];
+  }
+
+  let indices = [];
+
+  for (let i = 0; i < totalRecipes; i++) {
+    indices.push(i);
+  }
+
+  for (let i = indices.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [indices[i], indices[j]] = [indices[j], indices[i]];
+  }
+
+  indices.splice(0, limit);
+
+  return indices;
+}
 
 async function fetchRecipesData(response, language) {
   if (language === "en" || !language) {
     return response.map((recipe) => ({
-      id: recipe.id,
+      id: recipe.id || recipe._id,
       title: recipe.title,
       image: recipe.image,
       readyInMinutes: recipe.readyInMinutes + " min",
@@ -37,7 +55,7 @@ async function fetchRecipesData(response, language) {
       response.map((recipe) => translateRecipeInformation(recipe, language)),
     );
     return response.map((recipe) => ({
-      id: recipe.id,
+      id: recipe.id || recipe._id,
       title: recipe.title,
       image: recipe.image,
       readyInMinutes: recipe.readyInMinutes,
@@ -193,11 +211,8 @@ const fetchRandomRecipes = async (limit, language, refreshToken) => {
     if (!refreshToken) {
       const recipes = await getRecipesFromDatabaseRandom(limit);
       const allRecipes = response.data.recipes.concat(recipes);
-      const halfRandomSample = getRandomSample(
-        allRecipes,
-        Math.floor(allRecipes.length / 2),
-      );
-      return fetchRecipesData(halfRandomSample, language);
+      const recipesData = eraseRandomRecipes(allRecipes.length, limit);
+      return fetchRecipesData(recipesData, language);
     }
     const user = await findUserByRefreshToken(refreshToken);
 
@@ -275,7 +290,12 @@ const fetchAggregateLikesById = async (recipeId) => {
 
 const fetchInformationById = async (id, language) => {
   let apiKey = getApiKey();
+  if (id.length >= 7) {
+    console.log(id);
+    const recipe = await getRecipe(id);
 
+    return recipe;
+  }
   const url = `${baseUrl}/${id}/information?includeNutrition=false&apiKey=${apiKey}`;
   try {
     const response = await axios.get(url);

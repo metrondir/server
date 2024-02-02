@@ -15,8 +15,9 @@ const {
 const { data } = require("../utils/recipesData");
 const ApiError = require("../middleware/apiError");
 
-const getRecipe = async (req) => {
-  const recipe = await Recipe.findById(req.params.id);
+const getRecipe = async (id) => {
+  console.log(id);
+  const recipe = await Recipe.findById(id);
   if (!recipe) {
     throw ApiError.BadRequest("Recipe not found");
   }

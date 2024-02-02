@@ -41,8 +41,9 @@ function parseNestedArray(arr) {
 //@access private
 
 const getRecipe = asyncHandler(async (req, res, next) => {
+  const { id } = req.params;
   try {
-    const recipe = await recipeService.getRecipe(req);
+    const recipe = await recipeService.getRecipe(id);
     return res.status(200).json(recipe);
   } catch (error) {
     next(error);
