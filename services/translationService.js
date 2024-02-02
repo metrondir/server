@@ -47,41 +47,32 @@ async function translateText(text, toLanguage) {
 }
 
 async function detectLanguage(text) {
-  console.log(typeof text);
   try {
     const response = await axios.post(
-      `${process.env.ENDPOINT_MICROSOFT_AZURE_TRANSLATE}/detect`,
-      [{ text }],
+      "https://api-free.deepl.com/v2/translate",
       {
-        baseURL: process.env.ENDPOINT_MICROSOFT_AZURE_TRANSLATE,
+        text,
+        target_lang: "en",
+      },
+      {
         headers: {
-          "Ocp-Apim-Subscription-Key": process.env.SECRET_KEY_MICROSOFT_AZURE,
-          "Ocp-Apim-Subscription-Region": process.env.LOCATION_MICROSOFT_AZURE,
-          "Content-type": "application/json",
-          "X-ClientTraceId": uuidv4().toString(),
+          "Content-Type": "application/x-www-form-urlencoded",
         },
         params: {
-          "api-version": "3.0",
+          auth_key: process.env.DEEPL_API_KEY,
         },
         responseType: "json",
       },
     );
 
-    const detectedLanguage = response.data[0].language;
-    return detectedLanguage;
+    const detectedLanguage =
+      response.data.translations[0].detected_source_language;
+    return detectedLanguage.toLowerCase();
   } catch (error) {
-    console.error("Error detecting language:", error);
+    console.error("Error detecting language with DeepL:", error);
     throw error;
   }
 }
-(async () => {
-  try {
-    const detectedLanguage = await detectLanguage("fuck u mother ");
-    console.log("Detected Language:", detectedLanguage);
-  } catch (error) {
-    console.error("Error:", error.message);
-  }
-})();
 
 async function translateAndAppendMinutes(language) {
   const min = await translateText("min", language);
