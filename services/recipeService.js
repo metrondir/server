@@ -14,7 +14,7 @@ const {
   translateRecipePost,
   TranslateRecipeInformation,
 } = require("../services/translationService");
-const { diets, cuisines, dishTypes } = require("../utils/recipesData");
+const { data } = require("../utils/recipesData");
 const ApiError = require("../middleware/apiError");
 
 const getRecipe = async (req) => {
@@ -206,12 +206,6 @@ const deleteRecipe = async (req) => {
 };
 
 const loadData = async (req, language) => {
-  const data = {
-    diets,
-    cuisines,
-    dishTypes,
-  };
-
   if (language === "en" || language === undefined) {
     return data;
   }

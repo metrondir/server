@@ -7,7 +7,7 @@
     "lint": "eslint 'server.js'",
     "test": "jest --testTimeout=10000 --watchAll --verbose --detectOpenHandles --forceExit --runInBand --coverage",
     "start": "node server.js",
-    "dev": "nodemon --env-file .env server.js"
+    "dev": "nodemon --env-file .env server.js "
   },
   "author": "Roman",
   "license": "MIT",
@@ -16,6 +16,7 @@
     "async_hooks": "^1.0.0",
     "axios": "^1.6.2",
     "bcrypt": "^5.1.1",
+    "cheerio": "^1.0.0-rc.12",
     "compression": "^1.7.4",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
