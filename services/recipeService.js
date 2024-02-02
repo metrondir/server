@@ -44,6 +44,11 @@ const createRecipe = async (req) => {
   ) {
     req.body.extendedIngredients = JSON.parse(req.body.extendedIngredients);
   }
+  if (req.body.dishTypes && typeof req.body.dishTypes === "string") {
+    req.body.dishTypes = req.body.dishTypes.map((dishtype) => dishtype.label);
+    console.log(req.body.dishTypes);
+    req.body.dishTypes = JSON.parse(req.body.dishTypes);
+  }
   if (req.body.dishTypes && Array.isArray(req.body.dishTypes)) {
     req.body.dishTypes = req.body.dishTypes.map((dishtype) => dishtype.label);
   }
