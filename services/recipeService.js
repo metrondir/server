@@ -2,9 +2,7 @@ const Recipe = require("../models/recipeModel");
 const FavoriteRecipe = require("../models/favoriteRecipeModel");
 const SpoonacularRecipeModel = require("../models/spoonacularRecipeModel");
 const imgur = require("imgur");
-const fs = require("fs");
-const csv = require("csv-parser");
-const Papa = require("papaparse");
+
 const {
   parsedIngredients,
   fetchAggregateLikesById,
@@ -35,6 +33,7 @@ const getRecipes = async (req, res, next) => {
 };
 
 const createRecipe = async (req) => {
+  console.log(typeof req.body.diets);
   if (
     req.body.extendedIngredients &&
     typeof req.body.extendedIngredients === "string"
@@ -42,18 +41,24 @@ const createRecipe = async (req) => {
     req.body.extendedIngredients = JSON.parse(req.body.extendedIngredients);
   }
 
-  if (req.body.dishTypes && Array.isArray(req.body.dishTypes)) {
-    req.body.dishTypes = req.body.dishTypes.map((dishtype) => dishtype.label);
+  if (req.body.dishTypes && typeof req.body.dishTypes === "string") {
+    req.body.dishTypes = JSON.parse(req.body.dishTypes).map(
+      (dishtype) => dishtype.label,
+    );
   }
-  if (req.body.cuisines && Array.isArray(req.body.cuisines)) {
-    req.body.cuisines = req.body.cuisines.map((cuisine) => cuisine.label);
+
+  if (req.body.cuisines && typeof req.body.cuisines === "string") {
+    req.body.cuisines = JSON.parse(req.body.cuisines).map(
+      (cuisine) => cuisine.label,
+    );
   }
-  if (req.body.diets && Array.isArray(req.body.diets)) {
-    req.body.diets = req.body.diets.map((diet) => diet.label);
+
+  if (req.body.diets && typeof req.body.diets === "string") {
+    req.body.diets = JSON.parse(req.body.diets).map((diet) => diet.label);
   }
 
   const imgurLink = await imgur.uploadFile(req.file.path);
-  const language = await detectLanguage(req.body.instructions);
+  const language = await detectLanguage(req.body.title);
   try {
     let recipe = await translateRecipePost(req.body, language);
     const cost = await parsedIngredients(recipe.extendedIngredients);
@@ -112,14 +117,8 @@ const deleteFavoriteRecipe = async (
   const deletedFavoriteRecipe = await FavoriteRecipe.findByIdAndDelete(
     existingFavoriteRecipe._id,
   );
-  const likes = await fetchAggregateLikesById(recipeId);
-
   if (recipeId >= 7) {
-    await updateSpoonacularRecipeLikes(
-      existedSpoonacularRecipe,
-      recipeId,
-      likes - 1,
-    );
+    await updateSpoonacularRecipeLikes(existedSpoonacularRecipe, recipeId, -1);
   } else {
     await updateRecipeLikes(recipeId, null, -1);
   }

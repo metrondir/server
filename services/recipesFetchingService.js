@@ -277,6 +277,7 @@ const fetchInformationById = async (id, language) => {
   const url = `${baseUrl}/${id}/information?includeNutrition=false&apiKey=${apiKey}`;
   try {
     const response = await axios.get(url);
+    console.log(response);
     if (language === "en" || !language) {
       return {
         id: response.data.id,
@@ -352,6 +353,14 @@ const fetchFavoriteRecipes = async (id, language) => {
         favoriteRecipesByDb.push(favoriteRecipe);
       }
     }
+    const fetchRecipes = async (recipeIds) => {
+      try {
+        const fetchedRecipes = await Recipe.find({ _id: recipeIds });
+        return fetchedRecipes;
+      } catch (error) {
+        throw new Error(error);
+      }
+    };
     const recipes = await Promise.all(
       favoriteRecipes.map(async (favoriteRecipe) => {
         const url = `${baseUrl}/${favoriteRecipe.recipe}/information?includeNutrition=false&apiKey=${apiKey}`;
@@ -363,15 +372,6 @@ const fetchFavoriteRecipes = async (id, language) => {
         }
       }),
     );
-
-    const fetchRecipes = async (recipeIds) => {
-      try {
-        const fetchedRecipes = await Recipe.find({ _id: recipeIds });
-        return fetchedRecipes;
-      } catch (error) {
-        throw new Error(error);
-      }
-    };
 
     const dbRecipes = await Promise.all(
       favoriteRecipesByDb.map(async (favoriteRecipe) => {

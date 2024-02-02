@@ -47,6 +47,7 @@ async function translateText(text, toLanguage) {
 }
 
 async function detectLanguage(text) {
+  console.log(typeof text);
   try {
     const response = await axios.post(
       `${process.env.ENDPOINT_MICROSOFT_AZURE_TRANSLATE}/detect`,
@@ -73,6 +74,14 @@ async function detectLanguage(text) {
     throw error;
   }
 }
+(async () => {
+  try {
+    const detectedLanguage = await detectLanguage("fuck u mother ");
+    console.log("Detected Language:", detectedLanguage);
+  } catch (error) {
+    console.error("Error:", error.message);
+  }
+})();
 
 async function translateAndAppendMinutes(language) {
   const min = await translateText("min", language);
