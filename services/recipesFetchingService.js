@@ -394,7 +394,6 @@ const fetchFavoriteRecipes = async (id, language) => {
         const fetchedRecipes = await Recipe.find({ _id: recipeIds });
         return fetchedRecipes;
       } catch (error) {
-        console.log(error);
         throw new Error(error);
       }
     };
@@ -427,12 +426,12 @@ const fetchFavoriteRecipes = async (id, language) => {
             }
           }
         } catch (error) {
-          console.log(error);
+          return handleApiError(error, fetchFavoriteRecipes, id, language);
         }
       }),
     );
-    console.log(dbRecipes);
-    return recipes.concat(dbRecipes);
+    const filteredDbRecipes = dbRecipes.filter((recipe) => recipe);
+    return recipes.concat(filteredDbRecipes);
   } catch (error) {
     console.log(error);
     return handleApiError(error, fetchFavoriteRecipes, id, language);
