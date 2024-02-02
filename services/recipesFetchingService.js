@@ -26,7 +26,7 @@ const getRandomSample = (array, size) => {
 async function fetchRecipesData(response, language) {
   if (language === "en" || !language) {
     return response.map((recipe) => ({
-      id: recipe.id || response.data._id,
+      id: recipe.id,
       title: recipe.title,
       image: recipe.image,
       readyInMinutes: recipe.readyInMinutes + " min",
@@ -37,7 +37,7 @@ async function fetchRecipesData(response, language) {
       response.map((recipe) => translateRecipeInformation(recipe, language)),
     );
     return response.map((recipe) => ({
-      id: recipe.id || response.data._id,
+      id: recipe.id,
       title: recipe.title,
       image: recipe.image,
       readyInMinutes: recipe.readyInMinutes,
@@ -189,6 +189,7 @@ const fetchRandomRecipes = async (limit, language, refreshToken) => {
   const url = `${baseUrl}/random?apiKey=${apiKey}&number=${limit}`;
   try {
     const response = await axios.get(url);
+
     if (!refreshToken) {
       const recipes = await getRecipesFromDatabaseRandom(limit);
       const allRecipes = response.data.recipes.concat(recipes);
@@ -207,7 +208,7 @@ const fetchRandomRecipes = async (limit, language, refreshToken) => {
       allRecipes,
       Math.floor(allRecipes.length / 2),
     );
-    console.log(allRecipes);
+
     return fetchRecipesData(halfRandomSample, language);
   } catch (error) {
     return handleApiError(error, fetchRandomRecipes, limit, language);
