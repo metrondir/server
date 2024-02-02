@@ -413,7 +413,7 @@ const fetchFavoriteRecipes = async (id, language) => {
                 title: fetchedRecipe.title,
                 image: fetchedRecipe.image,
                 readyInMinutes: `${fetchedRecipe.readyInMinutes} min`,
-                dishType: fetchedRecipe.dishType || [],
+                dishTypes: fetchedRecipe.dishTypes || [],
               };
             } else {
               await translateRecipeInformation(fetchedRecipe, language);
@@ -422,7 +422,7 @@ const fetchFavoriteRecipes = async (id, language) => {
                 title: fetchedRecipe.title,
                 image: fetchedRecipe.image,
                 readyInMinutes: fetchedRecipe.readyInMinutes,
-                dishType: fetchedRecipe.dishType || [],
+                dishTypes: fetchedRecipe.dishTypes || [],
               };
             }
           }
