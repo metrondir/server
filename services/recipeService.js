@@ -37,7 +37,7 @@ const getRecipes = async (req, res, next) => {
 const createRecipe = async (req) => {
   console.log(req.body.dishTypes);
   console.log(req.body.cuisines);
-  console.log(req.body.diets);
+  console.log(typeof req.body.diets);
   if (
     req.body.extendedIngredients &&
     typeof req.body.extendedIngredients === "string"
