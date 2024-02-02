@@ -196,7 +196,7 @@ const deleteRecipe = async (req) => {
   if (!recipe) {
     throw ApiError.BadRequest("Recipe not found");
   }
-  await Recipe.deleteOne({ _id: req.params.id });
+  await Recipe.deleteOne({ id: req.params.id });
 
   return recipe;
 };

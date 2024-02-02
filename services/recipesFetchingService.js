@@ -199,15 +199,15 @@ const fetchRandomRecipes = async (limit, language, refreshToken) => {
       return fetchRecipesData(halfRandomSample, language);
     }
     const user = await findUserByRefreshToken(refreshToken);
-    const recipes = await getRecipesFromDatabaseRandomWithUsers(
-      limit,
-      user._id,
-    );
+
+    const recipes = await getRecipesFromDatabaseRandomWithUsers(limit, user.id);
+
     const allRecipes = response.data.recipes.concat(recipes);
     const halfRandomSample = getRandomSample(
       allRecipes,
       Math.floor(allRecipes.length / 2),
     );
+    console.log(allRecipes);
     return fetchRecipesData(halfRandomSample, language);
   } catch (error) {
     return handleApiError(error, fetchRandomRecipes, limit, language);
@@ -391,7 +391,7 @@ const fetchFavoriteRecipes = async (id, language) => {
 
     const fetchRecipes = async (recipeIds) => {
       try {
-        const fetchedRecipes = await Recipe.find({ _id: recipeIds });
+        const fetchedRecipes = await Recipe.find({ id: recipeIds });
         return fetchedRecipes;
       } catch (error) {
         throw new Error(error);
@@ -408,7 +408,7 @@ const fetchFavoriteRecipes = async (id, language) => {
             console.log(fetchedRecipe);
             if (language === "en" || !language) {
               return {
-                id: fetchedRecipe._id,
+                id: fetchedRecipe.id,
                 title: fetchedRecipe.title,
                 image: fetchedRecipe.image,
                 readyInMinutes: `${fetchedRecipe.readyInMinutes} min`,
@@ -417,7 +417,7 @@ const fetchFavoriteRecipes = async (id, language) => {
             } else {
               await translateRecipeInformation(fetchedRecipe, language);
               return {
-                id: fetchedRecipe._id,
+                id: fetchedRecipe.id,
                 title: fetchedRecipe.title,
                 image: fetchedRecipe.image,
                 readyInMinutes: fetchedRecipe.readyInMinutes,

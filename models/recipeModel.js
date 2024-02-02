@@ -21,6 +21,8 @@ const extendedIngredientSchema = new mongoose.Schema({
 });
 
 const recipeSchema = new mongoose.Schema({
+  _id: false,
+  id: mongoose.Schema.Types.ObjectId,
   vegetarian: { type: String, enum: ["vegetarian", "non-vegetarian"] },
   extendedIngredients: [extendedIngredientSchema],
   user: {
