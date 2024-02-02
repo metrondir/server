@@ -69,6 +69,7 @@ const createRecipe = async (req) => {
     await recipe.save();
     return recipe;
   } catch (error) {
+    console.log(error);
     throw ApiError.BadRequest(error.message);
   }
 };

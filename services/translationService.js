@@ -108,7 +108,6 @@ async function translateRecipeInformation(recipe, language) {
 }
 
 async function translateRecipePost(recipe, language) {
-  console.log(language);
   try {
     if (language === "en" || !language) {
       return recipe;
@@ -117,21 +116,24 @@ async function translateRecipePost(recipe, language) {
 
     recipe.instructions = await translateText(recipe.instructions, language);
 
-    if (typeof req.body.dishTypes === "string") {
+    if (Array.isArray(recipe.dishTypes)) {
       recipe.dishTypes = await Promise.all(
         recipe.dishTypes.map(async (dishType) => {
           return await translateText(dishType, language);
         }),
       );
     }
-    if (typeof req.body.diets === "string") {
+
+    // Similarly, for diets and cuisines
+    if (Array.isArray(recipe.diets)) {
       recipe.diets = await Promise.all(
         recipe.diets.map(async (diet) => {
           return await translateText(diet, language);
         }),
       );
     }
-    if (typeof req.body.cuisines === "string") {
+
+    if (Array.isArray(recipe.cuisines)) {
       recipe.cuisines = await Promise.all(
         recipe.cuisines.map(async (cuisine) => {
           return await translateText(cuisine, language);
@@ -147,7 +149,7 @@ async function translateRecipePost(recipe, language) {
         return ingredient;
       }),
     );
-    console.log(recipe);
+
     return recipe;
   } catch (error) {
     console.log(error);
