@@ -108,43 +108,50 @@ async function translateRecipeInformation(recipe, language) {
 }
 
 async function translateRecipePost(recipe, language) {
-  if (language === "en" || !language) {
-    return recipe;
-  }
-  await translateText(recipe.title, (language = "en"));
+  console.log(language);
+  try {
+    if (language === "en" || !language) {
+      return recipe;
+    }
+    await translateText(recipe.title, language);
 
-  recipe.instructions = await translateText(
-    recipe.instructions,
-    (language = "en"),
-  );
-  if (Array.isArray(recipe.dishTypes)) {
-    recipe.dishTypes = await Promise.all(
-      recipe.dishTypes.map(async (dishType) => {
-        return await translateText(dishType, language);
+    recipe.instructions = await translateText(recipe.instructions, language);
+
+    if (typeof req.body.dishTypes === "string") {
+      recipe.dishTypes = await Promise.all(
+        recipe.dishTypes.map(async (dishType) => {
+          return await translateText(dishType, language);
+        }),
+      );
+    }
+    if (typeof req.body.diets === "string") {
+      recipe.diets = await Promise.all(
+        recipe.diets.map(async (diet) => {
+          return await translateText(diet, language);
+        }),
+      );
+    }
+    if (typeof req.body.cuisines === "string") {
+      recipe.cuisines = await Promise.all(
+        recipe.cuisines.map(async (cuisine) => {
+          return await translateText(cuisine, language);
+        }),
+      );
+    }
+    recipe.extendedIngredients = await Promise.all(
+      recipe.extendedIngredients.map(async (ingredient) => {
+        ingredient.original = await translateText(
+          ingredient.original,
+          language,
+        );
+        return ingredient;
       }),
     );
+    console.log(recipe);
+    return recipe;
+  } catch (error) {
+    console.log(error);
   }
-  if (Array.isArray(recipe.cuisines)) {
-    recipe.cuisines = await Promise.all(
-      recipe.cuisines.map(async (cuisine) => {
-        return await translateText(cuisine, language);
-      }),
-    );
-  }
-  if (Array.isArray(recipe.diets)) {
-    recipe.diets = await Promise.all(
-      recipe.diets.map(async (diet) => {
-        return await translateText(diet, language);
-      }),
-    );
-  }
-  recipe.extendedIngredients = await Promise.all(
-    recipe.extendedIngredients.map(async (ingredient) => {
-      ingredient.original = await translateText(ingredient.original, language);
-      return ingredient;
-    }),
-  );
-  return recipe;
 }
 
 const TranslateRecipeInformation = async (recipe, language) => {

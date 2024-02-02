@@ -274,6 +274,7 @@ const fetchAggregateLikesById = async (recipeId) => {
 
 const fetchInformationById = async (id, language) => {
   let apiKey = getApiKey();
+
   const url = `${baseUrl}/${id}/information?includeNutrition=false&apiKey=${apiKey}`;
   try {
     const response = await axios.get(url);
@@ -342,7 +343,9 @@ const fetchInformationById = async (id, language) => {
 const fetchFavoriteRecipes = async (id, language) => {
   try {
     const apiKey = getApiKey();
+
     const allFavoriteRecipes = await FavoriteRecipe.find({ user: id });
+
     const favoriteRecipes = [];
     const favoriteRecipesByDb = [];
 
@@ -353,42 +356,85 @@ const fetchFavoriteRecipes = async (id, language) => {
         favoriteRecipesByDb.push(favoriteRecipe);
       }
     }
-    const fetchRecipes = async (recipeIds) => {
-      try {
-        const fetchedRecipes = await Recipe.find({ _id: recipeIds });
-        return fetchedRecipes;
-      } catch (error) {
-        throw new Error(error);
-      }
-    };
+
     const recipes = await Promise.all(
       favoriteRecipes.map(async (favoriteRecipe) => {
         const url = `${baseUrl}/${favoriteRecipe.recipe}/information?includeNutrition=false&apiKey=${apiKey}`;
+
         try {
           const response = await axios.get(url);
-          return fetchRecipes(response.data, language);
+
+          if (language === "en" || !language) {
+            return {
+              id: response.data.id,
+              title: response.data.title,
+              image: response.data.image,
+              readyInMinutes: response.data.readyInMinutes + " min",
+              dishTypes: response.data.dishTypes || [],
+            };
+          } else {
+            await translateRecipeInformation(response.data, language);
+            return {
+              id: response.data.id,
+              title: response.data.title,
+              image: response.data.image,
+              readyInMinutes: response.data.readyInMinutes,
+              dishTypes: response.data.dishTypes || [],
+            };
+          }
         } catch (error) {
+          console.log(error);
           return handleApiError(error, fetchFavoriteRecipes, id, language);
         }
       }),
     );
 
+    const fetchRecipes = async (recipeIds) => {
+      try {
+        const fetchedRecipes = await Recipe.find({ _id: recipeIds });
+        return fetchedRecipes;
+      } catch (error) {
+        console.log(error);
+        throw new Error(error);
+      }
+    };
+
     const dbRecipes = await Promise.all(
       favoriteRecipesByDb.map(async (favoriteRecipe) => {
         try {
           const fetchedRecipes = await fetchRecipes([favoriteRecipe.recipe]);
+
           if (fetchedRecipes.length > 0) {
             const fetchedRecipe = fetchedRecipes[0];
-            return fetchRecipes(fetchedRecipe, language);
+            console.log(fetchedRecipe);
+            if (language === "en" || !language) {
+              return {
+                id: fetchedRecipe._id,
+                title: fetchedRecipe.title,
+                image: fetchedRecipe.image,
+                readyInMinutes: `${fetchedRecipe.readyInMinutes} min`,
+                dishType: fetchedRecipe.dishType || [],
+              };
+            } else {
+              await translateRecipeInformation(fetchedRecipe, language);
+              return {
+                id: fetchedRecipe._id,
+                title: fetchedRecipe.title,
+                image: fetchedRecipe.image,
+                readyInMinutes: fetchedRecipe.readyInMinutes,
+                dishType: fetchedRecipe.dishType || [],
+              };
+            }
           }
         } catch (error) {
-          return handleApiError(error, fetchFavoriteRecipes, id, language);
+          console.log(error);
         }
       }),
     );
-    const filteredDbRecipes = dbRecipes.filter((recipe) => recipe);
-    return recipes.concat(filteredDbRecipes);
+    console.log(dbRecipes);
+    return recipes.concat(dbRecipes);
   } catch (error) {
+    console.log(error);
     return handleApiError(error, fetchFavoriteRecipes, id, language);
   }
 };
