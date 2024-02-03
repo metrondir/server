@@ -1,6 +1,7 @@
 const Recipe = require("../models/recipeModel");
 const ApiError = require("../middleware/apiError");
 const SpoonacularRecipeModel = require("../models/spoonacularRecipeModel");
+const { query } = require("express");
 
 const getRecipesFromDatabaseRandom = async (limit) => {
   return await Recipe.aggregate([{ $sample: { size: Math.floor(limit) } }]);
@@ -48,6 +49,7 @@ const getRecipesFromDatabaseByIngridients = async (limit, ingredients) => {
 };
 
 const getRecipesFromDatabaseComplex = async (
+  query,
   limit,
   type,
   diet,
@@ -58,7 +60,9 @@ const getRecipesFromDatabaseComplex = async (
     { $match: {} },
     { $sample: { size: Math.floor(limit / 2) } },
   ];
-
+  if (query) {
+    pipeline[0].$match.title = { $regex: new RegExp(query, "i") };
+  }
   if (type) {
     pipeline[0].$match.dishTypes = type;
   }

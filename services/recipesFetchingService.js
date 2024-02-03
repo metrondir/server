@@ -98,6 +98,7 @@ const fetchRecipes = async (
   try {
     const response = await axios.get(url);
     const recipes = await getRecipesFromDatabaseComplex(
+      query,
       limit,
       type,
       diet,
