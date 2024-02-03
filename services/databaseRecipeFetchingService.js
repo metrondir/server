@@ -1,15 +1,15 @@
 const Recipe = require("../models/recipeModel");
 const ApiError = require("../middleware/apiError");
 const SpoonacularRecipeModel = require("../models/spoonacularRecipeModel");
-const { query } = require("express");
 
+const mongoose = require("mongoose");
 const getRecipesFromDatabaseRandom = async (limit) => {
   return await Recipe.aggregate([{ $sample: { size: Math.floor(limit) } }]);
 };
 
 const getRecipesFromDatabaseRandomWithUsers = async (limit, userId) => {
   return await Recipe.aggregate([
-    { $match: { user: { $ne: userId } } },
+    { $match: { user: { $ne: new mongoose.Types.ObjectId(userId) } } },
     { $sample: { size: Math.floor(limit) } },
   ]);
 };

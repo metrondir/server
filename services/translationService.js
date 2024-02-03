@@ -110,8 +110,6 @@ async function translateRecipeInformation(recipe, language) {
 }
 
 async function translateRecipePost(recipe, language) {
-  console.log("translaterecipePost recept", recipe);
-  console.log("translaterecipePost language", language);
   try {
     if (language === "en" || !language) {
       return recipe;
@@ -150,7 +148,7 @@ async function translateRecipePost(recipe, language) {
           ingredient.original,
           language,
         );
-        console.log("after translation", recipe);
+
         return ingredient;
       }),
     );
@@ -158,6 +156,7 @@ async function translateRecipePost(recipe, language) {
     return recipe;
   } catch (error) {
     console.log(error);
+    throw new Error(error);
   }
 }
 

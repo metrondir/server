@@ -203,9 +203,7 @@ const fetchRandomRecipes = async (limit, language, refreshToken) => {
       return fetchRecipesData(RandomSample, language);
     }
     const user = await findUserByRefreshToken(refreshToken);
-
     const recipes = await getRecipesFromDatabaseRandomWithUsers(limit, user.id);
-
     const allRecipes = response.data.recipes.concat(recipes);
     let RandomSample = getRandomSample(
       allRecipes,
@@ -463,6 +461,7 @@ const parsedIngredients = async (ingredients) => {
     const url = `${baseUrl}/parseIngredients?includeNutrition=false&apiKey=${apiKey}`;
 
     const ingredientList = ingredients.map((item) => item.original).join("\n");
+
     const formData = new URLSearchParams();
     formData.append("ingredientList", ingredientList);
 

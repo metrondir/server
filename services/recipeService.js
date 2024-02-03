@@ -45,7 +45,6 @@ const getRecipes = async (req, res, next) => {
 };
 
 const createRecipe = async (req) => {
-  console.log(req.body);
   if (
     req.body.extendedIngredients &&
     typeof req.body.extendedIngredients === "string"
@@ -68,10 +67,10 @@ const createRecipe = async (req) => {
   if (req.body.diets && typeof req.body.diets === "string") {
     req.body.diets = JSON.parse(req.body.diets).map((diet) => diet.label);
   }
-  console.log(req.body);
+
   const imgurLink = await imgur.uploadFile(req.file.path);
   const language = await detectLanguage(req.body.instructions);
-  console.log(language);
+
   try {
     let recipe = await translateRecipePost(req.body, language);
     const cost = await parsedIngredients(recipe.extendedIngredients);
