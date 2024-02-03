@@ -19,27 +19,10 @@ const {
 } = require("./databaseRecipeFetchingService");
 const { findUserByRefreshToken } = require("./userService");
 
-function eraseRandomRecipes(totalRecipes, limit) {
-  if (limit >= totalRecipes) {
-    console.error("Limit exceeds total number of recipes.");
-    return [];
-  }
-
-  let indices = [];
-
-  for (let i = 0; i < totalRecipes; i++) {
-    indices.push(i);
-  }
-
-  for (let i = indices.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [indices[i], indices[j]] = [indices[j], indices[i]];
-  }
-
-  indices.splice(0, limit);
-
-  return indices;
-}
+const getRandomSample = (array, size) => {
+  const shuffled = array.slice().sort(() => 0.5 - Math.random());
+  return shuffled.slice(0, size);
+};
 
 async function fetchRecipesData(response, language) {
   if (language === "en" || !language) {
@@ -211,8 +194,11 @@ const fetchRandomRecipes = async (limit, language, refreshToken) => {
     if (!refreshToken) {
       const recipes = await getRecipesFromDatabaseRandom(limit);
       const allRecipes = response.data.recipes.concat(recipes);
-      const recipesData = eraseRandomRecipes(allRecipes.length, limit);
-      return fetchRecipesData(recipesData, language);
+      const halfRandomSample = getRandomSample(
+        allRecipes,
+        Math.floor(allRecipes.length),
+      );
+      return fetchRecipesData(halfRandomSample, language);
     }
     const user = await findUserByRefreshToken(refreshToken);
 
