@@ -278,7 +278,7 @@ const fetchAggregateLikesById = async (recipeId) => {
 
 const fetchInformationById = async (id, language) => {
   let apiKey = getApiKey();
-  if (id.length >= 7) {
+  if (id.length >= 8) {
     const data = await Recipe.findById(id);
 
     if (!data) {
@@ -372,7 +372,7 @@ const fetchFavoriteRecipes = async (id, language) => {
     const favoriteRecipesByDb = [];
 
     for (const favoriteRecipe of allFavoriteRecipes) {
-      if (favoriteRecipe.recipe.length === 6) {
+      if (favoriteRecipe.recipe.length <= 7) {
         favoriteRecipes.push(favoriteRecipe);
       } else {
         favoriteRecipesByDb.push(favoriteRecipe);

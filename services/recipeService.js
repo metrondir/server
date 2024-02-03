@@ -130,7 +130,7 @@ const deleteFavoriteRecipe = async (
   const deletedFavoriteRecipe = await FavoriteRecipe.findByIdAndDelete(
     existingFavoriteRecipe._id,
   );
-  if (recipeId >= 7) {
+  if (recipeId >= 8) {
     await updateSpoonacularRecipeLikes(existedSpoonacularRecipe, recipeId, -1);
   } else {
     await updateRecipeLikes(recipeId, null, -1);
@@ -144,7 +144,7 @@ const updateRecipeLikes = async (
   existedSpoonacularRecipe,
   likesDelta = 1,
 ) => {
-  if (recipeId >= 7) {
+  if (recipeId >= 8) {
     await updateSpoonacularRecipeLikes(
       existedSpoonacularRecipe,
       recipeId,
