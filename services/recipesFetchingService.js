@@ -194,23 +194,25 @@ const fetchRandomRecipes = async (limit, language, refreshToken) => {
     if (!refreshToken) {
       const recipes = await getRecipesFromDatabaseRandom(limit);
       const allRecipes = response.data.recipes.concat(recipes);
-      const halfRandomSample = getRandomSample(
+      let RandomSample = getRandomSample(
         allRecipes,
         Math.floor(allRecipes.length),
       );
-      return fetchRecipesData(halfRandomSample, language);
+      RandomSample = RandomSample.slice(0, limit);
+      return fetchRecipesData(RandomSample, language);
     }
     const user = await findUserByRefreshToken(refreshToken);
 
     const recipes = await getRecipesFromDatabaseRandomWithUsers(limit, user.id);
 
     const allRecipes = response.data.recipes.concat(recipes);
-    const halfRandomSample = getRandomSample(
+    let RandomSample = getRandomSample(
       allRecipes,
-      Math.floor(allRecipes.length / 2),
+      Math.floor(allRecipes.length),
     );
-
-    return fetchRecipesData(halfRandomSample, language);
+    RandomSample = RandomSample.slice(0, limit);
+    console.log(RandomSample.length);
+    return fetchRecipesData(RandomSample, language);
   } catch (error) {
     return handleApiError(error, fetchRandomRecipes, limit, language);
   }
