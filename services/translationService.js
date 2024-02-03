@@ -47,6 +47,7 @@ async function translateText(text, toLanguage) {
 }
 
 async function detectLanguage(text) {
+  console.log(text);
   try {
     const response = await axios.post(
       "https://api-free.deepl.com/v2/translate",
@@ -64,9 +65,10 @@ async function detectLanguage(text) {
         responseType: "json",
       },
     );
-
+    console.log(response.data);
     const detectedLanguage =
       response.data.translations[0].detected_source_language;
+    console.log(detectedLanguage);
     return detectedLanguage.toLowerCase();
   } catch (error) {
     console.error("Error detecting language with DeepL:", error);
@@ -108,6 +110,8 @@ async function translateRecipeInformation(recipe, language) {
 }
 
 async function translateRecipePost(recipe, language) {
+  console.log("translaterecipePost recept", recipe);
+  console.log("translaterecipePost language", language);
   try {
     if (language === "en" || !language) {
       return recipe;
@@ -146,6 +150,7 @@ async function translateRecipePost(recipe, language) {
           ingredient.original,
           language,
         );
+        console.log("after translation", recipe);
         return ingredient;
       }),
     );
