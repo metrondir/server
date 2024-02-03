@@ -1,7 +1,6 @@
 const express = require("express");
 const router = express.Router();
 const {
-  getRecipe,
   getRecipes,
   setFavoriteRecipes,
   createRecipe,
@@ -25,7 +24,6 @@ router.route("/favourite/:id").get(authMiddleware, setFavoriteRecipes);
 
 router
   .route("/:id")
-  .get(authMiddleware, getRecipe)
   .put(authMiddleware, updateRecipe)
   .delete(authMiddleware, deleteRecipe);
 

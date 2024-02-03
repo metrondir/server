@@ -1,8 +1,8 @@
 const axios = require("axios");
 const { baseUrl, getApiKey } = require("../config/configApiHandler");
 const FavoriteRecipe = require("../models/favoriteRecipeModel");
+
 const Recipe = require("../models/recipeModel");
-const { getRecipe } = require("./recipeService.js");
 const {
   translateText,
   handleApiError,
@@ -277,15 +277,28 @@ const fetchAggregateLikesById = async (recipeId) => {
 const fetchInformationById = async (id, language) => {
   let apiKey = getApiKey();
   if (id.length >= 7) {
-    console.log(id);
-    const recipe = await getRecipe(id);
+    const data = await Recipe.findById(id);
 
-    return recipe;
+    if (!data) {
+      throw ApiError.BadRequest("Recipe not found");
+    }
+    return {
+      id: data.id,
+      title: data.title,
+      image: data.image,
+      diets: data.diets || [],
+      instructions: data.instructions,
+      extendedIngredients:
+        data.extendedIngredients.map((ingredient) => ingredient.original) || [],
+      pricePerServing: data.pricePerServing,
+      readyInMinutes: data.readyInMinutes + " min",
+      dishTypes: data.dishTypes || [],
+    };
   }
   const url = `${baseUrl}/${id}/information?includeNutrition=false&apiKey=${apiKey}`;
   try {
     const response = await axios.get(url);
-    console.log(response);
+
     if (language === "en" || !language) {
       return {
         id: response.data.id,
@@ -391,6 +404,7 @@ const fetchFavoriteRecipes = async (id, language) => {
           }
         } catch (error) {
           console.log(error);
+
           return handleApiError(error, fetchFavoriteRecipes, id, language);
         }
       }),
@@ -412,7 +426,6 @@ const fetchFavoriteRecipes = async (id, language) => {
 
           if (fetchedRecipes.length > 0) {
             const fetchedRecipe = fetchedRecipes[0];
-            console.log(fetchedRecipe);
             if (language === "en" || !language) {
               return {
                 id: fetchedRecipe.id,

@@ -55,3 +55,5 @@ const test = async () => {
 
 // Call the test function
 test();
+
+module.exports = { ParseCurrencyExchange };

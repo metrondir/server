@@ -8,6 +8,7 @@ const {
   translateRecipe,
   getRecipesByCategories,
 } = require("../controllers/apiController");
+const authMiddleware = require("../middleware/authMiddleware");
 
 const router = express.Router();
 

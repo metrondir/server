@@ -16,12 +16,23 @@ const { data } = require("../utils/recipesData");
 const ApiError = require("../middleware/apiError");
 
 const getRecipe = async (id) => {
-  console.log(id);
-  const recipe = await Recipe.findById(id);
-  if (!recipe) {
+  const data = await Recipe.findById(id);
+
+  if (!data) {
     throw ApiError.BadRequest("Recipe not found");
   }
-  return recipe;
+  return {
+    id: data.id,
+    title: data.title,
+    image: data.image,
+    diets: data.diets || [],
+    instructions: data.instructions,
+    extendedIngredients:
+      data.extendedIngredients.map((ingredient) => ingredient.original) || [],
+    pricePerServing: data.pricePerServing,
+    readyInMinutes: data.readyInMinutes + " min",
+    dishTypes: data.dishTypes || [],
+  };
 };
 
 const getRecipes = async (req, res, next) => {
