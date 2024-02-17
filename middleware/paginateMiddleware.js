@@ -75,64 +75,58 @@ const redisGetModelsWithPaginating = async (
   }
 };
 
-function calculatePagination(page, limit, totalDocuments) {
-  const startIndex = (page - 1) * limit;
-  const endIndex = page * limit;
+const calculatePagination = (page, size, totalItems) => {
+  const startIndex = (page - 1) * size;
+  const endIndex = page * size;
 
-  return {
-    startIndex,
-    endIndex,
-    hasPrevious: startIndex > 0,
-    hasNext: endIndex < totalDocuments,
-  };
-}
+  const hasPrevious = page > 1;
+  const hasNext = endIndex < totalItems;
 
-paginate = function (model, conditions = {}) {
-  return asyncHandler(async (req, res, next) => {
-    try {
-      const totalDocuments = await model.countDocuments();
-      const page = parseInt(req.query.page) || 1;
-      const limit = parseInt(req.query.limit) || totalDocuments;
+  return { startIndex, endIndex, hasPrevious, hasNext };
+};
 
-      if (isNaN(page) || page < 1) {
-        throw ApiError.BadRequest("Page must be greater than 0");
-      }
-      if (isNaN(limit) || limit < 1) {
-        throw ApiError.BadRequest("Limit must be greater than 0");
-      }
-      if (limit > totalDocuments) {
-        throw ApiError.BadRequest(
-          `Limit cannot be greater than total documents: ${totalDocuments}`,
-        );
-      }
-
-      const { startIndex, endIndex, hasPrevious, hasNext } =
-        calculatePagination(page, limit, totalDocuments);
-
-      const sortBy = req.query.sortBy || "_id";
-      const sortOrder =
-        req.query.sortOrder && req.query.sortOrder.toLowerCase() === "desc"
-          ? -1
-          : 1;
-
-      const result = {
-        next: hasNext ? { page: page + 1, limit } : undefined,
-        previous: hasPrevious ? { page: page - 1, limit } : undefined,
-      };
-
-      result.results = await model
-        .find(conditions)
-        .sort({ [sortBy]: sortOrder })
-        .limit(limit)
-        .skip(startIndex)
-        .exec();
-
-      res.paginatedResult = result;
-      next();
-    } catch (error) {
-      throw ApiError.BadRequest(error.message);
+const paginateArray = (data, page, size) => (req, res, next) => {
+  try {
+    if (!size || !page) {
+      res.locals.paginatedData = data;
+      return next();
     }
-  });
+    const totalItems = data.length;
+    const pageNumber = parseInt(page) || 1;
+    const pageSize = parseInt(size) || totalItems;
+
+    if (isNaN(pageNumber) || pageNumber < 1) {
+      throw new Error("Page must be greater than 0");
+    }
+    if (isNaN(pageSize) || pageSize < 1) {
+      throw new Error("Limit must be greater than 0");
+    }
+    if (pageSize > totalItems) {
+      throw new Error(
+        `Limit cannot be greater than total items: ${totalItems}`,
+      );
+    }
+
+    const { startIndex, endIndex, hasPrevious, hasNext } = calculatePagination(
+      pageNumber,
+      pageSize,
+      totalItems,
+    );
+
+    const result = {
+      next: hasNext ? { page: pageNumber + 1, size: pageSize } : undefined,
+      previous: hasPrevious
+        ? { page: pageNumber - 1, size: pageSize }
+        : undefined,
+    };
+
+    result.results = data.slice(startIndex, endIndex);
+
+    res.locals.paginatedData = result;
+    next();
+  } catch (error) {
+    throw new Error(error);
+  }
 };
 const onDataChanged = async (modelName) => {
   try {
@@ -154,4 +148,5 @@ module.exports = {
   redisGetModelsWithPaginating,
   redisGetModels,
   onDataChanged,
+  paginateArray,
 };

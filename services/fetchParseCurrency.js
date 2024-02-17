@@ -1,6 +1,6 @@
 const cheerio = require("cheerio");
 const axios = require("axios");
-
+const CurrencyModel = require("../models/curencyModel");
 const ParseCurrencyExchange = async () => {
   try {
     const response = await axios.get(
@@ -9,38 +9,50 @@ const ParseCurrencyExchange = async () => {
 
     const $ = cheerio.load(response.data);
 
-    // Find the table with the name "currencypage-mini"
     const currencyDiv = $(".css-panes");
 
     if (currencyDiv.length > 0) {
-      // Find all tables with the name "currencypage-mini" within the div
       const tables = currencyDiv.find('table[class="currencypage-mini"]');
 
-      // Check if any tables were found
       if (tables.length > 0) {
         tables.each((index, table) => {
           const $table = $(table);
+          console.log($table.html());
+          const relevantTds = $table.find(
+            "td:has(span:not(.flag.us)), td:has(b)",
+          );
 
-          // Find all <td> elements with either <span> or <b>
-          const relevantTds = $table.find("td:has(span), td:has(b)");
-
-          // Check if any relevant <td> elements were found
           if (relevantTds.length > 0) {
             relevantTds.each((index, td) => {
               const $td = $(td);
-              console.log($td.html());
+
+              // Check if it has a flag with class "wf"
+              const wfFlag = $td.find(".flag");
+
+              if (wfFlag.length > 0) {
+                // Extract values
+                const lanClass = wfFlag.attr("class");
+                const lan = lanClass ? lanClass.split(" ")[1] : undefined;
+
+                // Use regular expression to extract numeric values from <b> tags
+                const numericValues = wfFlag
+                  .find("b")
+                  .map(function () {
+                    const text = $(this).text().trim();
+                    const numericValue = parseFloat(text);
+                    return isNaN(numericValue) ? 0 : numericValue;
+                  })
+                  .get();
+                const pricePerDollar =
+                  numericValues.length > 0 ? numericValues[0] : 0;
+
+                // Use the values as needed (for example, log or set to a database)
+                console.log(`lan: ${lan}, pricePerDollar: ${pricePerDollar}`);
+              }
             });
-          } else {
-            console.log("No relevant <td> elements found in the table");
           }
         });
-      } else {
-        console.log(
-          "No tables with name 'currencypage-mini' found inside the div",
-        );
       }
-    } else {
-      console.log("Div with class 'css-panes' not found");
     }
   } catch (error) {
     console.error("Error fetching data:", error.message);

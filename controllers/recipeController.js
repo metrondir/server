@@ -2,7 +2,7 @@ const asyncHandler = require("express-async-handler");
 const recipeService = require("../services/recipeService");
 const multer = require("multer");
 const ApiError = require("../middleware/apiError");
-
+const { paginateArray } = require("../middleware/paginateMiddleware");
 // multer configuration for file upload
 
 const storage = multer.diskStorage({
@@ -56,8 +56,12 @@ const getRecipe = asyncHandler(async (req, res, next) => {
 
 const getRecipes = asyncHandler(async (req, res, next) => {
   try {
+    const { page, size } = req.query;
     const recipes = await recipeService.getRecipes(req, res, next);
-    return res.status(200).json(recipes);
+    paginateArray(recipes, page, size)(req, res, () => {
+      const paginatedRecipes = res.locals.paginatedData;
+      res.status(200).json(paginatedRecipes);
+    });
   } catch (error) {
     next(error);
   }
