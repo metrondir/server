@@ -114,10 +114,13 @@ const paginateArray = (data, page, size) => (req, res, next) => {
     );
 
     const result = {
-      next: hasNext ? { page: pageNumber + 1, size: pageSize } : undefined,
+      next: hasNext
+        ? { page: pageNumber + 1, size: totalItems - pageSize * page }
+        : undefined,
       previous: hasPrevious
         ? { page: pageNumber - 1, size: pageSize }
         : undefined,
+      totalItems: totalItems,
     };
 
     result.results = data.slice(startIndex, endIndex);

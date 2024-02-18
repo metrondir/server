@@ -1,7 +1,7 @@
 const express = require("express");
 const errorHandler = require("./middleware/errorHandler");
 const connectDb = require("./config/dbConnection");
-
+const cron = require("node-cron");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
 const dotenv = require("dotenv").config();
@@ -11,6 +11,7 @@ const { transports, format } = require("winston");
 const helmet = require("helmet");
 require("winston-mongodb");
 const logger = require("./utils/logger");
+const { ParseCurrencyExchange } = require("./services/fetchParseCurrency");
 
 connectDb();
 
@@ -48,6 +49,10 @@ app.use("/api/users", require("./routes/userRoutes"));
 app.use("/api/spoonacular/recipes", require("./routes/apiRoutes"));
 
 app.use(errorHandler);
+cron.schedule("0 0 * * *", async () => {
+  console.log("Running currency update...");
+  await ParseCurrencyExchange();
+});
 
 const myFormat = format.printf(
   ({ level, message, label, timestamp, metadata }) => {

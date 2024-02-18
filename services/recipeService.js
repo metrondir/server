@@ -2,7 +2,7 @@ const Recipe = require("../models/recipeModel");
 const FavoriteRecipe = require("../models/favoriteRecipeModel");
 const SpoonacularRecipeModel = require("../models/spoonacularRecipeModel");
 const imgur = require("imgur");
-
+const { changeCurrency } = require("./changeCurrencyRecipesService");
 const {
   parsedIngredients,
   fetchAggregateLikesById,
@@ -11,6 +11,7 @@ const {
   detectLanguage,
   translateRecipePost,
   TranslateRecipeInformation,
+  translateText,
 } = require("../services/translationService");
 const { data } = require("../utils/recipesData");
 const ApiError = require("../middleware/apiError");
@@ -36,12 +37,41 @@ const getRecipe = async (id) => {
 };
 
 const getRecipes = async (req, res, next) => {
+  const { currency, language } = req.query;
+
   const recipes = await Recipe.find({ user: req.user.id });
-  const updatedRecipes = recipes.map((recipe) => ({
-    ...recipe._doc,
-    readyInMinutes: recipe.readyInMinutes + " min",
-  }));
-  return updatedRecipes;
+  if (recipes.length === 0) return [];
+  if (language === "en" || !language) {
+    const updatedRecipes = recipes.map((recipe) => ({
+      ...recipe._doc,
+      readyInMinutes: recipe.readyInMinutes + " min",
+    }));
+    if (currency) return changeCurrency(updatedRecipes, currency);
+
+    return updatedRecipes;
+  } else {
+    const min = await translateText(" min", language);
+    await Promise.all(
+      recipes.map((recipe) => translateRecipePost(recipe, language)),
+    );
+
+    const translatedRecipes = recipes.map((recipe) => ({
+      id: recipe.id || recipe._id,
+      title: recipe.title,
+      image: recipe.image,
+      extendedIngredients: recipe.extendedIngredients,
+      pricePerServing: recipe.pricePerServing,
+      diets: recipe.diets || [],
+      cuisines: recipe.cuisines || [],
+      instructions: recipe.instructions,
+      readyInMinutes: recipe.readyInMinutes + min,
+      dishTypes: recipe.dishTypes || [],
+    }));
+
+    if (currency) return changeCurrency(translatedRecipes, currency);
+
+    return translatedRecipes;
+  }
 };
 
 const createRecipe = async (req) => {
@@ -73,6 +103,7 @@ const createRecipe = async (req) => {
 
   try {
     let recipe = await translateRecipePost(req.body, language);
+    console.log(recipe);
     const cost = await parsedIngredients(recipe.extendedIngredients);
     recipe.pricePerServing = cost;
     recipe.image = imgurLink.link;
@@ -81,7 +112,6 @@ const createRecipe = async (req) => {
     await recipe.save();
     return recipe;
   } catch (error) {
-    console.log(error);
     throw ApiError.BadRequest(error.message);
   }
 };
