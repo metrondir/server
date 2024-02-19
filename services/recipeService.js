@@ -103,7 +103,6 @@ const createRecipe = async (req) => {
 
   try {
     let recipe = await translateRecipePost(req.body, language);
-    console.log(recipe);
     const cost = await parsedIngredients(recipe.extendedIngredients);
     recipe.pricePerServing = cost;
     recipe.image = imgurLink.link;

@@ -1,6 +1,7 @@
 const cheerio = require("cheerio");
 const axios = require("axios");
 const CurrencyModel = require("../models/curencyModel");
+const cron = require("node-cron");
 
 const ParseCurrencyExchange = async () => {
   try {
@@ -32,7 +33,6 @@ const ParseCurrencyExchange = async () => {
 
             const exchangeRate = parseFloat($row.find("td b").text().trim());
 
-            // Prepare update operation for the specific country
             const updateOperation = {
               updateOne: {
                 filter: { lan: country },
@@ -46,16 +46,13 @@ const ParseCurrencyExchange = async () => {
           });
         });
 
-        // Bulk update all records
         if (updateOperations.length > 0) {
           try {
             const result = await CurrencyModel.bulkWrite(updateOperations);
-            console.log(result); // Log the result if needed
-            console.log("Updates complete!");
-            // Handle the success case here
-          } catch (err) {
-            console.error(err); // Log the error if needed
-            // Handle the error case here
+            console.log(result);
+            console.log("Currency updates complete!");
+          } catch (error) {
+            throw new Error(error);
           }
         } else {
           console.log("No updates found");
@@ -64,7 +61,12 @@ const ParseCurrencyExchange = async () => {
     }
   } catch (error) {
     console.error("Error fetching data:", error.message);
+    throw new Error(error);
   }
 };
+cron.schedule("0 0 * * *", async () => {
+  console.log("Running currency update...");
+  await ParseCurrencyExchange();
+});
 
 module.exports = { ParseCurrencyExchange };

@@ -10,11 +10,7 @@ const connectDb = async () => {
       socketTimeoutMS: 45000,
       serverSelectionTimeoutMS: 5000,
     });
-    console.log(
-      "Database connected: ",
-      connect.connection.host,
-      connect.connection.name,
-    );
+    console.log("Database connected: ");
   } catch (err) {
     console.log(err);
     process.exit(1);

@@ -1,7 +1,7 @@
 const express = require("express");
 const errorHandler = require("./middleware/errorHandler");
 const connectDb = require("./config/dbConnection");
-const cron = require("node-cron");
+
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
 const dotenv = require("dotenv").config();
@@ -11,7 +11,6 @@ const { transports, format } = require("winston");
 const helmet = require("helmet");
 require("winston-mongodb");
 const logger = require("./utils/logger");
-const { ParseCurrencyExchange } = require("./services/fetchParseCurrency");
 
 connectDb();
 
@@ -23,15 +22,22 @@ app.use(helmet());
 app.use(express.json());
 
 app.use(express.urlencoded({ extended: true }));
+const allowedOrigins = [process.env.CLIENT_URL, process.env.API_URL];
 
-app.use(cookieParser());
 app.use(
   cors({
-    origin: process.env.CLIENT_URL,
+    origin: function (origin, callback) {
+      if (allowedOrigins.includes(origin)) {
+        callback(null, origin);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
   }),
 );
 
+app.use(cookieParser());
 app.use(
   expressWinston.logger({
     winstonInstance: logger,
@@ -49,10 +55,6 @@ app.use("/api/users", require("./routes/userRoutes"));
 app.use("/api/spoonacular/recipes", require("./routes/apiRoutes"));
 
 app.use(errorHandler);
-cron.schedule("0 0 * * *", async () => {
-  console.log("Running currency update...");
-  await ParseCurrencyExchange();
-});
 
 const myFormat = format.printf(
   ({ level, message, label, timestamp, metadata }) => {
