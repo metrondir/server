@@ -22,20 +22,8 @@ app.use(helmet());
 app.use(express.json());
 
 app.use(express.urlencoded({ extended: true }));
-const allowedOrigins = [process.env.CLIENT_URL, process.env.API_URL];
 
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      if (allowedOrigins.includes(origin)) {
-        callback(null, origin);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
-    credentials: true,
-  }),
-);
+app.use(cors());
 
 app.use(cookieParser());
 app.use(
