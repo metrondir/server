@@ -97,7 +97,7 @@ const createRecipe = async (req) => {
   if (req.body.diets && typeof req.body.diets === "string") {
     req.body.diets = JSON.parse(req.body.diets).map((diet) => diet.label);
   }
-
+  console.log(req.file.path);
   const imgurLink = await imgur.uploadFile(req.file.path);
   const language = await detectLanguage(req.body.instructions);
 

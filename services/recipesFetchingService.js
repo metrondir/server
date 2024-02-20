@@ -163,8 +163,8 @@ const fetchRecipesByCategories = async (
         (a, b) => sortDirectionFactor * (a.readyInMinutes - b.readyInMinutes),
       );
       allData.splice(limit, allData.length - limit);
-      let RandomSample = getRandomSample(allData, Math.floor(allData.length));
-      const recipe = await fetchRecipesData(RandomSample, language);
+
+      const recipe = await fetchRecipesData(allData, language);
       if (currency) return changeCurrency(recipe, currency);
       return recipe;
     }
@@ -182,8 +182,8 @@ const fetchRecipesByCategories = async (
         (a, b) => sortDirectionFactor * (a.aggregateLikes - b.aggregateLikes),
       );
       allData.splice(limit, allData.length - limit);
-      let RandomSample = getRandomSample(allData, Math.floor(allData.length));
-      const recipe = await fetchRecipesData(RandomSample, language);
+
+      const recipe = await fetchRecipesData(allData, language);
       if (currency) return changeCurrency(recipe, currency);
       return recipe;
     }
@@ -195,8 +195,7 @@ const fetchRecipesByCategories = async (
         (a, b) => sortDirectionFactor * (a.pricePerServing - b.pricePerServing),
       );
       allData.splice(limit, allData.length - limit);
-      let RandomSample = getRandomSample(allData, Math.floor(allData.length));
-      const recipe = await fetchRecipesData(RandomSample, language);
+      const recipe = await fetchRecipesData(allData, language);
       if (currency) return changeCurrency(recipe, currency);
       return recipe;
     }
