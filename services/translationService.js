@@ -129,7 +129,7 @@ async function translateRecipeInformation(recipe, language) {
 
   await translateRecipeFields(recipe, language);
 
-  recipe.readyInMinutes + min;
+  recipe.readyInMinutes += min;
 }
 
 async function translateRecipePost(recipe, language) {
