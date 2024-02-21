@@ -43,8 +43,8 @@ const registerUser = asyncHandler(async (req, res, next) => {
 
     res.cookie("refreshToken", userData.refreshToken, {
       maxAge: process.env.COOKIE_MAX_AGE,
-      secure: true,
-      sameSite: "None",
+      //secure: true,
+      //sameSite: "None",
     });
     return res.status(201).json(userData);
   } catch (error) {
@@ -63,9 +63,11 @@ const loginUser = asyncHandler(async (req, res, next) => {
 
     res.cookie("refreshToken", userData.refreshToken, {
       maxAge: process.env.COOKIE_MAX_AGE,
-      secure: true,
-      sameSite: "None",
+      //secure: true,
+      //sameSite: "None",
+      //sameSite: "Lax",
     });
+    console.log(res.cookie.refreshToken);
     return res.status(200).json(userData);
   } catch (error) {
     next(error);
@@ -99,8 +101,8 @@ const refreshTokenUser = asyncHandler(async (req, res, next) => {
     const userData = await refresh(refreshToken);
     res.cookie("refreshToken", userData.refreshToken, {
       maxAge: process.env.COOKIE_MAX_AGE,
-      secure: true,
-      sameSite: "None",
+      //secure: true,
+      //sameSite: "None",
     });
     return res.status(200).json(userData);
   } catch (error) {
