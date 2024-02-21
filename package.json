@@ -4,7 +4,7 @@
   "description": "This is express project for my recipes backend api",
   "main": "server.js",
   "engines": {
-    "node": "14.x"
+    "node": "20.x"
   },
   "scripts": {
     "lint": "eslint 'server.js'",
