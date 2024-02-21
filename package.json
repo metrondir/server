@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "This is express project for my recipes backend api",
   "main": "server.js",
+  "engines": {
+    "node": "14.x"
+  },
   "scripts": {
     "lint": "eslint 'server.js'",
     "test": "jest --testTimeout=10000 --watchAll --verbose --detectOpenHandles --forceExit --runInBand --coverage",
@@ -39,6 +42,7 @@
     "node-cron": "^3.0.3",
     "nodemailer": "^6.9.7",
     "nvm": "^0.0.4",
+    "openssl": "^2.0.0",
     "papaparse": "^5.4.1",
     "qs": "^6.11.2",
     "redis": "^4.6.11",
