@@ -24,14 +24,15 @@ const getRandomSample = (array, size) => {
   return shuffled.slice(0, size);
 };
 
-async function fetchRecipesData(response, language) {
+async function fetchRecipesData(response, language, currency) {
   if (language === "en" || !language) {
     return response.map((recipe) => ({
       id: recipe.id || recipe._id,
       title: recipe.title,
       image: recipe.image,
-      pricePerServing:
-        parseFloat((recipe.pricePerServing / 100).toFixed(2)) + " USD",
+      pricePerServing: !currency
+        ? parseFloat((response.data.pricePerServing / 100).toFixed(2)) + " USD"
+        : parseFloat((response.data.pricePerServing / 100).toFixed(2)),
       readyInMinutes: recipe.readyInMinutes + " min",
       dishTypes: recipe.dishTypes || [],
       isFavourite: recipe?.isFavourite,
@@ -44,8 +45,9 @@ async function fetchRecipesData(response, language) {
       id: recipe.id || recipe._id,
       title: recipe.title,
       image: recipe.image,
-      pricePerServing: parseFloat((recipe.pricePerServing / 100).toFixed(2)),
-
+      pricePerServing: !currency
+        ? parseFloat((response.data.pricePerServing / 100).toFixed(2)) + " USD"
+        : parseFloat((response.data.pricePerServing / 100).toFixed(2)),
       readyInMinutes: recipe.readyInMinutes,
       dishTypes: recipe.dishTypes || [],
       isFavourite: recipe?.isFavourite,
@@ -68,6 +70,7 @@ const fetchRecipesByIngredients = async (
   let url = `${baseUrl}/findByIngredients?apiKey=${apiKey}&ingredients=${ingredients}&number=${number}&ignorePantry=true`;
   try {
     const response = await axios.get(url);
+
     const recipes = await getRecipesFromDatabaseByIngridients(
       number,
       ingredients,
@@ -80,7 +83,6 @@ const fetchRecipesByIngredients = async (
       allRecipes,
       Math.floor(allRecipes.length),
     );
-
     const recipe = Promise.all(
       RandomSample.map(async (recipe) =>
         fetchInformationByRecomended(
@@ -91,14 +93,17 @@ const fetchRecipesByIngredients = async (
         ),
       ),
     );
+    console.log(recipe);
     return recipe;
   } catch (error) {
     return handleApiError(
       error,
       fetchRecipesByIngredients,
       ingredients,
+      number,
       language,
       currency,
+      refreshToken,
     );
   }
 };
@@ -141,19 +146,19 @@ const fetchRecipes = async (
     if (refreshToken) {
       const user = await findUserByRefreshToken(refreshToken);
       const favourites = await FavoriteRecipe.find({ user: user._id });
-      allRecipes.map(
-        (item, index) =>
-          (item.isFavourite = favourites.some(
-            (recipe) => recipe.id === item.id,
-          )),
-      );
+
+      allRecipes.map((item) => {
+        item.isFavourite = favourites.some(
+          (recipe) => recipe.recipe.toString() === item.id.toString(),
+        );
+      });
     }
     let RandomSample = getRandomSample(
       allRecipes,
       Math.floor(allRecipes.length),
     );
 
-    const recipe = await fetchRecipesData(RandomSample, language);
+    const recipe = await fetchRecipesData(RandomSample, language, currency);
     if (currency) return changeCurrency(recipe, currency);
     return recipe;
   } catch (error) {
@@ -208,7 +213,7 @@ const fetchRecipesByCategories = async (
         allData.map(
           (item, index) =>
             (item.isFavourite = favourites.some(
-              (recipe) => recipe.id === item.id,
+              (recipe) => recipe.recipe.toString() === item.id.toString(),
             )),
         );
       }
@@ -218,7 +223,7 @@ const fetchRecipesByCategories = async (
       );
       allData.splice(limit, allData.length - limit);
 
-      const recipe = await fetchRecipesData(allData, language);
+      const recipe = await fetchRecipesData(allData, language, currency);
       if (currency) return changeCurrency(recipe, currency);
       return recipe;
     }
@@ -241,7 +246,7 @@ const fetchRecipesByCategories = async (
         allData.map(
           (item, index) =>
             (item.isFavourite = favourites.some(
-              (recipe) => recipe.id === item.id,
+              (recipe) => recipe.recipe.toString() === item.id.toString(),
             )),
         );
       }
@@ -251,7 +256,7 @@ const fetchRecipesByCategories = async (
       );
       allData.splice(limit, allData.length - limit);
 
-      const recipe = await fetchRecipesData(allData, language);
+      const recipe = await fetchRecipesData(allData, language, currency);
       if (currency) return changeCurrency(recipe, currency);
       return recipe;
     }
@@ -268,7 +273,7 @@ const fetchRecipesByCategories = async (
         allData.map(
           (item, index) =>
             (item.isFavourite = favourites.some(
-              (recipe) => recipe.id === item.id,
+              (recipe) => recipe.recipe.toString() === item.id.toString(),
             )),
         );
       }
@@ -277,7 +282,7 @@ const fetchRecipesByCategories = async (
         (a, b) => sortDirectionFactor * (a.pricePerServing - b.pricePerServing),
       );
       allData.splice(limit, allData.length - limit);
-      const recipe = await fetchRecipesData(allData, language);
+      const recipe = await fetchRecipesData(allData, language, currency);
       if (currency) return changeCurrency(recipe, currency);
       return recipe;
     }
@@ -310,7 +315,7 @@ const fetchRandomRecipes = async (limit, language, refreshToken, currency) => {
         Math.floor(allRecipes.length),
       );
       RandomSample = RandomSample.slice(0, limit);
-      const recipe = await fetchRecipesData(RandomSample, language);
+      const recipe = await fetchRecipesData(RandomSample, language, currency);
 
       if (currency) return changeCurrency(recipe, currency);
       return recipe;
@@ -322,16 +327,19 @@ const fetchRandomRecipes = async (limit, language, refreshToken, currency) => {
     const recipes = await getRecipesFromDatabaseRandomWithUsers(limit, user.id);
     const allRecipes = response.data.recipes.concat(recipes);
     const favourites = await FavoriteRecipe.find({ user: user._id });
-    allRecipes.map(
-      (item, index) =>
-        (item.isFavourite = favourites.some((recipe) => recipe.id === item.id)),
-    );
+    console.log(favourites);
+    allRecipes.forEach((item) => {
+      item.isFavourite = favourites.some(
+        (recipe) => recipe.recipe.toString() === item.id.toString(),
+      );
+    });
+
     let RandomSample = getRandomSample(
       allRecipes,
       Math.floor(allRecipes.length),
     );
     RandomSample = RandomSample.slice(0, limit);
-    const recipe = await fetchRecipesData(RandomSample, language);
+    const recipe = await fetchRecipesData(RandomSample, language, currency);
     if (currency) return changeCurrency(recipe, currency);
     return recipe;
   } catch (error) {
@@ -371,6 +379,7 @@ const fetchInformationByRecomended = async (
   refreshToken,
 ) => {
   let apiKey = getApiKey();
+
   let favourites = [];
   if (refreshToken) {
     const user = await findUserByRefreshToken(refreshToken);
@@ -379,6 +388,7 @@ const fetchInformationByRecomended = async (
   const url = `${baseUrl}/${id}/information?includeNutrition=false&apiKey=${apiKey}`;
   try {
     const response = await axios.get(url);
+
     if (language === "en" || !language) {
       let recipe = {
         id: response.data.id,
@@ -386,10 +396,13 @@ const fetchInformationByRecomended = async (
         dishTypes: response.data.dishTypes || [],
         image: response.data.image,
         readyInMinutes: response.data.readyInMinutes + " min",
-        pricePerServing: parseFloat(
-          (response.data.pricePerServing / 100).toFixed(2),
+        pricePerServing: !currency
+          ? parseFloat((response.data.pricePerServing / 100).toFixed(2)) +
+            " USD"
+          : parseFloat((response.data.pricePerServing / 100).toFixed(2)),
+        isFavourite: favourites.some(
+          (fav) => fav.recipe.toString() === response.data.id.toString(),
         ),
-        isFavourite: favourites.some((fav) => fav.id === response.data.id),
       };
 
       if (currency) return changeCurrency(recipe, currency);
@@ -403,10 +416,13 @@ const fetchInformationByRecomended = async (
         dishTypes: response.data.dishTypes || [],
         image: response.data.image,
         readyInMinutes: response.data.readyInMinutes,
-        pricePerServing: parseFloat(
-          (response.data.pricePerServing / 100).toFixed(2),
+        pricePerServing: !currency
+          ? parseFloat((response.data.pricePerServing / 100).toFixed(2)) +
+            " USD"
+          : parseFloat((response.data.pricePerServing / 100).toFixed(2)),
+        isFavourite: favourites.some(
+          (fav) => fav.recipe.toString() === response.data.id.toString(),
         ),
-        isFavourite: favourites.some((fav) => fav.id === response.data.id),
       };
       if (currency) return changeCurrency(recipe, currency);
 
@@ -419,6 +435,7 @@ const fetchInformationByRecomended = async (
       id,
       language,
       currency,
+      refreshToken,
     );
   }
 };
@@ -450,7 +467,9 @@ const fetchInformationById = async (id, language, currency) => {
       instructions: data.instructions,
       extendedIngredients:
         data.extendedIngredients.map((ingredient) => ingredient.original) || [],
-      pricePerServing: data.pricePerServing,
+      pricePerServing: !currency
+        ? parseFloat(data.pricePerServing) + " USD"
+        : parseFloat(data.pricePerServing),
       readyInMinutes: data.readyInMinutes + " min",
       dishTypes: data.dishTypes || [],
     };
@@ -469,9 +488,10 @@ const fetchInformationById = async (id, language, currency) => {
           response.data.extendedIngredients.map(
             (ingredient) => ingredient.original,
           ) || [],
-        pricePerServing: parseFloat(
-          (response.data.pricePerServing / 100).toFixed(2),
-        ),
+        pricePerServing: !currency
+          ? parseFloat((response.data.pricePerServing / 100).toFixed(2)) +
+            " USD"
+          : parseFloat((response.data.pricePerServing / 100).toFixed(2)),
         cuisines: response.data.cuisines || [],
         dishTypes: response.data.dishTypes || [],
         instructions: response.data.instructions || [],
@@ -515,9 +535,10 @@ const fetchInformationById = async (id, language, currency) => {
         diets: response.data.diets,
         dishTypes: response.data.dishTypes,
         instructions: response.data.instructions,
-        pricePerServing: parseFloat(
-          (response.data.pricePerServing / 100).toFixed(2),
-        ),
+        pricePerServing: !currency
+          ? parseFloat((response.data.pricePerServing / 100).toFixed(2)) +
+            " USD"
+          : parseFloat((response.data.pricePerServing / 100).toFixed(2)),
         image: response.data.image,
         readyInMinutes: response.data.readyInMinutes,
       };
@@ -558,9 +579,10 @@ const fetchFavoriteRecipes = async (id, language, currency) => {
               title: response.data.title,
               image: response.data.image,
               readyInMinutes: response.data.readyInMinutes + " min",
-              pricePerServing: parseFloat(
-                (response.data.pricePerServing / 100).toFixed(2),
-              ),
+              pricePerServing: !currency
+                ? parseFloat((response.data.pricePerServing / 100).toFixed(2)) +
+                  " USD"
+                : parseFloat((response.data.pricePerServing / 100).toFixed(2)),
               dishTypes: response.data.dishTypes || [],
             };
             if (currency) return changeCurrency(recipe, currency);
@@ -573,9 +595,10 @@ const fetchFavoriteRecipes = async (id, language, currency) => {
               title: response.data.title,
               image: response.data.image,
               readyInMinutes: response.data.readyInMinutes,
-              pricePerServing: parseFloat(
-                (response.data.pricePerServing / 100).toFixed(2),
-              ),
+              pricePerServing: !currency
+                ? parseFloat((response.data.pricePerServing / 100).toFixed(2)) +
+                  " USD"
+                : parseFloat((response.data.pricePerServing / 100).toFixed(2)),
               dishTypes: response.data.dishTypes || [],
             };
             if (currency) return changeCurrency(recipe, currency);
@@ -616,7 +639,9 @@ const fetchFavoriteRecipes = async (id, language, currency) => {
                 title: fetchedRecipe.title,
                 image: fetchedRecipe.image,
                 readyInMinutes: `${fetchedRecipe.readyInMinutes} min`,
-                pricePerServing: fetchedRecipe.pricePerServing,
+                pricePerServing: !currency
+                  ? parseFloat(fetchedRecipe.pricePerServing) + " USD"
+                  : parseFloat(fetchedRecipe.pricePerServing),
                 dishTypes: fetchedRecipe.dishTypes || [],
               };
               if (currency) return changeCurrency(recipe, currency);
@@ -628,7 +653,9 @@ const fetchFavoriteRecipes = async (id, language, currency) => {
                 id: fetchedRecipe.id,
                 title: fetchedRecipe.title,
                 image: fetchedRecipe.image,
-                pricePerServing: fetchedRecipe.pricePerServing,
+                pricePerServing: !currency
+                  ? parseFloat(fetchedRecipe.pricePerServing) + " USD"
+                  : parseFloat(fetchedRecipe.pricePerServing),
                 readyInMinutes: fetchedRecipe.readyInMinutes,
                 dishTypes: fetchedRecipe.dishTypes || [],
               };
