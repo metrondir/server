@@ -58,6 +58,7 @@ const fetchRecipesByIngredients = async (
   number,
   language,
   currency,
+  refreshToken,
 ) => {
   let apiKey = getApiKey();
   const lanIngredients = await detectLanguage(ingredients);
@@ -71,17 +72,26 @@ const fetchRecipesByIngredients = async (
       number,
       ingredients,
     );
+
     const allRecipes = response.data.concat(recipes);
     allRecipes.splice(number, allRecipes.length - number);
+
     let RandomSample = getRandomSample(
       allRecipes,
       Math.floor(allRecipes.length),
     );
-    return Promise.all(
+
+    const recipe = Promise.all(
       RandomSample.map(async (recipe) =>
-        fetchInformationByRecomended(recipe.id, language, currency),
+        fetchInformationByRecomended(
+          recipe.id,
+          language,
+          currency,
+          refreshToken,
+        ),
       ),
     );
+    return recipe;
   } catch (error) {
     return handleApiError(
       error,
@@ -102,6 +112,7 @@ const fetchRecipes = async (
   maxReadyTime,
   language,
   currency,
+  refreshToken,
 ) => {
   let apiKey = getApiKey();
   const lanQuery = await detectLanguage(query);
@@ -127,10 +138,21 @@ const fetchRecipes = async (
     );
     let allRecipes = response.data.results.concat(recipes);
     allRecipes.splice(limit, allRecipes.length - limit);
+    if (refreshToken) {
+      const user = await findUserByRefreshToken(refreshToken);
+      const favourites = await FavoriteRecipe.find({ user: user._id });
+      allRecipes.map(
+        (item, index) =>
+          (item.isFavourite = favourites.some(
+            (recipe) => recipe.id === item.id,
+          )),
+      );
+    }
     let RandomSample = getRandomSample(
       allRecipes,
       Math.floor(allRecipes.length),
     );
+
     const recipe = await fetchRecipesData(RandomSample, language);
     if (currency) return changeCurrency(recipe, currency);
     return recipe;
@@ -145,6 +167,7 @@ const fetchRecipes = async (
       maxReadyTime,
       language,
       currency,
+      refreshToken,
     );
   }
 };
@@ -156,8 +179,10 @@ const fetchRecipesByCategories = async (
   sortDirection,
   language,
   currency,
+  refreshToken,
 ) => {
   let apiKey = getApiKey();
+  if (refreshToken) findUserByRefreshToken(refreshToken);
 
   //check if query exist when user whant specific category like the most popular burger
   if (query) {
@@ -177,6 +202,16 @@ const fetchRecipesByCategories = async (
         query,
       );
       const allData = response.data.results.concat(recipesByDB);
+      if (refreshToken) {
+        const user = await findUserByRefreshToken(refreshToken);
+        const favourites = await FavoriteRecipe.find({ user: user._id });
+        allData.map(
+          (item, index) =>
+            (item.isFavourite = favourites.some(
+              (recipe) => recipe.id === item.id,
+            )),
+        );
+      }
       const sortDirectionFactor = sortDirection === "desc" ? -1 : 1;
       allData.sort(
         (a, b) => sortDirectionFactor * (a.readyInMinutes - b.readyInMinutes),
@@ -200,6 +235,16 @@ const fetchRecipesByCategories = async (
         }
       });
       const allData = response.data.results.concat(recipesByDB);
+      if (refreshToken) {
+        const user = await findUserByRefreshToken(refreshToken);
+        const favourites = await FavoriteRecipe.find({ user: user._id });
+        allData.map(
+          (item, index) =>
+            (item.isFavourite = favourites.some(
+              (recipe) => recipe.id === item.id,
+            )),
+        );
+      }
       const sortDirectionFactor = sortDirection === "desc" ? -1 : 1;
       allData.sort(
         (a, b) => sortDirectionFactor * (a.aggregateLikes - b.aggregateLikes),
@@ -217,6 +262,16 @@ const fetchRecipesByCategories = async (
         query,
       );
       const allData = response.data.results.concat(recipesByDB);
+      if (refreshToken) {
+        const user = await findUserByRefreshToken(refreshToken);
+        const favourites = await FavoriteRecipe.find({ user: user._id });
+        allData.map(
+          (item, index) =>
+            (item.isFavourite = favourites.some(
+              (recipe) => recipe.id === item.id,
+            )),
+        );
+      }
       const sortDirectionFactor = sortDirection === "desc" ? -1 : 1;
       allData.sort(
         (a, b) => sortDirectionFactor * (a.pricePerServing - b.pricePerServing),
@@ -235,6 +290,7 @@ const fetchRecipesByCategories = async (
       sortDirection,
       language,
       currency,
+      refreshToken,
     );
   }
 };
@@ -265,7 +321,7 @@ const fetchRandomRecipes = async (limit, language, refreshToken, currency) => {
 
     const recipes = await getRecipesFromDatabaseRandomWithUsers(limit, user.id);
     const allRecipes = response.data.recipes.concat(recipes);
-    const favourites = await fetchFavoriteRecipes(user._id);
+    const favourites = await FavoriteRecipe.find({ user: user._id });
     allRecipes.map(
       (item, index) =>
         (item.isFavourite = favourites.some((recipe) => recipe.id === item.id)),
@@ -290,7 +346,7 @@ const fetchRecommendedRecipes = async (id, language, currency) => {
   try {
     const response = await axios.get(url);
     const stringId = id.toString();
-    if (stringId.length < 7) {
+    if (stringId.length <= 7) {
       return Promise.all(
         response.data.map(async (recipe) =>
           fetchInformationByRecomended(recipe.id, language, currency),
@@ -308,8 +364,18 @@ const fetchRecommendedRecipes = async (id, language, currency) => {
   }
 };
 
-const fetchInformationByRecomended = async (id, language, currency) => {
+const fetchInformationByRecomended = async (
+  id,
+  language,
+  currency,
+  refreshToken,
+) => {
   let apiKey = getApiKey();
+  let favourites = [];
+  if (refreshToken) {
+    const user = await findUserByRefreshToken(refreshToken);
+    favourites = await FavoriteRecipe.find({ user: user._id });
+  }
   const url = `${baseUrl}/${id}/information?includeNutrition=false&apiKey=${apiKey}`;
   try {
     const response = await axios.get(url);
@@ -323,6 +389,7 @@ const fetchInformationByRecomended = async (id, language, currency) => {
         pricePerServing: parseFloat(
           (response.data.pricePerServing / 100).toFixed(2),
         ),
+        isFavourite: favourites.some((fav) => fav.id === response.data.id),
       };
 
       if (currency) return changeCurrency(recipe, currency);
@@ -339,6 +406,7 @@ const fetchInformationByRecomended = async (id, language, currency) => {
         pricePerServing: parseFloat(
           (response.data.pricePerServing / 100).toFixed(2),
         ),
+        isFavourite: favourites.some((fav) => fav.id === response.data.id),
       };
       if (currency) return changeCurrency(recipe, currency);
 

@@ -11,6 +11,8 @@ const {
 const { paginateArray } = require("../middleware/paginateMiddleware");
 const getRecipes = asyncHandler(async (req, res, next) => {
   try {
+    const { refreshToken } = req.cookies;
+
     const {
       query,
       limit,
@@ -33,6 +35,7 @@ const getRecipes = asyncHandler(async (req, res, next) => {
       maxReadyTime,
       language,
       currency,
+      refreshToken,
     );
     //await redisGetModelsWithPaginating(recipes, page, size, req, res, next);
     //res.json(req.paginatedData);
@@ -105,12 +108,14 @@ const getFavouriteRecipes = asyncHandler(async (req, res, next) => {
 
 const getRecipesByIngridients = asyncHandler(async (req, res, next) => {
   try {
+    const { refreshToken } = req.cookies;
     const { ingredients, number, language, page, size, currency } = req.query;
     const recipes = await fetchRecipesByIngredients(
       ingredients,
       number,
       language,
       currency,
+      refreshToken,
     );
     paginateArray(recipes, page, size)(req, res, () => {
       const paginatedRecipes = res.locals.paginatedData;
@@ -136,6 +141,7 @@ const translateRecipe = asyncHandler(async (req, res, next) => {
 
 const getRecipesByCategories = asyncHandler(async (req, res, next) => {
   try {
+    const { refreshToken } = req.cookies;
     const {
       query,
       limit,
@@ -153,6 +159,7 @@ const getRecipesByCategories = asyncHandler(async (req, res, next) => {
       sortDirection,
       language,
       currency,
+      refreshToken,
     );
 
     paginateArray(recipes, page, size)(req, res, () => {
