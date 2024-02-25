@@ -64,9 +64,5 @@ const ParseCurrencyExchange = async () => {
     throw new Error(error);
   }
 };
-cron.schedule("0 0 * * *", async () => {
-  console.log("Running currency update...");
-  await ParseCurrencyExchange();
-});
 
 module.exports = { ParseCurrencyExchange };

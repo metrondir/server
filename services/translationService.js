@@ -3,50 +3,6 @@ const { getApiKey } = require("../config/configApiHandler");
 const axios = require("axios").default;
 const { Translate } = require("@google-cloud/translate").v2;
 
-const { v4: uuidv4 } = require("uuid");
-
-//const CREDENTIALS = JSON.parse(process.env.CREDENTIALS_GOOGLE);
-//const translate = new Translate({
-//  credentials: CREDENTIALS,
-//  projectId: CREDENTIALS.project_id,
-//});
-
-//async function translateText(text, toLanguage) {
-//  try {
-//    const response = await axios.post(
-//      `${process.env.ENDPOINT_MICROSOFT_AZURE_TRANSLATE}/translate`,
-//      [
-//        {
-//          text: text,
-//        },
-//      ],
-//      {
-//        headers: {
-//          "Ocp-Apim-Subscription-Key": process.env.SECRET_KEY_MICROSOFT_AZURE,
-//          "Ocp-Apim-Subscription-Region": process.env.LOCATION_MICROSOFT_AZURE,
-//          "Content-type": "application/json",
-//          "X-ClientTraceId": uuidv4().toString(),
-//        },
-//        params: {
-//          "api-version": "3.0",
-//          to: toLanguage,
-//        },
-//        responseType: "json",
-//      },
-//    );
-
-//    const translation = response.data[0].translations[0].text;
-//    return translation;
-//  } catch (error) {
-//    console.error(
-//      "Error translating text:",
-//      error.response ? error.response.data : error.message,
-//    );
-
-//    throw error;
-//  }
-//}
-
 const CREDENTIALS = JSON.parse(process.env.CREDENTIALS_GOOGLE);
 const translate = new Translate({
   credentials: CREDENTIALS,

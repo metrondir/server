@@ -34,39 +34,43 @@ const redisGetModels = async (model, req, res, next, conditions = {}) => {
 };
 
 const redisGetModelsWithPaginating = async (
-  model,
+  data,
+  page,
+  size,
   req,
   res,
   next,
-  conditions = {},
 ) => {
   try {
-    const { page, limit } = req.query;
-    const redisKey = `${model.modelName.toLowerCase() + "s"}:${page}:${limit}`;
-    const redisModels = await new Promise((resolve, reject) => {
-      redis.get(redisKey, (err, redisModels) => {
+    const redisKey = "allData";
+    const redisData = await new Promise((resolve, reject) => {
+      redis.get(redisKey, (err, redisData) => {
         if (err) {
           reject(err);
         } else {
-          resolve(redisModels);
+          resolve(redisData);
         }
       });
     });
 
-    if (redisModels) {
-      res.json(JSON.parse(redisModels));
+    if (redisData) {
+      console.log("FROM Redis");
+      const parsedData = JSON.parse(redisData);
+      const paginatedResult = paginateArray(parsedData, page, size);
+      res.json(paginatedResult);
     } else {
-      await paginate(model, conditions)(req, res, () => {});
+      console.log("FROM DB");
+      redis.setex(
+        redisKey,
+        process.env.DEFAULT_EXPIRATION_REDIS_KEY_TIME,
+        JSON.stringify(data),
+      );
 
-      const paginatedResult = res.paginatedResult;
+      const paginatedResult = paginateArray(data, page, size);
+
       if (!paginatedResult) {
         throw ApiError.BadRequest("Too low results in model");
       } else {
-        redis.setex(
-          redisKey,
-          process.env.DEFAULT_EXPIRATION_REDIS_KEY_TIME,
-          JSON.stringify(paginatedResult),
-        );
         res.json(paginatedResult);
       }
     }
@@ -106,7 +110,9 @@ const paginateArray = (data, page, size) => (req, res, next) => {
         `Limit cannot be greater than total items: ${totalItems}`,
       );
     }
-
+    if (totalItems <= 0) {
+      throw new Error(`Dont have items ${totalItems}`);
+    }
     const { startIndex, endIndex, hasPrevious, hasNext } = calculatePagination(
       pageNumber,
       pageSize,
@@ -128,9 +134,11 @@ const paginateArray = (data, page, size) => (req, res, next) => {
     res.locals.paginatedData = result;
     next();
   } catch (error) {
+    next(error);
     throw new Error(error);
   }
 };
+
 const onDataChanged = async (modelName) => {
   try {
     const patern = `${modelName.toLowerCase()}`;

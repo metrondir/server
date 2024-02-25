@@ -11,7 +11,6 @@ const { transports, format } = require("winston");
 const helmet = require("helmet");
 require("winston-mongodb");
 const logger = require("./utils/logger");
-
 connectDb();
 
 const port = process.env.PORT || 5000;
@@ -20,13 +19,26 @@ const app = express();
 app.disable("x-powered-by");
 app.use(helmet());
 app.use(express.json());
-
 app.use(express.urlencoded({ extended: true }));
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://granny-recipes.vercel.app",
+  "https://https://granny-recipes-git-main-crazytimes-projects.vercel.app",
+  "https://granny-recipes-git-main-crazytimes-projects.vercel.app",
+];
 
 app.use(
   cors({
     credentials: true,
-    origin: process.env.CLIENT_URL,
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    origin: function (origin, callback) {
+      if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
   }),
 );
 

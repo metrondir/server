@@ -30,9 +30,11 @@ async function fetchRecipesData(response, language) {
       id: recipe.id || recipe._id,
       title: recipe.title,
       image: recipe.image,
-      pricePerServing: parseFloat((recipe.pricePerServing / 100).toFixed(2)),
+      pricePerServing:
+        parseFloat((recipe.pricePerServing / 100).toFixed(2)) + " USD",
       readyInMinutes: recipe.readyInMinutes + " min",
       dishTypes: recipe.dishTypes || [],
+      isFavourite: recipe?.isFavourite,
     }));
   } else {
     await Promise.all(
@@ -46,6 +48,7 @@ async function fetchRecipesData(response, language) {
 
       readyInMinutes: recipe.readyInMinutes,
       dishTypes: recipe.dishTypes || [],
+      isFavourite: recipe?.isFavourite,
     }));
   }
 }
@@ -102,8 +105,10 @@ const fetchRecipes = async (
 ) => {
   let apiKey = getApiKey();
   const lanQuery = await detectLanguage(query);
-  if (lanQuery !== "en") {
-    query = await translateText(query, "en");
+  if (query) {
+    if (lanQuery !== "en") {
+      query = await translateText(query, "en");
+    }
   }
   let url = `${baseUrl}/complexSearch?apiKey=${apiKey}&query=${query}&number=${limit}&addRecipeNutrition=true`;
   if (type) url += `&type=${type}`;
@@ -145,6 +150,7 @@ const fetchRecipes = async (
 };
 
 const fetchRecipesByCategories = async (
+  query,
   limit,
   sort,
   sortDirection,
@@ -152,11 +158,24 @@ const fetchRecipesByCategories = async (
   currency,
 ) => {
   let apiKey = getApiKey();
-  let url = `${baseUrl}/complexSearch?apiKey=${apiKey}&number=${limit}&sort=${sort}&sortDirection=${sortDirection}&addRecipeNutrition=true`;
+
+  //check if query exist when user whant specific category like the most popular burger
+  if (query) {
+    const lanQuery = await detectLanguage(query); // if query is another language than english
+    if (lanQuery !== "en") {
+      query = await translateText(query, "en"); // we translate this query to en to create a request to the api
+    }
+  }
+
+  let url = `${baseUrl}/complexSearch?apiKey=${apiKey}&query=${query}&number=${limit}&sort=${sort}&sortDirection=${sortDirection}&addRecipeNutrition=true`;
   try {
     const response = await axios.get(url);
     if (sort === "time") {
-      const recipesByDB = await getRecipesByCategories(sortDirection, sort);
+      const recipesByDB = await getRecipesByCategories(
+        sortDirection,
+        sort,
+        query,
+      );
       const allData = response.data.results.concat(recipesByDB);
       const sortDirectionFactor = sortDirection === "desc" ? -1 : 1;
       allData.sort(
@@ -169,7 +188,11 @@ const fetchRecipesByCategories = async (
       return recipe;
     }
     if (sort === "popularity") {
-      const recipesByDB = await getRecipesByCategories(sortDirection, sort);
+      const recipesByDB = await getRecipesByCategories(
+        sortDirection,
+        sort,
+        query,
+      );
       const changeRecipesLike = await getSpoonAcularChangedLikeRecipe();
       response.data.results.forEach((recipe) => {
         if (changeRecipesLike.id == recipe.id) {
@@ -188,7 +211,11 @@ const fetchRecipesByCategories = async (
       return recipe;
     }
     if (sort === "price") {
-      const recipesByDB = await getRecipesByCategories(sortDirection, sort);
+      const recipesByDB = await getRecipesByCategories(
+        sortDirection,
+        sort,
+        query,
+      );
       const allData = response.data.results.concat(recipesByDB);
       const sortDirectionFactor = sortDirection === "desc" ? -1 : 1;
       allData.sort(
@@ -221,6 +248,7 @@ const fetchRandomRecipes = async (limit, language, refreshToken, currency) => {
     if (!refreshToken) {
       const recipes = await getRecipesFromDatabaseRandom(limit);
       const allRecipes = response.data.recipes.concat(recipes);
+
       let RandomSample = getRandomSample(
         allRecipes,
         Math.floor(allRecipes.length),
@@ -231,9 +259,17 @@ const fetchRandomRecipes = async (limit, language, refreshToken, currency) => {
       if (currency) return changeCurrency(recipe, currency);
       return recipe;
     }
+
+    // if refresh token exist we get the recipes from the database with the user id
     const user = await findUserByRefreshToken(refreshToken);
+
     const recipes = await getRecipesFromDatabaseRandomWithUsers(limit, user.id);
     const allRecipes = response.data.recipes.concat(recipes);
+    const favourites = await fetchFavoriteRecipes(user._id);
+    allRecipes.map(
+      (item, index) =>
+        (item.isFavourite = favourites.some((recipe) => recipe.id === item.id)),
+    );
     let RandomSample = getRandomSample(
       allRecipes,
       Math.floor(allRecipes.length),

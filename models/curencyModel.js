@@ -9,6 +9,10 @@ const CurrencyModel = new mongoose.Schema({
     type: Number,
     required: true,
   },
+  name: {
+    type: String,
+    required: true,
+  },
 });
 
 module.exports = mongoose.model("CurrencyModel", CurrencyModel);

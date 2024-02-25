@@ -19,9 +19,14 @@ const getSpoonAcularChangedLikeRecipe = async () => {
   return recipes;
 };
 
-const getRecipesByCategories = async (sortDirection, valueSort) => {
+const getRecipesByCategories = async (sortDirection, valueSort, query) => {
   let sortValue = sortDirection === "desc" ? -1 : 1;
   try {
+    let queryObject = {};
+
+    if (query) {
+      queryObject.title = { $regex: new RegExp(query, "i") }; // Case-insensitive title search
+    }
     if (valueSort === "time") {
       valueSort = "readyInMinutes";
     } else if (valueSort === "popularity") {
@@ -29,7 +34,10 @@ const getRecipesByCategories = async (sortDirection, valueSort) => {
     } else if (valueSort === "price") {
       valueSort = "pricePerServing";
     }
-    const recipes = await Recipe.find().sort({ [valueSort]: sortValue });
+    const recipes = await Recipe.find(queryObject).sort({
+      [valueSort]: sortValue,
+    });
+
     return recipes;
   } catch (error) {
     throw ApiError.BadRequest(error.message);

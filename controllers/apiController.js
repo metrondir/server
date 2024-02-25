@@ -34,6 +34,8 @@ const getRecipes = asyncHandler(async (req, res, next) => {
       language,
       currency,
     );
+    //await redisGetModelsWithPaginating(recipes, page, size, req, res, next);
+    //res.json(req.paginatedData);
     paginateArray(recipes, page, size)(req, res, () => {
       const paginatedRecipes = res.locals.paginatedData;
       res.status(200).json(paginatedRecipes);
@@ -134,9 +136,18 @@ const translateRecipe = asyncHandler(async (req, res, next) => {
 
 const getRecipesByCategories = asyncHandler(async (req, res, next) => {
   try {
-    const { limit, sort, sortDirection, language, page, size, currency } =
-      req.query;
+    const {
+      query,
+      limit,
+      sort,
+      sortDirection,
+      language,
+      page,
+      size,
+      currency,
+    } = req.query;
     const recipes = await fetchRecipesByCategories(
+      query,
       limit,
       sort,
       sortDirection,
