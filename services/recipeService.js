@@ -141,10 +141,24 @@ const setFavoriteRecipes = async (req) => {
         recipeId,
         existedSpoonacularRecipe,
       );
+      await FavoriteRecipe.updateMany(
+        { recipe: { $in: recipeId } },
+        { $inc: { aggregateLikes: -1 } },
+      );
       return { isDeleted: true, data: deletedFavoriteRecipe };
     }
+
     const recipe = await fetchInformationById(recipeId, "en", null);
-    console.log(recipe);
+    let foundAggLike;
+    if (recipeId <= 8) {
+      foundAggLike = await SpoonacularRecipeModel.find({ id: recipeId });
+    } else {
+      foundAggLike = await Recipe.find({ _id: recipeId });
+    }
+    await FavoriteRecipe.updateMany(
+      { recipe: { $in: recipeId } },
+      { $inc: { aggregateLikes: +1 } },
+    );
     const newFavoriteRecipe = new FavoriteRecipe({
       recipeId: recipe.id,
       title: recipe.title,
@@ -152,7 +166,14 @@ const setFavoriteRecipes = async (req) => {
       pricePerServing: recipe.pricePerServing,
       cuisines: recipe.cuisines,
       dishTypes: recipe.dishTypes,
-      instructions: recipe.instructions,
+      instructions: Array.isArray(recipe.instructions)
+        ? recipe.instructions.join("\n")
+        : typeof recipe.instructions === "string"
+          ? recipe.instructions
+          : undefined,
+      aggregateLikes: foundAggLike
+        ? foundAggLike[0].aggregateLikes + 1
+        : recipe.aggregateLikes,
       diets: recipe.diets,
       image: recipe.image,
       readyInMinutes: recipe.readyInMinutes,

@@ -52,6 +52,7 @@ async function handleApiError(error, retryFunction, ...args) {
 
 async function translateText(text, language) {
   try {
+    if (!text) return "";
     const [translation] = await translate.translate(text, language);
     return translation;
   } catch (error) {

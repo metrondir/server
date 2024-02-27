@@ -28,7 +28,6 @@ const getSpoonAcularChangedLikeRecipe = async (limit, sortDirection) => {
   }
 
   const recipes = await query.exec();
-  console.log(recipes);
   return recipes;
 };
 

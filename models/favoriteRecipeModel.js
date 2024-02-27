@@ -47,7 +47,6 @@ const favoriteRecipeSchema = new mongoose.Schema({
 
   aggregateLikes: {
     type: Number,
-    default: 0,
   },
   pricePerServing: String,
   diets: {
