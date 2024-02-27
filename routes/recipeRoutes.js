@@ -7,6 +7,8 @@ const {
   updateRecipe,
   deleteRecipe,
   loadDataToSelect,
+  loadCurrencyAndLanguges,
+  loadIngredients,
 } = require("../controllers/recipeController");
 const { getFavouriteRecipes } = require("../controllers/apiController");
 const authMiddleware = require("../middleware/authMiddleware");
@@ -17,6 +19,9 @@ router
   .post(authMiddleware, createRecipe);
 
 router.get("/data", loadDataToSelect);
+
+router.get("/load-currency-languages", loadCurrencyAndLanguges);
+router.get("/load-ingredients", loadIngredients);
 
 router.get("/favourite", authMiddleware, getFavouriteRecipes);
 

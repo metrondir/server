@@ -8,7 +8,12 @@ const {
   fetchRecipesByIngredients,
   fetchRecipesByCategories,
 } = require("../services/recipesFetchingService");
-const { paginateArray } = require("../middleware/paginateMiddleware");
+const {
+  redisGetModelsWithPaginating,
+} = require("../middleware/paginateMiddleware");
+const {
+  TranslateRecipeInformation,
+} = require("../services/translationService");
 const getRecipes = asyncHandler(async (req, res, next) => {
   try {
     const { refreshToken } = req.cookies;
@@ -25,8 +30,15 @@ const getRecipes = asyncHandler(async (req, res, next) => {
       size,
       currency,
     } = req.query;
-
-    const recipes = await fetchRecipes(
+    const ipAddress =
+      req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+    const clientIp = ipAddress.split(",")[0];
+    const redisKey = `${clientIp}search-recipes${refreshToken}${language}${query}${currency}${limit}${type}${diet}${cuisine}${maxReadyTime}`;
+    const recipes = await redisGetModelsWithPaginating(
+      page,
+      redisKey,
+      size,
+      fetchRecipes,
       query,
       limit,
       type,
@@ -37,12 +49,7 @@ const getRecipes = asyncHandler(async (req, res, next) => {
       currency,
       refreshToken,
     );
-    //await redisGetModelsWithPaginating(recipes, page, size, req, res, next);
-    //res.json(req.paginatedData);
-    paginateArray(recipes, page, size)(req, res, () => {
-      const paginatedRecipes = res.locals.paginatedData;
-      res.status(200).json(paginatedRecipes);
-    });
+    res.status(200).json(recipes);
   } catch (error) {
     next(error);
   }
@@ -51,20 +58,26 @@ const getRecipes = asyncHandler(async (req, res, next) => {
 const getRandomRecipes = asyncHandler(async (req, res, next) => {
   try {
     const { limit, language, page, size, currency } = req.query;
+    const ipAddress =
+      req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+    const clientIp = ipAddress.split(",")[0];
 
     const { refreshToken } = req.cookies;
-
-    const recipes = await fetchRandomRecipes(
+    const redisKey = `${clientIp}random-recipes${refreshToken}${language}${currency}${limit}`;
+    const recipes = await redisGetModelsWithPaginating(
+      page,
+      redisKey,
+      size,
+      fetchRandomRecipes,
       limit,
       language,
       refreshToken,
       currency,
     );
-    paginateArray(recipes, page, size)(req, res, () => {
-      const paginatedRecipes = res.locals.paginatedData;
-      res.status(200).json(paginatedRecipes);
-    });
+
+    res.status(200).json(recipes);
   } catch (error) {
+    console.log(error);
     next(error);
   }
 });
@@ -83,9 +96,20 @@ const getInformationById = asyncHandler(async (req, res, next) => {
 const getRecommendedRecipes = asyncHandler(async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { language, currency } = req.query;
-
-    const recipes = await fetchRecommendedRecipes(id, language, currency);
+    const { language, currency, page, size } = req.query;
+    const ipAddress =
+      req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+    const clientIp = ipAddress.split(",")[0];
+    const redisKey = `${clientIp}recomended-recipes${id}${language}${currency}`;
+    const recipes = await redisGetModelsWithPaginating(
+      page,
+      redisKey,
+      size,
+      fetchRecommendedRecipes,
+      id,
+      language,
+      currency,
+    );
     res.status(200).json(recipes);
   } catch (error) {
     next(error);
@@ -96,12 +120,23 @@ const getFavouriteRecipes = asyncHandler(async (req, res, next) => {
   try {
     const id = req.user.id;
     const { language, page, size, currency } = req.query;
-    const recipes = await fetchFavoriteRecipes(id, language, currency);
-    paginateArray(recipes, page, size)(req, res, () => {
-      const paginatedRecipes = res.locals.paginatedData;
-      res.status(200).json(paginatedRecipes);
-    });
+    const ipAddress =
+      req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+    const clientIp = ipAddress.split(",")[0];
+    const redisKey = `${clientIp}favourite-recipes${id}${language}${currency}`;
+
+    const recipes = await redisGetModelsWithPaginating(
+      page,
+      redisKey,
+      size,
+      fetchFavoriteRecipes,
+      id,
+      language,
+      currency,
+    );
+    res.status(200).json(recipes);
   } catch (error) {
+    console.log(error);
     next(error);
   }
 });
@@ -110,17 +145,24 @@ const getRecipesByIngridients = asyncHandler(async (req, res, next) => {
   try {
     const { refreshToken } = req.cookies;
     const { ingredients, number, language, page, size, currency } = req.query;
-    const recipes = await fetchRecipesByIngredients(
-      ingredients,
+
+    const ipAddress =
+      req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+    const clientIp = ipAddress.split(",")[0];
+    const redisKey = `${clientIp}searchByIngredients-recipes${refreshToken}${language}${currency}${number}${ingredients}`;
+
+    const recipes = await redisGetModelsWithPaginating(
+      page,
+      redisKey,
+      size,
+      fetchRecipesByIngredients,
       number,
       language,
       currency,
       refreshToken,
+      ingredients,
     );
-    paginateArray(recipes, page, size)(req, res, () => {
-      const paginatedRecipes = res.locals.paginatedData;
-      res.status(200).json(paginatedRecipes);
-    });
+    res.status(200).json(recipes);
   } catch (error) {
     next(error);
   }
@@ -129,11 +171,21 @@ const getRecipesByIngridients = asyncHandler(async (req, res, next) => {
 const translateRecipe = asyncHandler(async (req, res, next) => {
   try {
     const { language, page, size } = req.query;
-    const recipes = await translateRecipeInformation(req.body, language);
-    paginateArray(recipes, page, size)(req, res, () => {
-      const paginatedRecipes = res.locals.paginatedData;
-      res.status(200).json(paginatedRecipes);
-    });
+    const ipAddress =
+      req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+    const clientIp = ipAddress.split(",")[0];
+
+    const redisKey = `${clientIp}translate-recipes$${language}`;
+    const recipes = await redisGetModelsWithPaginating(
+      page,
+      redisKey,
+      size,
+      TranslateRecipeInformation,
+      req.body,
+      language,
+    );
+
+    res.status(200).json(recipes);
   } catch (error) {
     next(error);
   }
@@ -152,7 +204,16 @@ const getRecipesByCategories = asyncHandler(async (req, res, next) => {
       size,
       currency,
     } = req.query;
-    const recipes = await fetchRecipesByCategories(
+    const ipAddress =
+      req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+    const clientIp = ipAddress.split(",")[0];
+
+    const redisKey = `${clientIp}categories-recipes${refreshToken}${language}${currency}${limit}${query}${sort}${sortDirection}`;
+    const recipes = await redisGetModelsWithPaginating(
+      page,
+      redisKey,
+      size,
+      fetchRecipesByCategories,
       query,
       limit,
       sort,
@@ -162,10 +223,7 @@ const getRecipesByCategories = asyncHandler(async (req, res, next) => {
       refreshToken,
     );
 
-    paginateArray(recipes, page, size)(req, res, () => {
-      const paginatedRecipes = res.locals.paginatedData;
-      res.status(200).json(paginatedRecipes);
-    });
+    res.status(200).json(recipes);
   } catch (error) {
     next(error);
   }

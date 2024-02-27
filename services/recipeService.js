@@ -2,18 +2,23 @@ const Recipe = require("../models/recipeModel");
 const FavoriteRecipe = require("../models/favoriteRecipeModel");
 const SpoonacularRecipeModel = require("../models/spoonacularRecipeModel");
 const imgur = require("imgur");
+const fs = require("fs").promises;
 const { changeCurrency } = require("./changeCurrencyRecipesService");
 const {
   parsedIngredients,
   fetchAggregateLikesById,
+  fetchInformationById,
 } = require("../services/recipesFetchingService");
 const {
   detectLanguage,
   translateRecipePost,
+  translateRecipeGet,
   TranslateRecipeInformation,
   translateText,
 } = require("../services/translationService");
 const { data } = require("../utils/recipesData");
+const { currencyData } = require("../utils/currencyData");
+const { languageData } = require("../utils/languageData");
 const ApiError = require("../middleware/apiError");
 
 const getRecipe = async (id) => {
@@ -36,14 +41,15 @@ const getRecipe = async (id) => {
   };
 };
 
-const getRecipes = async (req, res, next) => {
-  const { currency, language } = req.query;
-
-  const recipes = await Recipe.find({ user: req.user.id });
+const getRecipes = async (currency, language, id) => {
+  const recipes = await Recipe.find({ user: id });
   if (recipes.length === 0) return [];
   if (language === "en" || !language) {
     const updatedRecipes = recipes.map((recipe) => ({
       ...recipe._doc,
+      pricePerServing: !currency
+        ? recipe.pricePerServing + " USD"
+        : recipe.pricePerServing,
       readyInMinutes: recipe.readyInMinutes + " min",
     }));
     if (currency) return changeCurrency(updatedRecipes, currency);
@@ -52,15 +58,17 @@ const getRecipes = async (req, res, next) => {
   } else {
     const min = await translateText(" min", language);
     await Promise.all(
-      recipes.map((recipe) => translateRecipePost(recipe, language)),
+      recipes.map((recipe) => translateRecipeGet(recipe, language)),
     );
-
+    console.log(recipes);
     const translatedRecipes = recipes.map((recipe) => ({
       id: recipe.id || recipe._id,
       title: recipe.title,
       image: recipe.image,
       extendedIngredients: recipe.extendedIngredients,
-      pricePerServing: recipe.pricePerServing,
+      pricePerServing: !currency
+        ? recipe.pricePerServing + " USD"
+        : recipe.pricePerServing,
       diets: recipe.diets || [],
       cuisines: recipe.cuisines || [],
       instructions: recipe.instructions,
@@ -135,10 +143,21 @@ const setFavoriteRecipes = async (req) => {
       );
       return { isDeleted: true, data: deletedFavoriteRecipe };
     }
-
+    const recipe = await fetchInformationById(recipeId, "en", null);
+    console.log(recipe);
     const newFavoriteRecipe = new FavoriteRecipe({
-      recipe: recipeId,
+      recipeId: recipe.id,
+      title: recipe.title,
+      extendedIngredients: recipe.extendedIngredients,
+      pricePerServing: recipe.pricePerServing,
+      cuisines: recipe.cuisines,
+      dishTypes: recipe.dishTypes,
+      instructions: recipe.instructions,
+      diets: recipe.diets,
+      image: recipe.image,
+      readyInMinutes: recipe.readyInMinutes,
       user: req.user.id,
+      recipe: recipeId,
     });
     await newFavoriteRecipe.save();
 
@@ -243,12 +262,39 @@ const deleteRecipe = async (req) => {
   return recipe;
 };
 
-const loadData = async (req, language) => {
+const loadData = async (language) => {
   if (language === "en" || language === undefined) {
     return data;
   }
   const translatedData = await TranslateRecipeInformation(data, language);
+
   return translatedData;
+};
+
+const getCurrencyAndLanguges = async () => {
+  const result = {
+    languageData: languageData.languageData,
+    currencyData: currencyData.currencyData,
+  };
+
+  return result;
+};
+
+const getIngredients = async () => {
+  let ingredients;
+  try {
+    const fileContent = await fs.readFile(
+      "./utils/top-1k-ingredients.txt",
+      "utf-8",
+    );
+
+    ingredients = fileContent.split("\r\n");
+  } catch (error) {
+    console.error("Error reading file:", error);
+    return [];
+  }
+
+  return ingredients;
 };
 
 module.exports = {
@@ -259,4 +305,6 @@ module.exports = {
   updateRecipe,
   deleteRecipe,
   loadData,
+  getCurrencyAndLanguges,
+  getIngredients,
 };

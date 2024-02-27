@@ -10,7 +10,6 @@ const translate = new Translate({
 });
 
 async function detectLanguage(text) {
-  console.log(text);
   try {
     const response = await axios.post(
       "https://api-free.deepl.com/v2/translate",
@@ -31,7 +30,6 @@ async function detectLanguage(text) {
 
     const detectedLanguage =
       response.data.translations[0].detected_source_language;
-    console.log(detectedLanguage);
     return detectedLanguage.toLowerCase();
   } catch (error) {
     console.error("Error detecting language with DeepL:", error);
@@ -93,8 +91,61 @@ async function translateRecipePost(recipe, language) {
     if (language === "en" || !language) {
       return recipe;
     }
-    recipe.title = await translateText(recipe.title, (language = "en"));
 
+    recipe.title = await translateText(recipe.title, (language = "en"));
+    recipe.instructions = await translateText(recipe.instructions, language);
+    if (!language === "en")
+      recipe.readyInMinutes += await translateText("min", language);
+
+    if (Array.isArray(recipe.dishTypes)) {
+      recipe.dishTypes = await Promise.all(
+        recipe.dishTypes.map(async (dishType) => {
+          return await translateText(dishType, language);
+        }),
+      );
+    }
+
+    // Similarly, for diets and cuisines
+    if (Array.isArray(recipe.diets)) {
+      recipe.diets = await Promise.all(
+        recipe.diets.map(async (diet) => {
+          return await translateText(diet, language);
+        }),
+      );
+    }
+
+    if (Array.isArray(recipe.cuisines)) {
+      recipe.cuisines = await Promise.all(
+        recipe.cuisines.map(async (cuisine) => {
+          return await translateText(cuisine, language);
+        }),
+      );
+    }
+    recipe.extendedIngredients = await Promise.all(
+      recipe.extendedIngredients.map(async (ingredient) => {
+        ingredient.original = await translateText(
+          ingredient.original,
+          language,
+        );
+
+        return ingredient;
+      }),
+    );
+
+    return recipe;
+  } catch (error) {
+    console.log(error);
+    throw new Error(error);
+  }
+}
+
+async function translateRecipeGet(recipe, language) {
+  try {
+    if (language === "en" || !language) {
+      return recipe;
+    }
+
+    recipe.title = await translateText(recipe.title, language);
     recipe.instructions = await translateText(recipe.instructions, language);
     if (!language === "en")
       recipe.readyInMinutes += await translateText("min", language);
@@ -179,4 +230,5 @@ module.exports = {
   TranslateRecipeInformation,
   detectLanguage,
   translateRecipePost,
+  translateRecipeGet,
 };

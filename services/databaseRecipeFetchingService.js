@@ -14,8 +14,21 @@ const getRecipesFromDatabaseRandomWithUsers = async (limit, userId) => {
   ]);
 };
 
-const getSpoonAcularChangedLikeRecipe = async () => {
-  const recipes = await SpoonacularRecipeModel.find();
+const getSpoonAcularChangedLikeRecipe = async (limit, sortDirection) => {
+  let query = SpoonacularRecipeModel.find();
+
+  if (sortDirection === "asc") {
+    query = query.sort({ aggregateLikes: 1 });
+  } else if (sortDirection === "desc") {
+    query = query.sort({ aggregateLikes: -1 });
+  }
+
+  if (limit) {
+    query = query.limit(parseInt(limit, 10));
+  }
+
+  const recipes = await query.exec();
+  console.log(recipes);
   return recipes;
 };
 
@@ -25,7 +38,7 @@ const getRecipesByCategories = async (sortDirection, valueSort, query) => {
     let queryObject = {};
 
     if (query) {
-      queryObject.title = { $regex: new RegExp(query, "i") }; // Case-insensitive title search
+      queryObject.title = { $regex: new RegExp(query, "i") };
     }
     if (valueSort === "time") {
       valueSort = "readyInMinutes";

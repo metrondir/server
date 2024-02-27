@@ -34,15 +34,17 @@ const redisGetModels = async (model, req, res, next, conditions = {}) => {
 };
 
 const redisGetModelsWithPaginating = async (
-  data,
   page,
+  redisKey,
   size,
-  req,
-  res,
-  next,
+  func,
+  limit,
+  language,
+  refreshToken,
+  currency,
+  ...args
 ) => {
   try {
-    const redisKey = "allData";
     const redisData = await new Promise((resolve, reject) => {
       redis.get(redisKey, (err, redisData) => {
         if (err) {
@@ -55,26 +57,25 @@ const redisGetModelsWithPaginating = async (
 
     if (redisData) {
       console.log("FROM Redis");
+
       const parsedData = JSON.parse(redisData);
       const paginatedResult = paginateArray(parsedData, page, size);
-      res.json(paginatedResult);
+      return paginatedResult;
     } else {
       console.log("FROM DB");
-      redis.setex(
-        redisKey,
-        process.env.DEFAULT_EXPIRATION_REDIS_KEY_TIME,
-        JSON.stringify(data),
-      );
+      const data = await func(limit, language, refreshToken, currency, ...args);
 
-      const paginatedResult = paginateArray(data, page, size);
+      redis.setex(redisKey, 60, JSON.stringify(data));
 
-      if (!paginatedResult) {
+      if (!data || data.length === 0) {
         throw ApiError.BadRequest("Too low results in model");
       } else {
-        res.json(paginatedResult);
+        const paginatedResult = paginateArray(data, page, size);
+        return paginatedResult;
       }
     }
   } catch (error) {
+    console.log(error);
     throw ApiError.BadRequest(error.message);
   }
 };
@@ -89,11 +90,10 @@ const calculatePagination = (page, size, totalItems) => {
   return { startIndex, endIndex, hasPrevious, hasNext };
 };
 
-const paginateArray = (data, page, size) => (req, res, next) => {
+const paginateArray = (data, page, size) => {
   try {
     if (!size || !page) {
-      res.locals.paginatedData = data;
-      return next();
+      return data;
     }
     const totalItems = data.length;
     const pageNumber = parseInt(page) || 1;
@@ -131,19 +131,18 @@ const paginateArray = (data, page, size) => (req, res, next) => {
 
     result.results = data.slice(startIndex, endIndex);
 
-    res.locals.paginatedData = result;
-    next();
+    return result;
   } catch (error) {
     next(error);
     throw new Error(error);
   }
 };
 
-const onDataChanged = async (modelName) => {
+const onDataChanged = async (ipAddress) => {
   try {
-    const patern = `${modelName.toLowerCase()}`;
+    const pattern = `${ipAddress}*`;
 
-    const keys = await redis.keys(patern);
+    const keys = await redis.keys(pattern);
 
     const deletePromises = keys.map((key) => {
       return redis.del(key);
