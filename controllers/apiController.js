@@ -49,6 +49,7 @@ const getRecipes = asyncHandler(async (req, res, next) => {
       currency,
       refreshToken,
     );
+
     res.status(200).json(recipes);
   } catch (error) {
     next(error);

@@ -69,7 +69,7 @@ const loginUser = asyncHandler(async (req, res, next) => {
       sameSite: "None",
     });
 
-    return res.status(200).json(userData).redirect(process.env.API_URL);
+    return res.status(200).json(userData);
   } catch (error) {
     next(error);
   }
@@ -190,7 +190,6 @@ const deleteUserById = asyncHandler(async (req, res, next) => {
         httpOnly: true,
         sameSite: "None",
       })
-      .redirect(process.env.API_URL)
       .status(200)
       .json("User deleted successfully");
   } catch (error) {

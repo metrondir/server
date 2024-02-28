@@ -5,6 +5,9 @@ const imgur = require("imgur");
 const fs = require("fs").promises;
 const { changeCurrency } = require("./changeCurrencyRecipesService");
 const {
+  createInstructionsHTML,
+} = require("../utils/createInstructionsLikeList");
+const {
   parsedIngredients,
   fetchAggregateLikesById,
   fetchInformationById,
@@ -115,6 +118,7 @@ const createRecipe = async (req) => {
     recipe.pricePerServing = cost;
     recipe.image = imgurLink.link;
     recipe.user = req.user.id;
+    recipe.instructions = createInstructionsHTML(recipe.instructions);
     recipe = new Recipe(recipe);
     await recipe.save();
     return recipe;

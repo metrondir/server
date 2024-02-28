@@ -206,6 +206,7 @@ const deleteUser = asyncHandler(async (id) => {
   const user = await User.findByIdAndDelete(id);
   await Recipe.deleteMany({ user: id });
   await FavoriteRecipe.deleteMany({ user: id });
+
   await removeToken(user.refreshToken);
   if (!user) {
     throw ApiError.BadRequest("User not found");

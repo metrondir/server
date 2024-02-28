@@ -19,6 +19,7 @@ const {
 } = require("./databaseRecipeFetchingService");
 const { findUserByRefreshToken } = require("./userService");
 const { changeCurrency } = require("./changeCurrencyRecipesService");
+
 const getRandomSample = (array, size) => {
   const shuffled = array.slice().sort(() => 0.5 - Math.random());
   return shuffled.slice(0, size);
@@ -370,26 +371,40 @@ const fetchRandomRecipes = async (limit, language, refreshToken, currency) => {
 
 const fetchRecommendedRecipes = async (id, language, currency) => {
   let apiKey = getApiKey();
-
-  const url = `${baseUrl}/${id}/similar?apiKey=${apiKey}`;
-  try {
+  if (id.length > 9) {
+    const recipeByBD = await Recipe.findById(id);
+    let url = `${baseUrl}/complexSearch?apiKey=${apiKey}&query=${recipeByBD.title}&number=1&addRecipeNutrition=true`;
     const response = await axios.get(url);
-    const stringId = id.toString();
-    if (stringId.length <= 7) {
-      return Promise.all(
-        response.data.map(async (recipe) =>
-          fetchInformationByRecomended(recipe.id, language, currency),
-        ),
+    if (response.data.results.length > 0) {
+      return await fetchRecommendedRecipes(
+        response.data.results[0].id,
+        language,
+        currency,
+      );
+    } else {
+      return "This recipe dont have recomended recepts";
+    }
+  } else {
+    const url = `${baseUrl}/${id}/similar?apiKey=${apiKey}`;
+    try {
+      const response = await axios.get(url);
+      const stringId = id.toString();
+      if (stringId.length <= 7) {
+        return Promise.all(
+          response.data.map(async (recipe) =>
+            fetchInformationByRecomended(recipe.id, language, currency),
+          ),
+        );
+      }
+    } catch (error) {
+      return handleApiError(
+        error,
+        fetchRecommendedRecipes,
+        id,
+        language,
+        currency,
       );
     }
-  } catch (error) {
-    return handleApiError(
-      error,
-      fetchRecommendedRecipes,
-      id,
-      language,
-      currency,
-    );
   }
 };
 
@@ -498,6 +513,7 @@ const fetchInformationById = async (id, language, currency) => {
         dishTypes: data.dishTypes || [],
         aggregateLikes: data.aggregateLikes,
       };
+
       if (currency) return changeCurrency(recipe, currency);
 
       return recipe;
@@ -619,7 +635,6 @@ const fetchInformationById = async (id, language, currency) => {
 
 const parsedIngredients = async (ingredients) => {
   try {
-    console.log(ingredients);
     const apiKey = getApiKey();
     const url = `${baseUrl}/parseIngredients?includeNutrition=false&apiKey=${apiKey}`;
 

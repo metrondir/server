@@ -76,29 +76,29 @@ const getRecipesFromDatabaseComplex = async (
   cuisine,
   maxReadyTime,
 ) => {
-  const pipeline = [
-    { $match: {} },
-    { $sample: { size: Math.floor(limit / 2) } },
-  ];
-  if (query) {
+  const pipeline = [{ $match: {} }, { $sample: { size: Math.floor(limit) } }];
+
+  if (query !== "undefined" && query !== "") {
     pipeline[0].$match.title = { $regex: new RegExp(query, "i") };
   }
-  if (type) {
+  if (type !== "undefined" && type !== "") {
     pipeline[0].$match.dishTypes = type;
   }
 
-  if (diet) {
+  if (diet !== "undefined" && diet !== "") {
     pipeline[0].$match.diets = diet;
   }
 
-  if (cuisine) {
+  if (cuisine !== "undefined" && cuisine !== "") {
     pipeline[0].$match.cuisines = cuisine;
   }
-  if (maxReadyTime) {
+  if (maxReadyTime !== "undefined" && maxReadyTime !== "") {
     pipeline[0].$match.readyInMinutes = { $lte: Number(maxReadyTime) };
   }
   try {
+    console.log(pipeline);
     const recipes = await Recipe.aggregate(pipeline);
+    console.log(recipes);
     return recipes;
   } catch (error) {
     throw ApiError.BadRequest(error.message);
