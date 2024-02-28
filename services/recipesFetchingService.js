@@ -347,9 +347,12 @@ const fetchRandomRecipes = async (limit, language, refreshToken, currency) => {
     const allRecipes = response.data.recipes.concat(recipes);
     const favourites = await FavoriteRecipe.find({ user: user._id });
     allRecipes.map((item) => {
-      item.isFavourite = favourites.some(
-        (recipe) => recipe.recipe.toString() === item.id.toString(),
-      );
+      if (item && item.id) {
+        item.isFavourite = favourites.some(
+          (recipe) =>
+            recipe.recipe && recipe.recipe.toString() === item.id.toString(),
+        );
+      }
     });
 
     let RandomSample = getRandomSample(

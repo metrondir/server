@@ -68,7 +68,7 @@ const redisGetModelsWithPaginating = async (
       redis.setex(redisKey, 60, JSON.stringify(data));
 
       if (!data || data.length === 0) {
-        throw ApiError.BadRequest("Too low results in model");
+        return [];
       } else {
         const paginatedResult = paginateArray(data, page, size);
         return paginatedResult;
@@ -133,7 +133,7 @@ const paginateArray = (data, page, size) => {
 
     return result;
   } catch (error) {
-    next(error);
+    console.log(error);
     throw new Error(error);
   }
 };

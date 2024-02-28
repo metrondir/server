@@ -150,11 +150,14 @@ const setFavoriteRecipes = async (req) => {
 
     const recipe = await fetchInformationById(recipeId, "en", null);
     let foundAggLike;
-    if (recipeId <= 8) {
+    if (recipeId.length <= 8) {
       foundAggLike = await SpoonacularRecipeModel.find({ id: recipeId });
-    } else {
+    }
+
+    if (recipeId.length >= 9) {
       foundAggLike = await Recipe.find({ _id: recipeId });
     }
+
     await FavoriteRecipe.updateMany(
       { recipe: { $in: recipeId } },
       { $inc: { aggregateLikes: +1 } },
@@ -171,9 +174,10 @@ const setFavoriteRecipes = async (req) => {
         : typeof recipe.instructions === "string"
           ? recipe.instructions
           : undefined,
-      aggregateLikes: foundAggLike
-        ? foundAggLike[0].aggregateLikes + 1
-        : recipe.aggregateLikes,
+      aggregateLikes:
+        foundAggLike.length !== 0
+          ? foundAggLike[0].aggregateLikes + 1
+          : recipe.aggregateLikes,
       diets: recipe.diets,
       image: recipe.image,
       readyInMinutes: recipe.readyInMinutes,

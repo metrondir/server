@@ -79,6 +79,7 @@ const googleOauthHandler = asyncHandler(async (req, res, next) => {
     res.cookie("refreshToken", tokens.refreshToken, {
       maxAge: process.env.COOKIE_MAX_AGE,
       secure: true,
+      httpOnly: true,
       sameSite: "None",
     });
     res.redirect(`${process.env.CLIENT_URL}`);

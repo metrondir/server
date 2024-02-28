@@ -45,6 +45,7 @@ const registerUser = asyncHandler(async (req, res, next) => {
       maxAge: process.env.COOKIE_MAX_AGE,
       secure: true,
       sameSite: "None",
+      httpOnly: true,
     });
     return res.status(201).json(userData);
   } catch (error) {
@@ -64,10 +65,11 @@ const loginUser = asyncHandler(async (req, res, next) => {
     res.cookie("refreshToken", userData.refreshToken, {
       maxAge: process.env.COOKIE_MAX_AGE,
       secure: true,
+      httpOnly: true,
       sameSite: "None",
     });
 
-    return res.status(200).json(userData);
+    return res.status(200).json(userData).redirect(process.env.API_URL);
   } catch (error) {
     next(error);
   }
@@ -80,11 +82,16 @@ const loginUser = asyncHandler(async (req, res, next) => {
 const logoutUser = asyncHandler(async (req, res, next) => {
   try {
     const { refreshToken } = req.cookies;
-    const token = await logout(refreshToken);
-    res.clearCookie("refreshToken");
+    await logout(refreshToken);
     return res
+      .clearCookie("refreshToken", {
+        secure: true,
+        httpOnly: true,
+        sameSite: "None",
+      })
       .status(200)
-      .json({ token: token, message: "User logged out successfully" });
+      .json("User logged out successfully")
+      .redirect(process.env.API_URL);
   } catch (error) {
     next(error);
   }
@@ -101,6 +108,7 @@ const refreshTokenUser = asyncHandler(async (req, res, next) => {
     res.cookie("refreshToken", userData.refreshToken, {
       maxAge: process.env.COOKIE_MAX_AGE,
       secure: true,
+      httpOnly: true,
       sameSite: "None",
     });
     return res.status(200).json(userData);
@@ -176,8 +184,15 @@ const changePasswordUserLink = asyncHandler(async (req, res, next) => {
 const deleteUserById = asyncHandler(async (req, res, next) => {
   try {
     await deleteUser(req.user.id);
-    res.clearCookie("refreshToken");
-    return res.status(200).json("User deleted successfully");
+    return res
+      .clearCookie("refreshToken", {
+        secure: true,
+        httpOnly: true,
+        sameSite: "None",
+      })
+      .redirect(process.env.API_URL)
+      .status(200)
+      .json("User deleted successfully");
   } catch (error) {
     next(error);
   }

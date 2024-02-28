@@ -1,11 +1,7 @@
 const asyncHandler = require("express-async-handler");
 const recipeService = require("../services/recipeService");
 const multer = require("multer");
-const ApiError = require("../middleware/apiError");
-const {
-  paginateArray,
-  onDataChanged,
-} = require("../middleware/paginateMiddleware");
+const { onDataChanged } = require("../middleware/paginateMiddleware");
 // multer configuration for file upload
 const {
   redisGetModelsWithPaginating,
@@ -111,6 +107,10 @@ const createRecipe = [
   asyncHandler(async (req, res, next) => {
     try {
       await recipeService.createRecipe(req);
+      const ipAddress =
+        req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+      const clientIp = ipAddress.split(",")[0];
+      onDataChanged(clientIp);
       return res.status(201).json("Recipe created");
     } catch (error) {
       next(error);
@@ -125,6 +125,10 @@ const createRecipe = [
 const updateRecipe = asyncHandler(async (req, res, next) => {
   try {
     const recipe = await recipeService.updateRecipe(req);
+    const ipAddress =
+      req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+    const clientIp = ipAddress.split(",")[0];
+    onDataChanged(clientIp);
     return res.status(200).json({ recipe, message: "Recipe updated" });
   } catch (error) {
     next(error);
@@ -138,6 +142,10 @@ const updateRecipe = asyncHandler(async (req, res, next) => {
 const deleteRecipe = asyncHandler(async (req, res, next) => {
   try {
     await recipeService.deleteRecipe(req);
+    const ipAddress =
+      req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+    const clientIp = ipAddress.split(",")[0];
+    onDataChanged(clientIp);
     return res.status(200).json("Recipe deleted");
   } catch (error) {
     next(error);
