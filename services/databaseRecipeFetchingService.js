@@ -36,7 +36,7 @@ const getRecipesByCategories = async (sortDirection, valueSort, query) => {
   try {
     let queryObject = {};
 
-    if (query) {
+    if (query && query !== "undefined" && query !== "") {
       queryObject.title = { $regex: new RegExp(query, "i") };
     }
     if (valueSort === "time") {
@@ -64,7 +64,7 @@ const getRecipesFromDatabaseByIngridients = async (limit, ingredients) => {
         extendedIngredients: { $elemMatch: { original: { $in: ingredients } } },
       },
     },
-    { $sample: { size: Math.floor(limit / 2) } },
+    { $sample: { size: Math.floor(limit) } },
   ]);
 };
 
