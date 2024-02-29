@@ -1,12 +1,12 @@
 module.exports.languageData = {
   languageData: [
-    { value: "Ukrainian", label: "Ukrainian", code: "uk" },
-    { value: "English", label: "English", code: "en" },
-    { value: "Czech", label: "Czech", code: "cs" },
-    { value: "French", label: "French", code: "fr" },
-    { value: "German", label: "German", code: "de" },
-    { value: "Italian", label: "Italian", code: "it" },
-    { value: "Polish", label: "Polish", code: "pl" },
-    { value: "Spanish", label: "Spanish", code: "es" },
+    { value: "Ukrainian", label: "UA", code: "uk" },
+    { value: "English", label: "EN", code: "en" },
+    { value: "Czech", label: "CZ", code: "cs" },
+    { value: "French", label: "FR", code: "fr" },
+    { value: "German", label: "DE", code: "de" },
+    { value: "Italian", label: "IT", code: "it" },
+    { value: "Polish", label: "PL", code: "pl" },
+    { value: "Spanish", label: "SP", code: "es" },
   ],
 };

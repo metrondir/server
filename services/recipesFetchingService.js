@@ -28,7 +28,7 @@ const getRandomSample = (array, size) => {
 async function fetchRecipesData(response, language, currency) {
   if (language === "en" || !language) {
     return response
-      .filter((recipe) => !!recipe.instructions)
+      .filter((recipe) => !!recipe.instructions || !!recipe.summary)
       .map((recipe) => ({
         id: recipe.id || recipe._id,
         title: recipe.title,
@@ -47,7 +47,7 @@ async function fetchRecipesData(response, language, currency) {
       response.map((recipe) => translateRecipeInformation(recipe, language)),
     );
     return response
-      .filter((recipe) => !!recipe.instructions)
+      .filter((recipe) => !!recipe.instructions || !!recipe.summary)
       .map((recipe) => ({
         id: recipe.id || recipe._id,
         title: recipe.title,
