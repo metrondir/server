@@ -3,6 +3,7 @@ const FavoriteRecipe = require("../models/favoriteRecipeModel");
 const SpoonacularRecipeModel = require("../models/spoonacularRecipeModel");
 const imgur = require("imgur");
 const fs = require("fs").promises;
+const sharp = require("sharp");
 const { changeCurrency } = require("./changeCurrencyRecipesService");
 const {
   createInstructionsHTML,
@@ -108,15 +109,22 @@ const createRecipe = async (req) => {
   if (req.body.diets && typeof req.body.diets === "string") {
     req.body.diets = JSON.parse(req.body.diets).map((diet) => diet.label);
   }
-  console.log(req.file.path);
-  const imgurLink = await imgur.uploadFile(req.file.path);
+
+  const resizedImageBuffer = await sharp(req.file.path)
+    .resize(556, 370)
+    .toBuffer();
+  const imgurResponse = await imgur.uploadBase64(
+    resizedImageBuffer.toString("base64"),
+  );
+  const imgurLink = imgurResponse.link;
+
   const language = await detectLanguage(req.body.instructions);
 
   try {
     let recipe = await translateRecipePost(req.body, language);
     const cost = await parsedIngredients(recipe.extendedIngredients);
     recipe.pricePerServing = cost;
-    recipe.image = imgurLink.link;
+    recipe.image = imgurLink;
     recipe.user = req.user.id;
     recipe.instructions = createInstructionsHTML(recipe.instructions);
     recipe = new Recipe(recipe);
