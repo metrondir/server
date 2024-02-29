@@ -27,33 +27,40 @@ const getRandomSample = (array, size) => {
 
 async function fetchRecipesData(response, language, currency) {
   if (language === "en" || !language) {
-    return response.map((recipe) => ({
-      id: recipe.id || recipe._id,
-      title: recipe.title,
-      image: recipe.image,
-      pricePerServing: !currency
-        ? parseFloat((recipe.pricePerServing / 100).toFixed(2)) + " USD"
-        : parseFloat((recipe.pricePerServing / 100).toFixed(2)),
-      readyInMinutes: recipe.readyInMinutes + " min",
-      dishTypes: recipe.dishTypes || [],
-      isFavourite: recipe?.isFavourite,
-      aggregateLikes: recipe?.aggregateLikes,
-    }));
+    return response
+      .filter((recipe) => !!recipe.instructions)
+      .map((recipe) => ({
+        id: recipe.id || recipe._id,
+        title: recipe.title,
+        image: recipe.image,
+        pricePerServing: !currency
+          ? parseFloat((recipe.pricePerServing / 100).toFixed(2)) + " USD"
+          : parseFloat((recipe.pricePerServing / 100).toFixed(2)),
+        readyInMinutes: recipe.readyInMinutes + " min",
+        dishTypes: recipe.dishTypes || [],
+        isFavourite: recipe?.isFavourite,
+        cuisine: recipe.cuisines || [],
+        aggregateLikes: recipe?.aggregateLikes,
+      }));
   } else {
     await Promise.all(
       response.map((recipe) => translateRecipeInformation(recipe, language)),
     );
-    return response.map((recipe) => ({
-      id: recipe.id || recipe._id,
-      title: recipe.title,
-      image: recipe.image,
-      pricePerServing: !currency
-        ? parseFloat((recipe.pricePerServing / 100).toFixed(2)) + " USD"
-        : parseFloat((recipe.pricePerServing / 100).toFixed(2)),
-      readyInMinutes: recipe.readyInMinutes,
-      dishTypes: recipe.dishTypes || [],
-      isFavourite: recipe?.isFavourite,
-    }));
+    return response
+      .filter((recipe) => !!recipe.instructions)
+      .map((recipe) => ({
+        id: recipe.id || recipe._id,
+        title: recipe.title,
+        image: recipe.image,
+        cuisine: recipe.cuisines || [],
+        pricePerServing: !currency
+          ? parseFloat((recipe.pricePerServing / 100).toFixed(2)) + " USD"
+          : parseFloat((recipe.pricePerServing / 100).toFixed(2)),
+        readyInMinutes: recipe.readyInMinutes,
+        dishTypes: recipe.dishTypes || [],
+        isFavourite: recipe?.isFavourite,
+        aggregateLikes: recipe?.aggregateLikes,
+      }));
   }
 }
 
@@ -420,25 +427,27 @@ const fetchInformationByRecomended = async (
   if (refreshToken) {
     const user = await findUserByRefreshToken(refreshToken);
     favourites = await FavoriteRecipe.find({ user: user._id });
-    console.log(favourites);
   }
   const url = `${baseUrl}/${id}/information?includeNutrition=false&apiKey=${apiKey}`;
   try {
     const response = await axios.get(url);
+    if (!response.data || !response.data.instructions) {
+      return;
+    }
 
+    const recipeData = response.data;
     if (language === "en" || !language) {
       let recipe = {
-        id: response.data.id,
-        title: response.data.title,
-        dishTypes: response.data.dishTypes || [],
-        image: response.data.image,
-        readyInMinutes: response.data.readyInMinutes + " min",
+        id: recipeData.id,
+        title: recipeData.title,
+        dishTypes: recipeData.dishTypes || [],
+        image: recipeData.image,
+        readyInMinutes: recipeData.readyInMinutes + " min",
         pricePerServing: !currency
-          ? parseFloat((response.data.pricePerServing / 100).toFixed(2)) +
-            " USD"
-          : parseFloat((response.data.pricePerServing / 100).toFixed(2)),
+          ? parseFloat((recipeData.pricePerServing / 100).toFixed(2)) + " USD"
+          : parseFloat((recipeData.pricePerServing / 100).toFixed(2)),
         isFavourite: favourites.some(
-          (fav) => fav.recipe.toString() === response.data.id.toString(),
+          (fav) => fav.recipe.toString() === recipeData.id.toString(),
         ),
       };
 
@@ -447,20 +456,25 @@ const fetchInformationByRecomended = async (
       return recipe;
     } else {
       await translateRecipeInformation(response.data, language);
-      let recipe = {
-        id: response.data.id,
-        title: response.data.title,
-        dishTypes: response.data.dishTypes || [],
-        image: response.data.image,
-        readyInMinutes: response.data.readyInMinutes,
+      if (!response.data || !response.data.instructions) {
+        return;
+      }
+
+      const recipeData = response.data;
+      const recipe = {
+        id: recipeData.id,
+        title: recipeData.title,
+        dishTypes: recipeData.dishTypes || [],
+        image: recipeData.image,
+        readyInMinutes: recipeData.readyInMinutes,
         pricePerServing: !currency
-          ? parseFloat((response.data.pricePerServing / 100).toFixed(2)) +
-            " USD"
-          : parseFloat((response.data.pricePerServing / 100).toFixed(2)),
+          ? parseFloat((recipeData.pricePerServing / 100).toFixed(2)) + " USD"
+          : parseFloat((recipeData.pricePerServing / 100).toFixed(2)),
         isFavourite: favourites.some(
-          (fav) => fav.recipe.toString() === response.data.id.toString(),
+          (fav) => fav.recipe.toString() === recipeData.id.toString(),
         ),
       };
+
       if (currency) return changeCurrency(recipe, currency);
 
       return recipe;
@@ -666,7 +680,6 @@ const parsedIngredients = async (ingredients) => {
 const fetchFavoriteRecipes = async (id, language, currency) => {
   try {
     const favoriteRecipesByDb = await FavoriteRecipe.find({ user: id });
-    console.log(favoriteRecipesByDb);
     const allFavoriteRecipes = await Promise.all(
       favoriteRecipesByDb.map(async (fetchedRecipe) => {
         try {
@@ -707,7 +720,6 @@ const fetchFavoriteRecipes = async (id, language, currency) => {
 
           return recipe;
         } catch (error) {
-          console.log(error);
           throw new Error(error);
         }
       }),

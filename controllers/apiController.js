@@ -111,7 +111,8 @@ const getRecommendedRecipes = asyncHandler(async (req, res, next) => {
       language,
       currency,
     );
-    res.status(200).json(recipes);
+    const filteredDbRecipes = recipes.filter((recipe) => recipe);
+    res.status(200).json(filteredDbRecipes);
   } catch (error) {
     next(error);
   }
