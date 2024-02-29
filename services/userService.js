@@ -2,6 +2,7 @@ const User = require("../models/userModel");
 const bcrypt = require("bcrypt");
 const asyncHandler = require("express-async-handler");
 const uuid = require("uuid");
+const moment = require("moment");
 const EmailService = require("./gmailService");
 const gmailService = new EmailService();
 const Recipe = require("../models/recipeModel");
@@ -29,13 +30,29 @@ async function validateEmailUniqueness(email) {
   }
 }
 
-async function createUser(username, email, hashedPassword, activationLink) {
+async function createUser(
+  username,
+  email,
+  hashedPassword,
+  activationLink,
+  activationLinkExpiration,
+) {
   return await User.create({
     username,
     email,
     password: hashedPassword,
     activationLink,
+    activationLinkExpiration,
   });
+}
+
+async function createLinkWithTime() {
+  const expirationDuration = 10;
+  const expirationTimestamp = moment()
+    .add(expirationDuration, "minutes")
+    .toISOString();
+
+  return expirationTimestamp;
 }
 
 async function sendActivationEmail(to, link) {
@@ -62,11 +79,14 @@ const registration = asyncHandler(async (username, email, password) => {
   const hashedPassword = await bcrypt.hash(password, 10);
   const activationLink = uuid.v4();
 
+  const activationLinkExpiration = await createLinkWithTime();
+
   const user = await createUser(
     username,
     email,
     hashedPassword,
     activationLink,
+    activationLinkExpiration,
   );
   await sendActivationEmail(
     email,
@@ -81,14 +101,32 @@ const registration = asyncHandler(async (username, email, password) => {
 });
 
 const activate = asyncHandler(async (activationLink) => {
-  const user = await User.findOne({ activationLink: activationLink });
+  try {
+    const user = await User.findOne({ activationLink: activationLink });
 
-  if (!user) {
-    throw ApiError.BadRequest("Incorrect activation link");
+    if (!user) {
+      throw ApiError.BadRequest("Incorrect activation link");
+    }
+    const currentTimestamp = moment();
+    if (currentTimestamp.isAfter(user.activationLinkExpiration)) {
+      user.activationLink = uuid.v4();
+      user.activationLinkExpiration = moment().add(10, "minutes").toISOString();
+      await user.save();
+      await sendActivationEmail(
+        user.email,
+        `${process.env.CLIENT_URL}/api/users/activate/${user.activationLink}`,
+      );
+      throw ApiError.BadRequest(
+        "Activation link has expired. A new activation link has been sent to your email.",
+      );
+    }
+
+    user.isActivated = true;
+    user.activationLinkExpiration = undefined;
+    await user.save();
+  } catch (error) {
+    console.log(error);
   }
-
-  user.isActivated = true;
-  await user.save();
 });
 
 const login = asyncHandler(async (email, password) => {
@@ -146,14 +184,16 @@ const forgetPassword = asyncHandler(async (email) => {
   }
 
   const changePasswordLink = uuid.v4();
+  const changePasswordLinkExpiration = await createLinkWithTime();
+  console.log(changePasswordLinkExpiration);
   await gmailService.sendChangePasswordUser(
     email,
-    `${process.env.API_URL}/api/users/change-password/${changePasswordLink}`,
+    `${process.env.CLIENT_URL}/api/users/change-password/${changePasswordLink}`,
   );
   user.changePasswordLink = changePasswordLink;
   user.isChangePasswordLink = false;
+  user.changePasswordLinkExpiration = changePasswordLinkExpiration;
   await user.save();
-
   return changePasswordLink;
 });
 
@@ -185,6 +225,7 @@ const changePassword = asyncHandler(async (email, password) => {
   user.password = hashedPassword;
   user.changePasswordLink = undefined;
   user.isChangePasswordLink = undefined;
+  user.changePasswordLinkExpiration = undefined;
   await user.save();
   const userDto = new UserDto(user);
   const tokens = generateTokens({ ...userDto });
@@ -195,8 +236,24 @@ const changePassword = asyncHandler(async (email, password) => {
 
 const changePasswordLink = asyncHandler(async (changePasswordLink) => {
   const user = await User.findOne({ changePasswordLink: changePasswordLink });
+  console.log(user);
   if (!user) {
     throw ApiError.BadRequest("Invalid change password link");
+  }
+  const currentTimestamp = moment();
+  if (currentTimestamp.isAfter(user.changePasswordLinkExpiration)) {
+    user.changePasswordLink = uuid.v4();
+    user.changePasswordLinkExpiration = moment()
+      .add(10, "minutes")
+      .toISOString();
+    await user.save();
+    await sendActivationEmail(
+      user.email,
+      `${process.env.CLIENT_URL}/api/users/change-password/${user.changePasswordLink}`,
+    );
+    throw ApiError.BadRequest(
+      "Activation link has expired. A new activation link has been sent to your email.",
+    );
   }
   user.isChangePasswordLink = true;
   await user.save();
@@ -206,7 +263,10 @@ const deleteUser = asyncHandler(async (id) => {
   const user = await User.findByIdAndDelete(id);
   await Recipe.deleteMany({ user: id });
   await FavoriteRecipe.deleteMany({ user: id });
-
+  await FavoriteRecipe.updateMany(
+    { user: { $in: id } },
+    { $inc: { aggregateLikes: -1 } },
+  );
   await removeToken(user.refreshToken);
   if (!user) {
     throw ApiError.BadRequest("User not found");
