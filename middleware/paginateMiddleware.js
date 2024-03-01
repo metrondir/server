@@ -80,6 +80,19 @@ const redisGetModelsWithPaginating = async (
   }
 };
 
+const storeRegistrationDetails = async (activationLink, details) => {
+  await redis.hset("registrations", activationLink, JSON.stringify(details));
+};
+
+const getRegistrationDetailsByActivationLink = async (activationLink) => {
+  const detailsString = await redis.hget("registrations", activationLink);
+  return detailsString ? JSON.parse(detailsString) : null;
+};
+
+const deleteRegistrationDetailsByActivationLink = async (activationLink) => {
+  await redis.hdel("registrations", activationLink);
+};
+
 const calculatePagination = (page, size, totalItems) => {
   const startIndex = (page - 1) * size;
   const endIndex = page * size;
@@ -159,4 +172,7 @@ module.exports = {
   redisGetModels,
   onDataChanged,
   paginateArray,
+  storeRegistrationDetails,
+  getRegistrationDetailsByActivationLink,
+  deleteRegistrationDetailsByActivationLink,
 };

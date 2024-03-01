@@ -41,12 +41,6 @@ const registerUser = asyncHandler(async (req, res, next) => {
     const { username, email, password } = req.body;
     const userData = await registration(username, email, password);
 
-    res.cookie("refreshToken", userData.refreshToken, {
-      maxAge: process.env.COOKIE_MAX_AGE,
-      secure: true,
-      sameSite: "None",
-      httpOnly: true,
-    });
     return res.status(201).json(userData);
   } catch (error) {
     next(error);
@@ -61,14 +55,12 @@ const loginUser = asyncHandler(async (req, res, next) => {
   try {
     const { email, password } = req.body;
     const userData = await login(email, password);
-
     res.cookie("refreshToken", userData.refreshToken, {
       maxAge: process.env.COOKIE_MAX_AGE,
       secure: true,
-      httpOnly: true,
       sameSite: "None",
+      httpOnly: true,
     });
-
     return res.status(200).json(userData);
   } catch (error) {
     next(error);
@@ -124,8 +116,14 @@ const refreshTokenUser = asyncHandler(async (req, res, next) => {
 const activateUser = asyncHandler(async (req, res, next) => {
   try {
     const activationLink = req.params.link;
-    await activate(activationLink);
-    return res.redirect(process.env.CLIENT_URL);
+    const tokens = await activate(activationLink);
+    res.cookie("refreshToken", tokens.refreshToken, {
+      maxAge: process.env.COOKIE_MAX_AGE,
+      secure: true,
+      httpOnly: true,
+      sameSite: "None",
+    });
+    res.redirect(process.env.CLIENT_URL);
   } catch (error) {
     next(error);
   }

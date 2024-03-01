@@ -19,6 +19,9 @@ const ApiError = require("../middleware/apiError");
 const {
   redisGetModelsWithPaginating,
   redisGetModels,
+  storeRegistrationDetails,
+  getRegistrationDetailsByActivationLink,
+  deleteRegistrationDetailsByActivationLink,
 } = require("../middleware/paginateMiddleware");
 
 async function validateEmailUniqueness(email) {
@@ -81,51 +84,76 @@ const registration = asyncHandler(async (username, email, password) => {
 
   const activationLinkExpiration = await createLinkWithTime();
 
-  const user = await createUser(
+  await storeRegistrationDetails(activationLink, {
     username,
     email,
     hashedPassword,
     activationLink,
     activationLinkExpiration,
-  );
+  });
   await sendActivationEmail(
     email,
     `${process.env.CLIENT_URL}/api/users/activate/${activationLink}`,
   );
 
-  const userDto = new UserDto(user);
-  const tokens = generateTokens({ ...userDto });
-  await saveTokens(userDto.id, tokens.refreshToken);
-
-  return { ...tokens, user: userDto };
+  return "To complete your registration, please check your email for activation instructions.";
 });
 
 const activate = asyncHandler(async (activationLink) => {
   try {
-    const user = await User.findOne({ activationLink: activationLink });
+    const registrationDetails =
+      await getRegistrationDetailsByActivationLink(activationLink);
 
-    if (!user) {
+    if (!registrationDetails) {
       throw ApiError.BadRequest("Incorrect activation link");
     }
+
     const currentTimestamp = moment();
-    if (currentTimestamp.isAfter(user.activationLinkExpiration)) {
-      user.activationLink = uuid.v4();
-      user.activationLinkExpiration = moment().add(10, "minutes").toISOString();
-      await user.save();
+    if (
+      currentTimestamp.isAfter(registrationDetails.activationLinkExpiration)
+    ) {
+      const deprecatedActivationLink = registrationDetails.activationLink;
+      const newActivationLink = uuid.v4();
+      const newActivationLinkExpiration = moment()
+        .add(10, "minutes")
+        .toISOString();
+
+      await storeRegistrationDetails(newActivationLink, {
+        username: registrationDetails.username,
+        email: registrationDetails.email,
+        hashedPassword: registrationDetails.hashedPassword,
+        activationLinkExpiration: newActivationLinkExpiration,
+      });
+
       await sendActivationEmail(
-        user.email,
-        `${process.env.CLIENT_URL}/api/users/activate/${user.activationLink}`,
+        registrationDetails.email,
+        `${process.env.CLIENT_URL}/api/users/activate/${newActivationLink}`,
       );
+      await deleteRegistrationDetailsByActivationLink(deprecatedActivationLink);
+
       throw ApiError.BadRequest(
         "Activation link has expired. A new activation link has been sent to your email.",
       );
     }
 
+    const user = await createUser(
+      registrationDetails.username,
+      registrationDetails.email,
+      registrationDetails.hashedPassword,
+      registrationDetails.activationLink,
+      registrationDetails.activationLinkExpiration,
+    );
     user.isActivated = true;
     user.activationLinkExpiration = undefined;
     await user.save();
+    await deleteRegistrationDetailsByActivationLink(activationLink);
+    const userDto = new UserDto(user);
+    const tokens = generateTokens({ ...userDto });
+    await saveTokens(userDto.id, tokens.refreshToken);
+    return { ...tokens, user: userDto };
   } catch (error) {
     console.log(error);
+    throw new Error(error);
   }
 });
 
@@ -185,7 +213,6 @@ const forgetPassword = asyncHandler(async (email) => {
 
   const changePasswordLink = uuid.v4();
   const changePasswordLinkExpiration = await createLinkWithTime();
-  console.log(changePasswordLinkExpiration);
   await gmailService.sendChangePasswordUser(
     email,
     `${process.env.CLIENT_URL}/api/users/change-password/${changePasswordLink}`,
@@ -236,7 +263,6 @@ const changePassword = asyncHandler(async (email, password) => {
 
 const changePasswordLink = asyncHandler(async (changePasswordLink) => {
   const user = await User.findOne({ changePasswordLink: changePasswordLink });
-  console.log(user);
   if (!user) {
     throw ApiError.BadRequest("Invalid change password link");
   }
