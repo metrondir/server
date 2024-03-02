@@ -25,42 +25,57 @@ const getRandomSample = (array, size) => {
   return shuffled.slice(0, size);
 };
 
+async function markFavorites(allRecipes, userId) {
+  const favourites = await FavoriteRecipe.find({ user: userId });
+
+  allRecipes.map((item) => {
+    if ((item && item.id) || item._id) {
+      const isFavoriteRecipe = favourites.some((recipe) => {
+        const recipeId = recipe.recipe && recipe.recipe.toString();
+        const itemId = item.id && item.id.toString();
+        const itemObjectId = item._id && item._id.toString();
+
+        return recipeId === itemId || recipeId === itemObjectId;
+      });
+
+      item.isFavourite = isFavoriteRecipe;
+    }
+  });
+
+  return allRecipes;
+}
 async function fetchRecipesData(response, language, currency) {
   if (language === "en" || !language) {
-    return response
-      .filter((recipe) => !!recipe.instructions || !!recipe.summary)
-      .map((recipe) => ({
-        id: recipe.id || recipe._id,
-        title: recipe.title,
-        image: recipe.image,
-        pricePerServing: !currency
-          ? parseFloat((recipe.pricePerServing / 100).toFixed(2)) + " USD"
-          : parseFloat((recipe.pricePerServing / 100).toFixed(2)),
-        readyInMinutes: recipe.readyInMinutes + " min",
-        dishTypes: recipe.dishTypes || [],
-        isFavourite: recipe?.isFavourite,
-        cuisine: recipe.cuisines || [],
-        aggregateLikes: recipe?.aggregateLikes,
-      }));
+    return response.map((recipe) => ({
+      id: recipe.id || recipe._id,
+      title: recipe.title,
+      image: recipe.image,
+      pricePerServing: !currency
+        ? parseFloat((recipe.pricePerServing / 100).toFixed(2)) + " USD"
+        : parseFloat((recipe.pricePerServing / 100).toFixed(2)),
+      readyInMinutes: recipe.readyInMinutes + " min",
+      dishTypes: recipe.dishTypes || [],
+      isFavourite: recipe?.isFavourite,
+      cuisine: recipe.cuisines || [],
+      aggregateLikes: recipe?.aggregateLikes,
+    }));
   } else {
     await Promise.all(
       response.map((recipe) => translateRecipeInformation(recipe, language)),
     );
-    return response
-      .filter((recipe) => !!recipe.instructions || !!recipe.summary)
-      .map((recipe) => ({
-        id: recipe.id || recipe._id,
-        title: recipe.title,
-        image: recipe.image,
-        cuisine: recipe.cuisines || [],
-        pricePerServing: !currency
-          ? parseFloat((recipe.pricePerServing / 100).toFixed(2)) + " USD"
-          : parseFloat((recipe.pricePerServing / 100).toFixed(2)),
-        readyInMinutes: recipe.readyInMinutes,
-        dishTypes: recipe.dishTypes || [],
-        isFavourite: recipe?.isFavourite,
-        aggregateLikes: recipe?.aggregateLikes,
-      }));
+    return response.map((recipe) => ({
+      id: recipe.id || recipe._id,
+      title: recipe.title,
+      image: recipe.image,
+      cuisine: recipe.cuisines || [],
+      pricePerServing: !currency
+        ? parseFloat((recipe.pricePerServing / 100).toFixed(2)) + " USD"
+        : parseFloat((recipe.pricePerServing / 100).toFixed(2)),
+      readyInMinutes: recipe.readyInMinutes,
+      dishTypes: recipe.dishTypes || [],
+      isFavourite: recipe?.isFavourite,
+      aggregateLikes: recipe?.aggregateLikes,
+    }));
   }
 }
 
@@ -89,13 +104,8 @@ const fetchRecipesByIngredients = async (
     allRecipes.splice(number, allRecipes.length - number);
     if (refreshToken) {
       const user = await findUserByRefreshToken(refreshToken);
-      const favourites = await FavoriteRecipe.find({ user: user._id });
-      allRecipes.map(
-        (item, index) =>
-          (item.isFavourite = favourites.some(
-            (recipe) => recipe.recipe.toString() === item.id.toString(),
-          )),
-      );
+
+      await markFavorites(allRecipes, user._id);
     }
     let RandomSample = getRandomSample(
       allRecipes,
@@ -111,7 +121,7 @@ const fetchRecipesByIngredients = async (
         ),
       ),
     );
-    console.log(recipe);
+
     return recipe;
   } catch (error) {
     return handleApiError(
@@ -163,13 +173,7 @@ const fetchRecipes = async (
     allRecipes.splice(limit, allRecipes.length - limit);
     if (refreshToken) {
       const user = await findUserByRefreshToken(refreshToken);
-      const favourites = await FavoriteRecipe.find({ user: user._id });
-
-      allRecipes.map((item) => {
-        item.isFavourite = favourites.some(
-          (recipe) => recipe.recipe.toString() === item.id.toString(),
-        );
-      });
+      await markFavorites(allRecipes, user._id);
     }
     let RandomSample = getRandomSample(
       allRecipes,
@@ -227,13 +231,7 @@ const fetchRecipesByCategories = async (
       const allData = response.data.results.concat(recipesByDB);
       if (refreshToken) {
         const user = await findUserByRefreshToken(refreshToken);
-        const favourites = await FavoriteRecipe.find({ user: user._id });
-        allData.map(
-          (item, index) =>
-            (item.isFavourite = favourites.some(
-              (recipe) => recipe.recipe.toString() === item.id.toString(),
-            )),
-        );
+        await markFavorites(allData, user._id);
       }
       const sortDirectionFactor = sortDirection === "desc" ? -1 : 1;
       allData.sort(
@@ -266,13 +264,7 @@ const fetchRecipesByCategories = async (
       const allData = response.data.results.concat(recipesByDB);
       if (refreshToken) {
         const user = await findUserByRefreshToken(refreshToken);
-        const favourites = await FavoriteRecipe.find({ user: user._id });
-        allData.map(
-          (item, index) =>
-            (item.isFavourite = favourites.some(
-              (recipe) => recipe.recipe.toString() === item.id.toString(),
-            )),
-        );
+        await markFavorites(allData, user._id);
       }
       const sortDirectionFactor = sortDirection === "desc" ? -1 : 1;
       allData.sort(
@@ -293,13 +285,7 @@ const fetchRecipesByCategories = async (
       const allData = response.data.results.concat(recipesByDB);
       if (refreshToken) {
         const user = await findUserByRefreshToken(refreshToken);
-        const favourites = await FavoriteRecipe.find({ user: user._id });
-        allData.map(
-          (item, index) =>
-            (item.isFavourite = favourites.some(
-              (recipe) => recipe.recipe.toString() === item.id.toString(),
-            )),
-        );
+        await markFavorites(allData, user._id);
       }
       const sortDirectionFactor = sortDirection === "desc" ? -1 : 1;
       allData.sort(
@@ -311,7 +297,6 @@ const fetchRecipesByCategories = async (
       return recipe;
     }
   } catch (error) {
-    console.log(error);
     return handleApiError(
       error,
       fetchRecipesByCategories,
@@ -337,15 +322,18 @@ const fetchRandomRecipes = async (limit, language, refreshToken, currency) => {
       const recipes = await getRecipesFromDatabaseRandom(limit);
       const allRecipes = response.data.recipes.concat(recipes);
 
-      let RandomSample = getRandomSample(
-        allRecipes,
-        Math.floor(allRecipes.length),
+      const filteredRecipes = allRecipes.filter(
+        (recipe) => !!recipe.instructions,
       );
+      const recipe = await fetchRecipesData(
+        filteredRecipes,
+        language,
+        currency,
+      );
+      let RandomSample = getRandomSample(recipe, Math.floor(recipe.length));
       RandomSample = RandomSample.slice(0, limit);
-      const recipe = await fetchRecipesData(RandomSample, language, currency);
-
-      if (currency) return changeCurrency(recipe, currency);
-      return recipe;
+      if (currency) return changeCurrency(RandomSample, currency);
+      return RandomSample;
     }
 
     // if refresh token exist we get the recipes from the database with the user id
@@ -353,24 +341,16 @@ const fetchRandomRecipes = async (limit, language, refreshToken, currency) => {
 
     const recipes = await getRecipesFromDatabaseRandomWithUsers(limit, user.id);
     const allRecipes = response.data.recipes.concat(recipes);
-    const favourites = await FavoriteRecipe.find({ user: user._id });
-    allRecipes.map((item) => {
-      if (item && item.id) {
-        item.isFavourite = favourites.some(
-          (recipe) =>
-            recipe.recipe && recipe.recipe.toString() === item.id.toString(),
-        );
-      }
-    });
 
-    let RandomSample = getRandomSample(
-      allRecipes,
-      Math.floor(allRecipes.length),
+    await markFavorites(allRecipes, user._id);
+    const filteredRecipes = allRecipes.filter(
+      (recipe) => !!recipe.instructions,
     );
+    const recipe = await fetchRecipesData(filteredRecipes, language, currency);
+    let RandomSample = getRandomSample(recipe, Math.floor(recipe.length));
     RandomSample = RandomSample.slice(0, limit);
-    const recipe = await fetchRecipesData(RandomSample, language, currency);
-    if (currency) return changeCurrency(recipe, currency);
-    return recipe;
+    if (currency) return changeCurrency(RandomSample, currency);
+    return RandomSample;
   } catch (error) {
     return handleApiError(error, fetchRandomRecipes, limit, language, currency);
   }
@@ -431,11 +411,11 @@ const fetchInformationByRecomended = async (
   const url = `${baseUrl}/${id}/information?includeNutrition=false&apiKey=${apiKey}`;
   try {
     const response = await axios.get(url);
+    console.log(response.data);
     if (!response.data || !response.data.instructions) {
       return;
     }
 
-    const recipeData = response.data;
     if (language === "en" || !language) {
       let recipe = {
         id: recipeData.id,

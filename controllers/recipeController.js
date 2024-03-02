@@ -109,7 +109,7 @@ const createRecipe = [
       await recipeService.createRecipe(req);
       const ipAddress =
         req.headers["x-forwarded-for"] || req.connection.remoteAddress;
-      const clientIp = ipAddress.split(",")[0];
+      const clientIp = ipAddress.split(",")[0].concat("my-recipes");
       onDataChanged(clientIp);
       return res.status(201).json("Recipe created");
     } catch (error) {
