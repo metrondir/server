@@ -4,6 +4,7 @@ const SpoonacularRecipeModel = require("../models/spoonacularRecipeModel");
 const imgur = require("imgur");
 const fs = require("fs").promises;
 const sharp = require("sharp");
+const axios = require("axios");
 const { changeCurrency } = require("./changeCurrencyRecipesService");
 const {
   createInstructionsHTML,
@@ -24,6 +25,7 @@ const { data } = require("../utils/recipesData");
 const { currencyData } = require("../utils/currencyData");
 const { languageData } = require("../utils/languageData");
 const ApiError = require("../middleware/apiError");
+const { response } = require("express");
 
 const getRecipe = async (id) => {
   const data = await Recipe.findById(id);
@@ -114,6 +116,26 @@ const createRecipe = async (req) => {
     req.body.diets = JSON.parse(req.body.diets).map((diet) => diet.label);
   }
 
+  const image = await fs.readFile(req.file.path, {
+    encoding: "base64",
+  });
+
+  const response = await axios({
+    method: "POST",
+    url: "https://detect.roboflow.com/food-ingredient-recognition-51ngf/4",
+    params: {
+      api_key: "6jm9qkQBt3xv4LmGk13g",
+    },
+    data: image,
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+  });
+
+  if (response.data.predictions.length === 0) {
+    throw ApiError.BadRequest("Image is not a food");
+  }
+
   const resizedImageBuffer = await sharp(req.file.path)
     .resize(556, 370)
     .toBuffer();
@@ -135,6 +157,7 @@ const createRecipe = async (req) => {
     await recipe.save();
     return recipe;
   } catch (error) {
+    console.log(error.message);
     throw ApiError.BadRequest(error.message);
   }
 };
