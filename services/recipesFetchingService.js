@@ -8,6 +8,7 @@ const {
   handleApiError,
   translateRecipeInformation,
   detectLanguage,
+  translateRecipeFavInformation,
 } = require("./translationService");
 const {
   getRecipesFromDatabaseRandom,
@@ -56,7 +57,7 @@ async function fetchRecipesData(response, language, currency) {
       readyInMinutes: recipe.readyInMinutes + " min",
       dishTypes: recipe.dishTypes || [],
       isFavourite: recipe?.isFavourite,
-      cuisine: recipe.cuisines || [],
+      cuisines: recipe.cuisines || [],
       aggregateLikes: recipe?.aggregateLikes,
     }));
   } else {
@@ -67,7 +68,7 @@ async function fetchRecipesData(response, language, currency) {
       id: recipe.id || recipe._id,
       title: recipe.title,
       image: recipe.image,
-      cuisine: recipe.cuisines || [],
+      cuisines: recipe.cuisines || [],
       pricePerServing: !currency
         ? parseFloat((recipe.pricePerServing / 100).toFixed(2)) + " USD"
         : parseFloat((recipe.pricePerServing / 100).toFixed(2)),
@@ -415,7 +416,7 @@ const fetchInformationByRecomended = async (
     if (!response.data || !response.data.instructions) {
       return;
     }
-
+    const recipeData = response.data;
     if (language === "en" || !language) {
       let recipe = {
         id: recipeData.id,
@@ -423,6 +424,7 @@ const fetchInformationByRecomended = async (
         dishTypes: recipeData.dishTypes || [],
         image: recipeData.image,
         readyInMinutes: recipeData.readyInMinutes + " min",
+
         pricePerServing: !currency
           ? parseFloat((recipeData.pricePerServing / 100).toFixed(2)) + " USD"
           : parseFloat((recipeData.pricePerServing / 100).toFixed(2)),
@@ -447,6 +449,7 @@ const fetchInformationByRecomended = async (
         dishTypes: recipeData.dishTypes || [],
         image: recipeData.image,
         readyInMinutes: recipeData.readyInMinutes,
+
         pricePerServing: !currency
           ? parseFloat((recipeData.pricePerServing / 100).toFixed(2)) + " USD"
           : parseFloat((recipeData.pricePerServing / 100).toFixed(2)),
@@ -534,7 +537,9 @@ const fetchInformationById = async (id, language, currency) => {
       const recipe = {
         id: data.id,
         title: data.title,
-        extendedIngredients: data.extendedIngredients,
+        extendedIngredients:
+          data.extendedIngredients.map((ingredient) => ingredient.original) ||
+          [],
         cuisines: data.cuisines,
         diets: data.diets,
         dishTypes: data.dishTypes,
@@ -672,7 +677,7 @@ const fetchFavoriteRecipes = async (id, language, currency) => {
               diets: fetchedRecipe.diets || [],
               cuisine: fetchedRecipe.cuisines || [],
               instructions: fetchedRecipe.instructions,
-              readyInMinutes: `${fetchedRecipe.readyInMinutes} min`,
+              readyInMinutes: fetchedRecipe.readyInMinutes,
               pricePerServing: !currency
                 ? parseFloat(fetchedRecipe.pricePerServing) + " USD"
                 : parseFloat(fetchedRecipe.pricePerServing),
@@ -681,7 +686,7 @@ const fetchFavoriteRecipes = async (id, language, currency) => {
 
             if (currency) return changeCurrency(recipe, currency);
           } else {
-            await translateRecipeInformation(fetchedRecipe, language);
+            await translateRecipeFavInformation(fetchedRecipe, language);
             recipe = {
               id: fetchedRecipe.recipe,
               title: fetchedRecipe.title,

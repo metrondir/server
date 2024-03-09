@@ -51,8 +51,13 @@ async function handleApiError(error, retryFunction, ...args) {
 }
 
 async function translateText(text, language) {
+  if (language == "cz") language = "cs";
+  if (language == "ua") language = "uk";
+  if (language == "sp") language = "es";
+
   try {
     if (!text) return "";
+
     const [translation] = await translate.translate(text, language);
     return translation;
   } catch (error) {
@@ -62,12 +67,19 @@ async function translateText(text, language) {
 }
 
 async function translateAndAppendMinutes(language) {
+  if (language == "cz") language = "cs";
+  if (language == "ua") language = "uk";
+  if (language == "sp") language = "es";
   const min = await translateText("min", language);
 
   return ` ${min}`;
 }
 
 async function translateRecipeFields(recipe, language) {
+  if (language == "cz") language = "cs";
+  if (language == "ua") language = "uk";
+  if (language == "sp") language = "es";
+
   if (recipe.title) {
     recipe.title = await translateText(recipe.title, language);
   }
@@ -80,6 +92,10 @@ async function translateRecipeFields(recipe, language) {
 }
 
 async function translateRecipeInformation(recipe, language) {
+  if (language == "cz") language = "cs";
+  if (language == "ua") language = "uk";
+  if (language == "sp") language = "es";
+
   const min = await translateAndAppendMinutes(language);
 
   await translateRecipeFields(recipe, language);
@@ -87,7 +103,33 @@ async function translateRecipeInformation(recipe, language) {
   recipe.readyInMinutes += min;
 }
 
+async function translateAndAppendMinutesFav(recipe, language) {
+  if (language == "cz") language = "cs";
+  if (language == "ua") language = "uk";
+  if (language == "sp") language = "es";
+
+  recipe = await translateText(recipe, language);
+  console.log(recipe);
+  return recipe;
+}
+
+async function translateRecipeFavInformation(recipe, language) {
+  if (language == "cz") language = "cs";
+  if (language == "ua") language = "uk";
+  if (language == "sp") language = "es";
+
+  recipe.readyInMinutes = await translateAndAppendMinutesFav(
+    recipe.readyInMinutes,
+    language,
+  );
+
+  await translateRecipeFields(recipe, language);
+}
 async function translateRecipePost(recipe, language) {
+  if (language == "cz") language = "cs";
+  if (language == "ua") language = "uk";
+  if (language == "sp") language = "es";
+
   try {
     if (language === "en" || !language) {
       return recipe;
@@ -141,6 +183,10 @@ async function translateRecipePost(recipe, language) {
 }
 
 async function translateRecipeGet(recipe, language) {
+  if (language == "cz") language = "cs";
+  if (language == "ua") language = "uk";
+  if (language == "sp") language = "es";
+
   try {
     if (language === "en" || !language) {
       return recipe;
@@ -194,6 +240,9 @@ async function translateRecipeGet(recipe, language) {
 }
 
 const TranslateRecipeInformation = async (recipe, language) => {
+  if (language == "cz") language = "cs";
+  if (language == "ua") language = "uk";
+  if (language == "sp") language = "es";
   let translatedRecipe = {};
   for (let key in recipe) {
     if (typeof recipe[key] === "string") {
@@ -232,4 +281,5 @@ module.exports = {
   detectLanguage,
   translateRecipePost,
   translateRecipeGet,
+  translateRecipeFavInformation,
 };

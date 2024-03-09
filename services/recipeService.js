@@ -51,6 +51,9 @@ const getRecipes = async (currency, language, id) => {
   if (language === "en" || !language) {
     const updatedRecipes = recipes.map((recipe) => ({
       ...recipe._doc,
+      extendedIngredients: recipe.extendedIngredients.map(
+        (ingredient) => ingredient.original,
+      ),
       pricePerServing: !currency
         ? recipe.pricePerServing + " USD"
         : recipe.pricePerServing,
@@ -64,12 +67,13 @@ const getRecipes = async (currency, language, id) => {
     await Promise.all(
       recipes.map((recipe) => translateRecipeGet(recipe, language)),
     );
-    console.log(recipes);
     const translatedRecipes = recipes.map((recipe) => ({
       id: recipe.id || recipe._id,
       title: recipe.title,
       image: recipe.image,
-      extendedIngredients: recipe.extendedIngredients,
+      extendedIngredients: recipe.extendedIngredients.map(
+        (ingredient) => ingredient.original,
+      ),
       pricePerServing: !currency
         ? recipe.pricePerServing + " USD"
         : recipe.pricePerServing,

@@ -12,7 +12,7 @@ const {
   deleteUser,
 } = require("../services/userService");
 const { validationResult } = require("express-validator");
-
+const ApiError = require("../middleware/apiError");
 //@desc Get all users
 //@route GET /api/users/allusers
 //@access private
@@ -43,7 +43,7 @@ const registerUser = asyncHandler(async (req, res, next) => {
 
     return res.status(201).json(userData);
   } catch (error) {
-    next(error);
+    throw ApiError.BadRequest(error);
   }
 });
 
