@@ -99,7 +99,6 @@ async function translateRecipeInformation(recipe, language) {
   const min = await translateAndAppendMinutes(language);
 
   await translateRecipeFields(recipe, language);
-
   recipe.readyInMinutes += min;
 }
 

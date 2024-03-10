@@ -57,6 +57,8 @@ const getRecipes = asyncHandler(async (req, res, next) => {
 });
 
 const getRandomRecipes = asyncHandler(async (req, res, next) => {
+  console.log(req);
+
   try {
     const { limit, language, page, size, currency } = req.query;
     const ipAddress =
@@ -64,6 +66,7 @@ const getRandomRecipes = asyncHandler(async (req, res, next) => {
     const clientIp = ipAddress.split(",")[0];
 
     const { refreshToken } = req.cookies;
+
     const redisKey = `${clientIp}random-recipes${refreshToken}${language}${currency}${limit}`;
     const recipes = await redisGetModelsWithPaginating(
       page,
@@ -87,9 +90,16 @@ const getInformationById = asyncHandler(async (req, res, next) => {
   try {
     const { id } = req.params;
     const { language, currency } = req.query;
-    const recipes = await fetchInformationById(id, language, currency);
+    const { refreshToken } = req.cookies;
+    const recipes = await fetchInformationById(
+      id,
+      language,
+      currency,
+      refreshToken,
+    );
     res.status(200).json(recipes);
   } catch (error) {
+    console.log(error);
     next(error);
   }
 });

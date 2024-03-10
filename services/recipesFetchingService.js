@@ -64,6 +64,8 @@ async function fetchRecipesData(response, language, currency) {
     await Promise.all(
       response.map((recipe) => translateRecipeInformation(recipe, language)),
     );
+    const translatedMin = await translateText("min", language);
+
     return response.map((recipe) => ({
       id: recipe.id || recipe._id,
       title: recipe.title,
@@ -72,7 +74,10 @@ async function fetchRecipesData(response, language, currency) {
       pricePerServing: !currency
         ? parseFloat((recipe.pricePerServing / 100).toFixed(2)) + " USD"
         : parseFloat((recipe.pricePerServing / 100).toFixed(2)),
-      readyInMinutes: recipe.readyInMinutes,
+      readyInMinutes:
+        typeof recipe.readyInMinutes === "number"
+          ? `${recipe.readyInMinutes} ${translatedMin}`
+          : recipe.readyInMinutes,
       dishTypes: recipe.dishTypes || [],
       isFavourite: recipe?.isFavourite,
       aggregateLikes: recipe?.aggregateLikes,
@@ -180,7 +185,6 @@ const fetchRecipes = async (
       allRecipes,
       Math.floor(allRecipes.length),
     );
-
     const recipe = await fetchRecipesData(RandomSample, language, currency);
     if (currency) return changeCurrency(recipe, currency);
     return recipe;
@@ -210,7 +214,6 @@ const fetchRecipesByCategories = async (
   refreshToken,
 ) => {
   let apiKey = getApiKey();
-  let url = `${baseUrl}/complexSearch?apiKey=${apiKey}&number=${limit}&sort=${sort}&sortDirection=${sortDirection}&addRecipeNutrition=true`;
 
   //check if query exist when user whant specific category like the most popular burger
   if (query) {
@@ -220,6 +223,7 @@ const fetchRecipesByCategories = async (
     }
     url += `&query=${query}`;
   }
+  let url = `${baseUrl}/complexSearch?apiKey=${apiKey}&number=${limit}&sort=${sort}&sortDirection=${sortDirection}&addRecipeNutrition=true`;
 
   try {
     const response = await axios.get(url);
@@ -314,7 +318,7 @@ const fetchRecipesByCategories = async (
 
 const fetchRandomRecipes = async (limit, language, refreshToken, currency) => {
   let apiKey = getApiKey();
-
+  console.log("refreshToken", refreshToken);
   const url = `${baseUrl}/random?apiKey=${apiKey}&number=${limit}`;
   try {
     const response = await axios.get(url);
@@ -412,7 +416,6 @@ const fetchInformationByRecomended = async (
   const url = `${baseUrl}/${id}/information?includeNutrition=false&apiKey=${apiKey}`;
   try {
     const response = await axios.get(url);
-    console.log(response.data);
     if (!response.data || !response.data.instructions) {
       return;
     }
@@ -485,14 +488,20 @@ const fetchAggregateLikesById = async (recipeId) => {
   }
 };
 
-const fetchInformationById = async (id, language, currency) => {
+const fetchInformationById = async (id, language, currency, refreshToken) => {
   let apiKey = getApiKey();
+  let favourites = [];
+  if (refreshToken) {
+    const user = await findUserByRefreshToken(refreshToken);
+    favourites = await FavoriteRecipe.find({ user: user._id });
+  }
   if (id.length >= 9) {
     const data = await Recipe.findById(id);
 
     if (!data) {
       throw ApiError.BadRequest("Recipe not found");
     }
+
     if (language === "en" || !language) {
       const recipe = {
         id: data.id,
@@ -509,6 +518,9 @@ const fetchInformationById = async (id, language, currency) => {
         readyInMinutes: data.readyInMinutes + " min",
         dishTypes: data.dishTypes || [],
         aggregateLikes: data.aggregateLikes,
+        isFavourite: favourites.some(
+          (fav) => fav.recipe.toString() === data.id.toString(),
+        ),
       };
 
       if (currency) return changeCurrency(recipe, currency);
@@ -534,6 +546,7 @@ const fetchInformationById = async (id, language, currency) => {
         data.cuisines.map((cuisine) => translateText(cuisine, language)),
       );
       const min = await translateText(" min", language);
+
       const recipe = {
         id: data.id,
         title: data.title,
@@ -550,6 +563,9 @@ const fetchInformationById = async (id, language, currency) => {
         image: data.image,
         readyInMinutes: data.readyInMinutes + min,
         aggregateLikes: data.aggregateLikes,
+        isFavourite: favourites.some(
+          (fav) => fav.recipe.toString() === data.id.toString(),
+        ),
       };
       if (currency) return changeCurrency(recipe, currency);
 
@@ -578,6 +594,9 @@ const fetchInformationById = async (id, language, currency) => {
         image: response.data.image,
         readyInMinutes: response.data.readyInMinutes + " min",
         aggregateLikes: response.data.aggregateLikes,
+        isFavourite: favourites.some(
+          (fav) => fav.recipe.toString() === response.data.toString(),
+        ),
       };
       if (currency) return changeCurrency(recipe, currency);
 
@@ -622,13 +641,23 @@ const fetchInformationById = async (id, language, currency) => {
         image: response.data.image,
         readyInMinutes: response.data.readyInMinutes,
         aggregateLikes: response.data.aggregateLikes,
+        isFavourite: favourites.some(
+          (fav) => fav.recipe.toString() === response.data.id.toString(),
+        ),
       };
       if (currency) return changeCurrency(recipe, currency);
 
       return recipe;
     }
   } catch (error) {
-    return handleApiError(error, fetchInformationById, id, language, currency);
+    return handleApiError(
+      error,
+      fetchInformationById,
+      id,
+      language,
+      currency,
+      refreshToken,
+    );
   }
 };
 
