@@ -49,26 +49,10 @@ const userSchema = mongoose.Schema(
         ref: "Recipe",
       },
     ],
-    cardInfo: [
-      {
-        cardNumber: {
-          type: String,
-          required: [true, "Please add the card number"],
-        },
-        cardHolder: {
-          type: String,
-          required: [true, "Please add the card holder"],
-        },
-        cardExpMonth: {
-          type: String,
-          required: [true, "Please add the expiration date"],
-        },
-        cvv: {
-          type: String,
-          required: [true, "Please add the cvv"],
-        },
-      },
-    ],
+    stripeAccountId: {
+      type: String,
+      required: false,
+    },
   },
   {
     timestamps: true,

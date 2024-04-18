@@ -223,6 +223,7 @@ const loadIngredients = asyncHandler(async (req, res, next) => {
 
 const createCheckoutSession = asyncHandler(async (req, res, next) => {
   try {
+    console.log(req.user.id);
     const session = await recipeService.createCheckoutSession(req);
     return res.status(200).json(session);
   } catch (error) {
@@ -233,7 +234,6 @@ const createCheckoutSession = asyncHandler(async (req, res, next) => {
 const getAllPaymentRecipes = asyncHandler(async (req, res, next) => {
   try {
     const { page, size } = req.query;
-    console.log(req);
     const redisKey = `AllPaymentRecipes`;
     const loadData = await redisGetModelsWithPaginating(
       page,

@@ -34,7 +34,6 @@ const {
 } = require("../middleware/paginateMiddleware");
 const { languageData } = require("../utils/languageData");
 const ApiError = require("../middleware/apiError");
-const { decryptInfo } = require("../middleware/decryptInfo");
 
 const getRecipe = async (id) => {
   const data = await Recipe.findById(id);
@@ -179,10 +178,7 @@ const createRecipe = async (req) => {
       recipe.paymentInfo.paymentStatus = req.body.paymentStatus;
       recipe.paymentInfo.price = req.body.price;
       recipe.paymentInfo.paymentMethod = req.body.paymentMethod;
-      user.cardNumber = req.body.cardNumber;
-      user.cardExpYear = req.body.cardExpYear;
-      user.cardExpMonth = req.body.cardExpMonth;
-      user.cardCvc = req.body.cardCvc;
+      user.stripeAccountId = req.body.stripeAccountId;
     }
     recipe.instructions = createInstructionsHTML(recipe.instructions);
     recipe = new Recipe(recipe);
@@ -475,32 +471,28 @@ const createCheckoutSession = async (req) => {
   try {
     const recipe = await Recipe.findById(req.body.id);
     const user = await User.findById(recipe.user);
-    const paymentMethod = await stripe.paymentMethods.create({
-      type: "card",
-      card: {
-        number: decryptInfo(user.cardNumber),
-        exp_month: decryptInfo(user.cardExpMonth),
-        exp_year: decryptInfo(user.cardExpYear),
-        cvc: decryptInfo(user.cardCvc),
-      },
-    });
-    if (req.body.currency !== "usd") {
-      req.body.price = changeCurrencyForPayment(req.body.id, req.body.currency);
+
+    if (req.body.currency !== "USD") {
+      req.body.price = await changeCurrencyForPayment(
+        req.body.id,
+        req.body.currency,
+      );
     }
-    const session = await stripe.payouts.sessions.create({
+    const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
-      paymentMethod: paymentMethod.id,
-      line_items: {
-        price_data: {
-          currency: req.body.currency,
-          product_data: {
-            name: req.body.title,
-            images: [req.body.image],
+      line_items: [
+        {
+          price_data: {
+            currency: req.body.currency,
+            product_data: {
+              name: req.body.title,
+              images: [req.body.image],
+            },
+            unit_amount: req.body.price * 100,
           },
-          unit_amount: req.body.price * 100,
+          quantity: 1,
         },
-        quantity: req.body.quantity,
-      },
+      ],
 
       mode: "payment",
       success_url: `${process.env.API_URL}/api/recipes/${req.body.id}`,
@@ -537,6 +529,51 @@ const getAllPaymentRecipes = async (id) => {
   }
 };
 
+const paytoUser = async (req) => {
+  const user = await User.findById(req.user.id);
+  const recipe = await Recipe.findById(req.body.id);
+  const transfer = await stripe.transfers.create({
+    amount: req.body.price,
+    currency: req.body.currency,
+    destination: user.stripeAccountId,
+    transfer_group: "recipe_payment",
+  });
+};
+
+const checkCheckoutSession = async (req) => {
+  const user = await User.findById(req.user.id);
+
+  let event = request.body;
+  if (endpointSecret) {
+    const signature = request.headers["stripe-signature"];
+    try {
+      event = stripe.webhooks.constructEvent(
+        request.body,
+        signature,
+        endpointSecret,
+      );
+      switch (event.type) {
+        case "payment_intent.succeeded":
+          const paymentIntent = event.data.object;
+          console.log(
+            `PaymentIntent for ${paymentIntent.amount} was successful!`,
+          );
+          user.boughtRecipes.push(paymentIntent.id);
+          break;
+        case "payment_method.attached":
+          const paymentMethod = event.data.object;
+          break;
+        default:
+          console.log(`Unhandled event type ${event.type}.`);
+      }
+
+      response.send();
+    } catch (err) {
+      console.error(`⚠️  Webhook signature verification failed.`);
+      return response.sendStatus(400);
+    }
+  }
+};
 module.exports = {
   getRecipe,
   getRecipes,

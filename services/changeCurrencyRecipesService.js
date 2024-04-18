@@ -1,5 +1,6 @@
 const asynchHandler = require("express-async-handler");
 const CurencyModel = require("../models/curencyModel");
+const RecipeModel = require("../models/recipeModel");
 
 const changeCurrency = asynchHandler(async (recipes, currency) => {
   const price = await CurencyModel.find({ lan: currency });
@@ -25,9 +26,10 @@ const changeCurrency = asynchHandler(async (recipes, currency) => {
 });
 
 const changeCurrencyForPayment = asynchHandler(async (id, currency) => {
-  const price = await CurencyModel.find({ lan: currency });
+  const price = await CurencyModel.find({ name: currency });
   const recipe = await RecipeModel.findById(id);
   const pricePerDollar = price[0].pricePerDollar;
-  return parseFloat((recipe.paymentInfo * pricePerDollar).toFixed(2));
+
+  return parseFloat((recipe.paymentInfo.price * pricePerDollar).toFixed(2));
 });
 module.exports = { changeCurrency, changeCurrencyForPayment };
