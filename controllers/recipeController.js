@@ -122,6 +122,26 @@ const createRecipe = [
 //@route PUT /api/recipe:/id
 //@access private
 
+const createRecipeByDraft = [
+  upload.single("image"),
+  asyncHandler(async (req, res, next) => {
+    try {
+      const ipAddress =
+        req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+      const clientIp = ipAddress.split(",")[0].concat("my-recipes");
+      await recipeService.createRecipeByDraft(req);
+      onDataChanged(clientIp);
+      return res.status(201).json("Recipe created By draft for 3 days");
+    } catch (error) {
+      next(error);
+    }
+  }),
+];
+
+//@desc Update recipe
+//@route PUT /api/recipe:/id
+//@access private
+
 const updateRecipe = asyncHandler(async (req, res, next) => {
   try {
     const recipe = await recipeService.updateRecipe(req);
@@ -201,14 +221,44 @@ const loadIngredients = asyncHandler(async (req, res, next) => {
   }
 });
 
+const createCheckoutSession = asyncHandler(async (req, res, next) => {
+  try {
+    const session = await recipeService.createCheckoutSession(req);
+    return res.status(200).json(session);
+  } catch (error) {
+    next(error);
+  }
+});
+
+const getAllPaymentRecipes = asyncHandler(async (req, res, next) => {
+  try {
+    const { page, size } = req.query;
+    console.log(req);
+    const redisKey = `AllPaymentRecipes`;
+    const loadData = await redisGetModelsWithPaginating(
+      page,
+      redisKey,
+      size,
+      recipeService.getAllPaymentRecipes,
+      req.user.id,
+    );
+    return res.status(200).json(loadData);
+  } catch (error) {
+    next(error);
+  }
+});
+
 module.exports = {
   getRecipe,
   getRecipes,
   setFavoriteRecipes,
   createRecipe,
+  createRecipeByDraft,
   updateRecipe,
   deleteRecipe,
   loadDataToSelect,
   loadCurrencyAndLanguges,
   loadIngredients,
+  createCheckoutSession,
+  getAllPaymentRecipes,
 };

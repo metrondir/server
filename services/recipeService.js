@@ -1,11 +1,16 @@
 const Recipe = require("../models/recipeModel");
+const User = require("../models/userModel");
 const FavoriteRecipe = require("../models/favoriteRecipeModel");
 const SpoonacularRecipeModel = require("../models/spoonacularRecipeModel");
 const imgur = require("imgur");
 const fs = require("fs").promises;
 const sharp = require("sharp");
 const axios = require("axios");
-const { changeCurrency } = require("./changeCurrencyRecipesService");
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+const {
+  changeCurrency,
+  changeCurrencyForPayment,
+} = require("./changeCurrencyRecipesService");
 const {
   createInstructionsHTML,
 } = require("../utils/createInstructionsLikeList");
@@ -23,9 +28,13 @@ const {
 } = require("../services/translationService");
 const { data } = require("../utils/recipesData");
 const { currencyData } = require("../utils/currencyData");
+const {
+  storeRecipe,
+  getRecipesFromUserIdFromRedis,
+} = require("../middleware/paginateMiddleware");
 const { languageData } = require("../utils/languageData");
 const ApiError = require("../middleware/apiError");
-const { response } = require("express");
+const { decryptInfo } = require("../middleware/decryptInfo");
 
 const getRecipe = async (id) => {
   const data = await Recipe.findById(id);
@@ -48,18 +57,27 @@ const getRecipe = async (id) => {
 };
 
 const getRecipes = async (currency, language, id) => {
-  const recipes = await Recipe.find({ user: id });
+  const recipesDraft = await getRecipesFromUserIdFromRedis(id);
+  console.log(recipesDraft);
+
+  const recipe = await Recipe.find({ user: id });
+  let recipes = [];
+  if (!recipesDraft) {
+    recipes = recipe;
+  } else {
+    recipes = recipe.concat(recipesDraft);
+  }
   if (recipes.length === 0) return [];
   if (language === "en" || !language) {
     const updatedRecipes = recipes.map((recipe) => ({
       ...recipe._doc,
-      extendedIngredients: recipe.extendedIngredients.map(
+      extendedIngredients: recipe?.extendedIngredients.map(
         (ingredient) => ingredient.original,
       ),
       pricePerServing: !currency
-        ? recipe.pricePerServing + " USD"
-        : recipe.pricePerServing,
-      readyInMinutes: recipe.readyInMinutes + " min",
+        ? recipe?.pricePerServing + " USD"
+        : recipe?.pricePerServing,
+      readyInMinutes: recipe?.readyInMinutes + " min",
     }));
     if (currency) return changeCurrency(updatedRecipes, currency);
 
@@ -70,20 +88,20 @@ const getRecipes = async (currency, language, id) => {
       recipes.map((recipe) => translateRecipeGet(recipe, language)),
     );
     const translatedRecipes = recipes.map((recipe) => ({
-      id: recipe.id || recipe._id,
-      title: recipe.title,
-      image: recipe.image,
-      extendedIngredients: recipe.extendedIngredients.map(
+      id: recipe?.id || recipe._id,
+      title: recipe?.title,
+      image: recipe?.image,
+      extendedIngredients: recipe?.extendedIngredients.map(
         (ingredient) => ingredient.original,
       ),
       pricePerServing: !currency
-        ? recipe.pricePerServing + " USD"
-        : recipe.pricePerServing,
-      diets: recipe.diets || [],
-      cuisines: recipe.cuisines || [],
-      instructions: recipe.instructions,
-      readyInMinutes: recipe.readyInMinutes + min,
-      dishTypes: recipe.dishTypes || [],
+        ? recipe?.pricePerServing + " USD"
+        : recipe?.pricePerServing,
+      diets: recipe?.diets || [],
+      cuisines: recipe?.cuisines || [],
+      instructions: recipe?.instructions,
+      readyInMinutes: recipe?.readyInMinutes + min,
+      dishTypes: recipe?.dishTypes || [],
     }));
 
     if (currency) return changeCurrency(translatedRecipes, currency);
@@ -93,6 +111,91 @@ const getRecipes = async (currency, language, id) => {
 };
 
 const createRecipe = async (req) => {
+  if (
+    req.body.extendedIngredients &&
+    typeof req.body.extendedIngredients === "string"
+  ) {
+    req.body.extendedIngredients = JSON.parse(req.body.extendedIngredients);
+  }
+
+  if (req.body.dishTypes && typeof req.body.dishTypes === "string") {
+    req.body.dishTypes = JSON.parse(req.body.dishTypes).map(
+      (dishtype) => dishtype.label,
+    );
+  }
+
+  if (req.body.cuisines && typeof req.body.cuisines === "string") {
+    req.body.cuisines = JSON.parse(req.body.cuisines).map(
+      (cuisine) => cuisine.label,
+    );
+  }
+
+  if (req.body.diets && typeof req.body.diets === "string") {
+    req.body.diets = JSON.parse(req.body.diets).map((diet) => diet.label);
+  }
+  const image = await fs.readFile(req.file.path, {
+    encoding: "base64",
+  });
+
+  const response = await axios({
+    method: "POST",
+    url: "https://detect.roboflow.com/food-ingredient-recognition-51ngf/4",
+    params: {
+      api_key: "6jm9qkQBt3xv4LmGk13g",
+    },
+    data: image,
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+  });
+
+  if (response.data.predictions.length === 0) {
+    throw ApiError.BadRequest("Image is not a food");
+  }
+
+  const resizedImageBuffer = await sharp(req.file.path)
+    .resize(556, 370)
+    .toBuffer();
+  const imgurResponse = await imgur.uploadBase64(
+    resizedImageBuffer.toString("base64"),
+  );
+  const imgurLink = imgurResponse.link;
+
+  const language = await detectLanguage(req.body.instructions);
+  const user = await User.findById(req.user.id);
+  try {
+    let recipe = await translateRecipePost(req.body, language);
+    const cost = await parsedIngredients(recipe.extendedIngredients);
+    recipe.pricePerServing = cost;
+    recipe.image = imgurLink;
+    recipe.user = req.user.id;
+
+    recipe.user = req.user.id;
+    if (!recipe.paymentInfo) {
+      recipe.paymentInfo = {};
+    }
+
+    if (req.body.paymentStatus) {
+      recipe.paymentInfo.paymentStatus = req.body.paymentStatus;
+      recipe.paymentInfo.price = req.body.price;
+      recipe.paymentInfo.paymentMethod = req.body.paymentMethod;
+      user.cardNumber = req.body.cardNumber;
+      user.cardExpYear = req.body.cardExpYear;
+      user.cardExpMonth = req.body.cardExpMonth;
+      user.cardCvc = req.body.cardCvc;
+    }
+    recipe.instructions = createInstructionsHTML(recipe.instructions);
+    recipe = new Recipe(recipe);
+    await recipe.save();
+    await user.save();
+    return recipe;
+  } catch (error) {
+    console.log(error.message);
+    throw ApiError.BadRequest(error.message);
+  }
+};
+
+const createRecipeByDraft = async (req) => {
   if (
     req.body.extendedIngredients &&
     typeof req.body.extendedIngredients === "string"
@@ -151,13 +254,20 @@ const createRecipe = async (req) => {
     const cost = await parsedIngredients(recipe.extendedIngredients);
     recipe.pricePerServing = cost;
     recipe.image = imgurLink;
+    if (!recipe.paymentInfo) {
+      recipe.paymentInfo = {};
+    }
+    if (req.body.paymentStatus) {
+      recipe.paymentInfo.paymentStatus = req.body.paymentStatus;
+      recipe.paymentInfo.currency = req.body.currency;
+      recipe.paymentInfo.price = req.body.price;
+      recipe.paymentInfo.paymentMethod = req.body.paymentMethod;
+    }
     recipe.user = req.user.id;
     recipe.instructions = createInstructionsHTML(recipe.instructions);
-    recipe = new Recipe(recipe);
-    await recipe.save();
+    await storeRecipe(recipe);
     return recipe;
   } catch (error) {
-    console.log(error.message);
     throw ApiError.BadRequest(error.message);
   }
 };
@@ -361,6 +471,72 @@ const getIngredients = async () => {
   return ingredients;
 };
 
+const createCheckoutSession = async (req) => {
+  try {
+    const recipe = await Recipe.findById(req.body.id);
+    const user = await User.findById(recipe.user);
+    const paymentMethod = await stripe.paymentMethods.create({
+      type: "card",
+      card: {
+        number: decryptInfo(user.cardNumber),
+        exp_month: decryptInfo(user.cardExpMonth),
+        exp_year: decryptInfo(user.cardExpYear),
+        cvc: decryptInfo(user.cardCvc),
+      },
+    });
+    if (req.body.currency !== "usd") {
+      req.body.price = changeCurrencyForPayment(req.body.id, req.body.currency);
+    }
+    const session = await stripe.payouts.sessions.create({
+      payment_method_types: ["card"],
+      paymentMethod: paymentMethod.id,
+      line_items: {
+        price_data: {
+          currency: req.body.currency,
+          product_data: {
+            name: req.body.title,
+            images: [req.body.image],
+          },
+          unit_amount: req.body.price * 100,
+        },
+        quantity: req.body.quantity,
+      },
+
+      mode: "payment",
+      success_url: `${process.env.API_URL}/api/recipes/${req.body.id}`,
+      cancel_url: `${process.env.API_URL}`,
+    });
+
+    return session;
+  } catch (error) {
+    console.error(error);
+    throw ApiError.BadRequest("Error creating checkout session");
+  }
+};
+const getAllPaymentRecipes = async (id) => {
+  try {
+    const user = await User.findById(id);
+    const recipes = await Recipe.find({
+      "paymentInfo.paymentStatus": true,
+    }).lean();
+
+    recipes.forEach((recipe) => {
+      if (user.boughtRecipes.includes(recipe._id.toString())) {
+        recipe.instructions = recipe.instructions;
+        recipe.analyzedInstructions = recipe.analyzedInstructions;
+        recipe.extendedIngredients = recipe.extendedIngredients;
+      } else {
+        delete recipe.instructions;
+        delete recipe.analyzedInstructions;
+        delete recipe.extendedIngredients;
+      }
+    });
+    return recipes;
+  } catch (error) {
+    throw error;
+  }
+};
+
 module.exports = {
   getRecipe,
   getRecipes,
@@ -371,4 +547,7 @@ module.exports = {
   loadData,
   getCurrencyAndLanguges,
   getIngredients,
+  createRecipeByDraft,
+  createCheckoutSession,
+  getAllPaymentRecipes,
 };

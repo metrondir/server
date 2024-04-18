@@ -79,11 +79,40 @@ const redisGetModelsWithPaginating = async (
     throw ApiError.BadRequest(error.message);
   }
 };
+const getRecipesFromUserIdFromRedis = async (userId) => {
+  const keys = await redis.keys(`recipe:${userId}*`);
 
+  const recipes = [];
+
+  for (const key of keys) {
+    const recipeData = await redis.hgetall(key);
+
+    const recipe = JSON.parse(recipeData.data);
+    recipes.push(recipe);
+  }
+
+  return recipes;
+};
+const getRecipeByUserIdAndRecipeId = async (userId, recipeId) => {
+  const key = `recipe:${userId}${recipeId}`;
+
+  const recipeData = await redis.hget(key, "data");
+
+  const recipe = JSON.parse(recipeData);
+
+  return recipe;
+};
 const storeRegistrationDetails = async (activationLink, details) => {
   await redis.hset("registrations", activationLink, JSON.stringify(details));
 };
+const storeRecipe = async (recipe) => {
+  const key = `recipe:${recipe.user}${recipe.id}`;
+  const field = "data";
+  const value = JSON.stringify(recipe);
 
+  await redis.hset(key, field, value);
+  await redis.expire(key, 60);
+};
 const getRegistrationDetailsByActivationLink = async (activationLink) => {
   const detailsString = await redis.hget("registrations", activationLink);
   return detailsString ? JSON.parse(detailsString) : null;
@@ -175,4 +204,7 @@ module.exports = {
   storeRegistrationDetails,
   getRegistrationDetailsByActivationLink,
   deleteRegistrationDetailsByActivationLink,
+  storeRecipe,
+  getRecipesFromUserIdFromRedis,
+  getRecipeByUserIdAndRecipeId,
 };

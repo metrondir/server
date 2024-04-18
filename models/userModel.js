@@ -43,6 +43,32 @@ const userSchema = mongoose.Schema(
       type: String,
       required: [false, "Please add the user change password link"],
     },
+    boughtRecipes: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Recipe",
+      },
+    ],
+    cardInfo: [
+      {
+        cardNumber: {
+          type: String,
+          required: [true, "Please add the card number"],
+        },
+        cardHolder: {
+          type: String,
+          required: [true, "Please add the card holder"],
+        },
+        cardExpMonth: {
+          type: String,
+          required: [true, "Please add the expiration date"],
+        },
+        cvv: {
+          type: String,
+          required: [true, "Please add the cvv"],
+        },
+      },
+    ],
   },
   {
     timestamps: true,

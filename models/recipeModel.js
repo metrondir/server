@@ -1,5 +1,14 @@
 const mongoose = require("mongoose");
-
+const paymentInfoSchema = new mongoose.Schema({
+  paymentStatus: {
+    type: Boolean,
+    default: false,
+    required: true,
+  },
+  price: Number,
+  paymentMethod: String,
+  paymentDate: Date,
+});
 const extendedIngredientSchema = new mongoose.Schema({
   id: Number,
   original: String,
@@ -32,6 +41,10 @@ const recipeSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
+  paymentInfo: {
+    type: paymentInfoSchema,
+  },
+
   pricePerServing: Number,
   diets: {
     type: Array,

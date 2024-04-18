@@ -4,11 +4,14 @@ const {
   getRecipes,
   setFavoriteRecipes,
   createRecipe,
+  createRecipeByDraft,
   updateRecipe,
   deleteRecipe,
   loadDataToSelect,
   loadCurrencyAndLanguges,
   loadIngredients,
+  createCheckoutSession,
+  getAllPaymentRecipes,
 } = require("../controllers/recipeController");
 const { getFavouriteRecipes } = require("../controllers/apiController");
 const authMiddleware = require("../middleware/authMiddleware");
@@ -24,8 +27,10 @@ router.get("/load-currency-languages", loadCurrencyAndLanguges);
 router.get("/load-ingredients", loadIngredients);
 
 router.get("/favourite", authMiddleware, getFavouriteRecipes);
-
+router.post("/create-checkout-session", authMiddleware, createCheckoutSession);
+router.get("/payment-recipes", authMiddleware, getAllPaymentRecipes);
 router.route("/favourite/:id").get(authMiddleware, setFavoriteRecipes);
+router.route("/by-draft").post(authMiddleware, createRecipeByDraft);
 
 router
   .route("/:id")

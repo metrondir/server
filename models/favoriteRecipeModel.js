@@ -11,7 +11,18 @@ const mongoose = require("mongoose");
 //    required: true,
 //  },
 //});
-
+const paymentInfoSchema = new mongoose.Schema({
+  paymentStatus: {
+    type: Boolean,
+    default: false,
+    required: true,
+  },
+  price: Number,
+  currency: String,
+  paymentMethod: String,
+  paymentDate: Date,
+  paymentId: String,
+});
 const extendedIngredientSchema = new mongoose.Schema({
   id: Number,
   original: String,
@@ -60,6 +71,9 @@ const favoriteRecipeSchema = new mongoose.Schema({
   },
   dishTypes: {
     type: Array,
+  },
+  paymentInfo: {
+    type: paymentInfoSchema,
   },
   instructions: String,
   analyzedInstructions: [
