@@ -495,7 +495,7 @@ const createCheckoutSession = async (req) => {
       ],
 
       mode: "payment",
-      success_url: `${process.env.API_URL}/api/recipes/${req.body.id}`,
+      success_url: `${process.env.API_URL}/recipes/${req.body.id}`,
       cancel_url: `${process.env.API_URL}`,
     });
 
