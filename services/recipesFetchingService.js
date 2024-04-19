@@ -491,12 +491,22 @@ const fetchAggregateLikesById = async (recipeId) => {
 const fetchInformationById = async (id, language, currency, refreshToken) => {
   let apiKey = getApiKey();
   let favourites = [];
-  if (refreshToken) {
-    const user = await findUserByRefreshToken(refreshToken);
-    favourites = await FavoriteRecipe.find({ user: user._id });
-  }
+  const user = await findUserByRefreshToken(refreshToken);
+  favourites = await FavoriteRecipe.find({ user: user._id });
+
   if (id.length >= 9) {
     const data = await Recipe.findById(id);
+    if (data.paymentInfo.paymentStatus) {
+      if (
+        user.boughtRecipes.includes(data._id.toString()) &&
+        user.boughtRecipes !== undefined
+      ) {
+      } else {
+        delete data.instructions;
+        delete data.analyzedInstructions;
+        delete data.extendedIngredients;
+      }
+    }
 
     if (!data) {
       throw ApiError.BadRequest("Recipe not found");
@@ -508,7 +518,7 @@ const fetchInformationById = async (id, language, currency, refreshToken) => {
         title: data.title,
         image: data.image,
         diets: data.diets || [],
-        instructions: data.instructions,
+        instructions: data?.instructions,
         extendedIngredients:
           data.extendedIngredients.map((ingredient) => ingredient.original) ||
           [],

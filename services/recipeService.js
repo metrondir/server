@@ -469,21 +469,18 @@ const getIngredients = async () => {
 
 const createCheckoutSession = async (req) => {
   try {
-    const recipe = await Recipe.findById(req.body.id);
-    const user = await User.findById(recipe.user);
-
-    if (req.body.currency !== "USD") {
-      req.body.price = await changeCurrencyForPayment(
-        req.body.id,
-        req.body.currency,
-      );
+    let currency = req.query.currency;
+    const currencyName = await CurrencyModel.findOne({ lan: currency });
+    currency = currencyName.name;
+    if (currency !== "USD" || !currency) {
+      req.body.price = await changeCurrencyForPayment(req.body.id, currency);
     }
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       line_items: [
         {
           price_data: {
-            currency: req.body.currency,
+            currency: currency,
             product_data: {
               name: req.body.title,
               images: [req.body.image],
@@ -498,14 +495,14 @@ const createCheckoutSession = async (req) => {
       success_url: `${process.env.API_URL}/recipes/${req.body.id}`,
       cancel_url: `${process.env.API_URL}`,
     });
-
+    console.log(session);
     return session;
   } catch (error) {
     console.error(error);
     throw ApiError.BadRequest("Error creating checkout session");
   }
 };
-const getAllPaymentRecipes = async (id) => {
+const getAllPaymentRecipes = async (id, language, currency) => {
   try {
     const user = await User.findById(id);
     const recipes = await Recipe.find({
@@ -513,18 +510,38 @@ const getAllPaymentRecipes = async (id) => {
     }).lean();
 
     recipes.forEach((recipe) => {
-      if (user.boughtRecipes.includes(recipe._id.toString())) {
-        recipe.instructions = recipe.instructions;
-        recipe.analyzedInstructions = recipe.analyzedInstructions;
-        recipe.extendedIngredients = recipe.extendedIngredients;
+      if (
+        user.boughtRecipes.includes(recipe._id.toString()) &&
+        user.boughtRecipes !== undefined
+      ) {
       } else {
         delete recipe.instructions;
         delete recipe.analyzedInstructions;
         delete recipe.extendedIngredients;
       }
     });
+
+    await Promise.all(
+      recipes.map((recipe) => translateRecipeGet(recipe, language)),
+    );
+    if (currency)
+      await Promise.all(
+        recipes.map((recipe) => changeCurrency(recipe, currency)),
+      );
+    else {
+      await Promise.all(
+        recipes.map(
+          (recipe) => (
+            (recipe.pricePerServing = recipe.pricePerServing + " USD"),
+            (recipe.paymentInfo.price = recipe.paymentInfo.price + " USD")
+          ),
+        ),
+      );
+    }
+
     return recipes;
   } catch (error) {
+    console.log(error.message);
     throw error;
   }
 };

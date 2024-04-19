@@ -54,7 +54,6 @@ async function translateText(text, language) {
   if (language == "cz") language = "cs";
   if (language == "ua") language = "uk";
   if (language == "sp") language = "es";
-
   try {
     if (!text) return "";
 
@@ -188,11 +187,14 @@ async function translateRecipeGet(recipe, language) {
 
   try {
     if (language === "en" || !language) {
+      recipe.readyInMinutes += " min";
       return recipe;
     }
 
     recipe.title = await translateText(recipe.title, language);
-    recipe.instructions = await translateText(recipe.instructions, language);
+    if (recipe.instructions && recipe.instructions.lenght > 0)
+      recipe.instructions = await translateText(recipe.instructions, language);
+
     if (!language === "en")
       recipe.readyInMinutes += await translateText("min", language);
 
@@ -204,7 +206,6 @@ async function translateRecipeGet(recipe, language) {
       );
     }
 
-    // Similarly, for diets and cuisines
     if (Array.isArray(recipe.diets)) {
       recipe.diets = await Promise.all(
         recipe.diets.map(async (diet) => {
@@ -220,17 +221,17 @@ async function translateRecipeGet(recipe, language) {
         }),
       );
     }
-    recipe.extendedIngredients = await Promise.all(
-      recipe.extendedIngredients.map(async (ingredient) => {
-        ingredient.original = await translateText(
-          ingredient.original,
-          language,
-        );
+    if (recipe.extendedIngredients)
+      recipe.extendedIngredients = await Promise.all(
+        recipe.extendedIngredients.map(async (ingredient) => {
+          ingredient.original = await translateText(
+            ingredient.original,
+            language,
+          );
 
-        return ingredient;
-      }),
-    );
-
+          return ingredient;
+        }),
+      );
     return recipe;
   } catch (error) {
     console.log(error);
