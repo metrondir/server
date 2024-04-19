@@ -660,6 +660,7 @@ const fetchInformationById = async (id, language, currency, refreshToken) => {
       return recipe;
     }
   } catch (error) {
+    console.log(error);
     return handleApiError(
       error,
       fetchInformationById,

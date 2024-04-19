@@ -293,7 +293,12 @@ const setFavoriteRecipes = async (req) => {
       return { isDeleted: true, data: deletedFavoriteRecipe };
     }
 
-    const recipe = await fetchInformationById(recipeId, "en", null);
+    const recipe = await fetchInformationById(
+      recipeId,
+      "en",
+      null,
+      req.cookies.refreshToken,
+    );
     let foundAggLike;
     if (recipeId.length <= 8) {
       foundAggLike = await SpoonacularRecipeModel.find({ id: recipeId });

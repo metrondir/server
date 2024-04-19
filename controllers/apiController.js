@@ -90,7 +90,7 @@ const getInformationById = asyncHandler(async (req, res, next) => {
   try {
     const { id } = req.params;
     const { language, currency } = req.query;
-    const { refreshToken } = req.cookies;
+    const refreshToken = req.cookies.refreshToken;
     const recipes = await fetchInformationById(
       id,
       language,
