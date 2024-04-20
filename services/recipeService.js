@@ -174,7 +174,7 @@ const createRecipe = async (req) => {
     if (!recipe.paymentInfo) {
       recipe.paymentInfo = {};
     }
-
+    console.log(req.body.stripeAccountId);
     if (req.body.stripeAccountId) {
       recipe.paymentInfo.paymentStatus = true;
       recipe.paymentInfo.price = req.body.price;
