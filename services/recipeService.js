@@ -174,10 +174,10 @@ const createRecipe = async (req) => {
       recipe.paymentInfo = {};
     }
 
-    if (req.body.paymentStatus) {
-      recipe.paymentInfo.paymentStatus = req.body.paymentStatus;
+    if (req.body.stripeAccountId) {
+      recipe.paymentInfo.paymentStatus = true;
       recipe.paymentInfo.price = req.body.price;
-      recipe.paymentInfo.paymentMethod = req.body.paymentMethod;
+      recipe.paymentInfo.paymentMethod = "card";
       user.stripeAccountId = req.body.stripeAccountId;
     }
     recipe.instructions = createInstructionsHTML(recipe.instructions);

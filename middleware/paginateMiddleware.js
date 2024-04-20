@@ -147,11 +147,7 @@ const paginateArray = (data, page, size) => {
     if (isNaN(pageSize) || pageSize < 1) {
       throw new Error("Limit must be greater than 0");
     }
-    if (pageSize > totalItems) {
-      throw new Error(
-        `Limit cannot be greater than total items: ${totalItems}`,
-      );
-    }
+
     if (totalItems <= 0) {
       throw new Error(`Dont have items ${totalItems}`);
     }

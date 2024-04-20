@@ -496,16 +496,14 @@ const fetchInformationById = async (id, language, currency, refreshToken) => {
 
   if (id.length >= 9) {
     const data = await Recipe.findById(id);
-    if (data.paymentInfo.paymentStatus) {
-      if (
-        user.boughtRecipes.includes(data._id.toString()) &&
-        user.boughtRecipes !== undefined
-      ) {
-      } else {
-        delete data.instructions;
-        delete data.analyzedInstructions;
-        delete data.extendedIngredients;
-      }
+    if (
+      data.paymentInfo.paymentStatus &&
+      (!user.boughtRecipes || !user.boughtRecipes.includes(data._id.toString()))
+    ) {
+      console.log("You need to buy this recipe");
+      data.instructions = null;
+      data.analyzedInstructions = null;
+      data.extendedIngredients = null;
     }
 
     if (!data) {
@@ -519,9 +517,7 @@ const fetchInformationById = async (id, language, currency, refreshToken) => {
         image: data.image,
         diets: data.diets || [],
         instructions: data?.instructions,
-        extendedIngredients:
-          data.extendedIngredients.map((ingredient) => ingredient.original) ||
-          [],
+
         pricePerServing: !currency
           ? parseFloat(data.pricePerServing) + " USD"
           : parseFloat(data.pricePerServing),
