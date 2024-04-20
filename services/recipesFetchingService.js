@@ -502,7 +502,6 @@ const fetchInformationById = async (id, language, currency, refreshToken) => {
     ) {
       data.instructions = undefined;
       data.analyzedInstructions = undefined;
-      data.extendedIngredients = undefined;
     }
 
     if (!data) {
@@ -519,6 +518,7 @@ const fetchInformationById = async (id, language, currency, refreshToken) => {
         extendedIngredients:
           data?.extendedIngredients.map((ingredient) => ingredient?.original) ||
           [],
+
         pricePerServing: !currency
           ? parseFloat(data.pricePerServing) + " USD"
           : parseFloat(data.pricePerServing),
