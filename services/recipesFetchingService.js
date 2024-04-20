@@ -497,13 +497,12 @@ const fetchInformationById = async (id, language, currency, refreshToken) => {
   if (id.length >= 9) {
     const data = await Recipe.findById(id);
     if (
-      data.paymentInfo.paymentStatus &&
+      data.paymentInfo &&
       (!user.boughtRecipes || !user.boughtRecipes.includes(data._id.toString()))
     ) {
-      console.log("You need to buy this recipe");
-      data.instructions = null;
-      data.analyzedInstructions = null;
-      data.extendedIngredients = null;
+      data.instructions = undefined;
+      data.analyzedInstructions = undefined;
+      data.extendedIngredients = undefined;
     }
 
     if (!data) {

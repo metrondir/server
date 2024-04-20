@@ -43,7 +43,6 @@ const removeToken = asyncHandler(async (refreshToken) => {
   const tokenData = await tokenModel.deleteOne({ refreshToken });
   return tokenData;
 });
-
 const findToken = asyncHandler(async (refreshToken) => {
   const tokenData = await tokenModel.findOne({ refreshToken });
   return tokenData;

@@ -183,6 +183,9 @@ const createRecipe = async (req) => {
     recipe.instructions = createInstructionsHTML(recipe.instructions);
     recipe = new Recipe(recipe);
     await recipe.save();
+    if (req.body.stripeAccountId) {
+      user.boughtRecipes.push(recipe._id);
+    }
     await user.save();
     return recipe;
   } catch (error) {

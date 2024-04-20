@@ -36,6 +36,7 @@ const userSchema = mongoose.Schema(
       type: String,
       require: true,
     },
+
     changePasswordLinkExpiration: {
       type: String,
     },
