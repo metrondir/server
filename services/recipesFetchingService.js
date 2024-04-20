@@ -516,7 +516,9 @@ const fetchInformationById = async (id, language, currency, refreshToken) => {
         image: data.image,
         diets: data.diets || [],
         instructions: data?.instructions,
-
+        extendedIngredients:
+          data?.extendedIngredients.map((ingredient) => ingredient?.original) ||
+          [],
         pricePerServing: !currency
           ? parseFloat(data.pricePerServing) + " USD"
           : parseFloat(data.pricePerServing),

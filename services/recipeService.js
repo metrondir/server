@@ -1,5 +1,6 @@
 const Recipe = require("../models/recipeModel");
 const User = require("../models/userModel");
+const CurrencyModel = require("../models/curencyModel");
 const FavoriteRecipe = require("../models/favoriteRecipeModel");
 const SpoonacularRecipeModel = require("../models/spoonacularRecipeModel");
 const imgur = require("imgur");
@@ -483,7 +484,7 @@ const createCheckoutSession = async (req) => {
     if (currency !== "USD" || !currency) {
       req.body.price = await changeCurrencyForPayment(req.body.id, currency);
     }
-    const session = await stripe.checkout.sessions.create({
+    let session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       line_items: [
         {
@@ -500,14 +501,34 @@ const createCheckoutSession = async (req) => {
       ],
 
       mode: "payment",
+
       success_url: `${process.env.API_URL}/recipes/${req.body.id}`,
       cancel_url: `${process.env.API_URL}`,
     });
     console.log(session);
+
     return session;
   } catch (error) {
     console.error(error);
     throw ApiError.BadRequest("Error creating checkout session");
+  }
+};
+const webhooks = async (req) => {
+  const sig = req.headers["stripe-signature"];
+  let event;
+  try {
+    event = stripe.webhooks.constructEvent(
+      req.body,
+      sig,
+      process.env.STRIPE_WEBHOOK_SECRET,
+    );
+  } catch (error) {
+    console.error(error);
+    throw ApiError.BadRequest("Error creating webhook event");
+  }
+
+  if (event.type === "checkout.session.completed") {
+    const session = event.data.object;
   }
 };
 const getAllPaymentRecipes = async (id, language, currency) => {
@@ -558,47 +579,15 @@ const paytoUser = async (req) => {
   const user = await User.findById(req.user.id);
   const recipe = await Recipe.findById(req.body.id);
   const transfer = await stripe.transfers.create({
-    amount: req.body.price,
-    currency: req.body.currency,
+    amount: req.body.price * 0.9,
+    currency: "USD",
     destination: user.stripeAccountId,
     transfer_group: "recipe_payment",
   });
+  console.log(transfer);
+  return transfer;
 };
 
-const checkCheckoutSession = async (req) => {
-  const user = await User.findById(req.user.id);
-
-  let event = request.body;
-  if (endpointSecret) {
-    const signature = request.headers["stripe-signature"];
-    try {
-      event = stripe.webhooks.constructEvent(
-        request.body,
-        signature,
-        endpointSecret,
-      );
-      switch (event.type) {
-        case "payment_intent.succeeded":
-          const paymentIntent = event.data.object;
-          console.log(
-            `PaymentIntent for ${paymentIntent.amount} was successful!`,
-          );
-          user.boughtRecipes.push(paymentIntent.id);
-          break;
-        case "payment_method.attached":
-          const paymentMethod = event.data.object;
-          break;
-        default:
-          console.log(`Unhandled event type ${event.type}.`);
-      }
-
-      response.send();
-    } catch (err) {
-      console.error(`⚠️  Webhook signature verification failed.`);
-      return response.sendStatus(400);
-    }
-  }
-};
 module.exports = {
   getRecipe,
   getRecipes,
