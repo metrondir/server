@@ -224,7 +224,7 @@ const loadIngredients = asyncHandler(async (req, res, next) => {
 const createCheckoutSession = asyncHandler(async (req, res, next) => {
   try {
     const session = await recipeService.createCheckoutSession(req);
-    return res.status(200).json(session);
+    res.redirect(session.url);
   } catch (error) {
     next(error);
   }
@@ -266,6 +266,17 @@ const getRecipesCollection = asyncHandler(async (req, res, next) => {
   }
 });
 
+const getSesionsStatus = asyncHandler(async (req, res, next) => {
+  try {
+    const session = await recipeService.getSesionsStatus(req);
+    return res.status(200).json(session);
+  } catch (error) {
+    console.log(error);
+
+    next(error);
+  }
+});
+
 module.exports = {
   getRecipe,
   getRecipes,
@@ -280,4 +291,5 @@ module.exports = {
   createCheckoutSession,
   getAllPaymentRecipes,
   getRecipesCollection,
+  getSesionsStatus,
 };

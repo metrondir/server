@@ -47,7 +47,6 @@ const changeCurrency = asynchHandler(async (recipes, currency) => {
       recipes.paymentInfo.price.toFixed(2),
     );
     recipes.paymentInfo.price = `${recipes.paymentInfo.price} ${price[0].name}`;
-
     return recipes;
   }
 });
@@ -57,6 +56,9 @@ const changeCurrencyForPayment = asynchHandler(async (id, currency) => {
   const recipe = await RecipeModel.findById(id);
   const pricePerDollar = price[0].pricePerDollar;
 
-  return parseFloat((recipe.paymentInfo.price * pricePerDollar).toFixed(2));
+  recipe.paymentInfo.price = parseFloat(
+    (recipe.paymentInfo.price * pricePerDollar).toFixed(2) * 100,
+  );
+  return parseFloat(recipe.paymentInfo.price.toFixed(2));
 });
 module.exports = { changeCurrency, changeCurrencyForPayment };

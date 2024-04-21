@@ -291,7 +291,6 @@ const createRecipeByDraft = async (req) => {
     }
 
     await storeRecipe(recipe);
-
     return recipe;
   } catch (error) {
     throw ApiError.BadRequest(error.message);
@@ -529,22 +528,28 @@ const getIngredients = async () => {
 const createCheckoutSession = async (req) => {
   try {
     let currency = req.query.currency;
+    const language = req.query.language;
     const currencyName = await CurrencyModel.findOne({ lan: currency });
-    currency = currencyName.name;
-    if (currency !== "USD" || !currency) {
+    if ((currency !== "USD" || !currency) && currencyName) {
+      currency = currencyName.name;
       req.body.price = await changeCurrencyForPayment(req.body.id, currency);
     }
+    if (language)
+      req.body.title = await translateText(req.body.title, language);
     let session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       line_items: [
         {
           price_data: {
-            currency: currency,
+            currency: currency ? currency : "USD",
             product_data: {
-              name: req.body.title,
+              name:
+                req.body.title.charAt(0).toUpperCase() +
+                req.body.title.slice(1),
+
               images: [req.body.image],
             },
-            unit_amount: req.body.price * 100,
+            unit_amount: req.body.price,
           },
           quantity: 1,
         },
@@ -552,10 +557,9 @@ const createCheckoutSession = async (req) => {
 
       mode: "payment",
 
-      success_url: `${process.env.API_URL}/recipes/${req.body.id}`,
-      cancel_url: `${process.env.API_URL}`,
+      success_url: `http://localhost:3000/recipes/${req.body.id}`,
+      cancel_url: "http://localhost:3000",
     });
-    console.log(session);
 
     return session;
   } catch (error) {
@@ -563,23 +567,17 @@ const createCheckoutSession = async (req) => {
     throw ApiError.BadRequest("Error creating checkout session");
   }
 };
-const webhooks = async (req) => {
-  const sig = req.headers["stripe-signature"];
-  let event;
-  try {
-    event = stripe.webhooks.constructEvent(
-      req.body,
-      sig,
-      process.env.STRIPE_WEBHOOK_SECRET,
-    );
-  } catch (error) {
-    console.error(error);
-    throw ApiError.BadRequest("Error creating webhook event");
+const getSesionsStatus = async (req) => {
+  const event = req.body;
+  switch (event.type) {
+    case "payment._intent.succeeded":
+      const email = event.data.object.charges.data[0].billing_details.email;
+      console.log(email);
+      break;
+    default:
+      console.log(`Unhandled event type ${event.type}`);
   }
-
-  if (event.type === "checkout.session.completed") {
-    const session = event.data.object;
-  }
+  return { received: true };
 };
 const getAllPaymentRecipes = async (id, language, currency) => {
   try {
@@ -651,4 +649,5 @@ module.exports = {
   createCheckoutSession,
   getAllPaymentRecipes,
   getRecipesCollection,
+  getSesionsStatus,
 };
