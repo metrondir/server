@@ -249,6 +249,23 @@ const getAllPaymentRecipes = asyncHandler(async (req, res, next) => {
   }
 });
 
+const getRecipesCollection = asyncHandler(async (req, res, next) => {
+  try {
+    const { page, size, language, currency } = req.query;
+    const redisKey = `RecipesCollection${language}${currency}`;
+    const loadData = await redisGetModelsWithPaginating(
+      page,
+      redisKey,
+      size,
+      recipeService.getRecipesCollection,
+      req,
+    );
+    return res.status(200).json(loadData);
+  } catch (error) {
+    console.log(error);
+  }
+});
+
 module.exports = {
   getRecipe,
   getRecipes,
@@ -262,4 +279,5 @@ module.exports = {
   loadIngredients,
   createCheckoutSession,
   getAllPaymentRecipes,
+  getRecipesCollection,
 };

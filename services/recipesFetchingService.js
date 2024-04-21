@@ -491,17 +491,21 @@ const fetchAggregateLikesById = async (recipeId) => {
 const fetchInformationById = async (id, language, currency, refreshToken) => {
   let apiKey = getApiKey();
   let favourites = [];
-  const user = await findUserByRefreshToken(refreshToken);
-  favourites = await FavoriteRecipe.find({ user: user._id });
-
   if (id.length >= 9) {
     const data = await Recipe.findById(id);
-    if (
-      data.paymentInfo &&
-      (!user.boughtRecipes || !user.boughtRecipes.includes(data._id.toString()))
-    ) {
-      data.instructions = undefined;
-      data.analyzedInstructions = undefined;
+
+    if (refreshToken) {
+      const user = await findUserByRefreshToken(refreshToken);
+      favourites = await FavoriteRecipe.find({ user: user._id });
+      console.log(data);
+      if (
+        data.paymentInfo &&
+        (!user.boughtRecipes ||
+          !user.boughtRecipes.includes(data._id.toString()))
+      ) {
+        data.instructions = undefined;
+        data.analyzedInstructions = undefined;
+      }
     }
 
     if (!data) {

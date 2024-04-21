@@ -58,7 +58,6 @@ const getRecipe = async (id) => {
 
 const getRecipes = async (currency, language, id) => {
   const recipesDraft = await getRecipesFromUserIdFromRedis(id);
-  console.log(recipesDraft);
 
   const recipe = await Recipe.find({ user: id });
   let recipes = [];
@@ -70,17 +69,19 @@ const getRecipes = async (currency, language, id) => {
   if (recipes.length === 0) return [];
   if (language === "en" || !language) {
     const updatedRecipes = recipes.map((recipe) => ({
-      ...recipe._doc,
+      ...recipe,
       extendedIngredients: recipe?.extendedIngredients.map(
         (ingredient) => ingredient.original,
       ),
       pricePerServing: !currency
-        ? recipe?.pricePerServing + " USD"
+        ? `${recipe?.pricePerServing} USD`
         : recipe?.pricePerServing,
-      readyInMinutes: recipe?.readyInMinutes + " min",
+      readyInMinutes: !recipe.readyInMinutes
+        ? undefined
+        : recipe?.readyInMinutes + " min",
     }));
-    if (currency) return changeCurrency(updatedRecipes, currency);
 
+    if (currency) return changeCurrency(updatedRecipes, currency);
     return updatedRecipes;
   } else {
     const min = await translateText(" min", language);
@@ -95,12 +96,19 @@ const getRecipes = async (currency, language, id) => {
         (ingredient) => ingredient.original,
       ),
       pricePerServing: !currency
-        ? recipe?.pricePerServing + " USD"
+        ? recipe?.pricePerServing
         : recipe?.pricePerServing,
       diets: recipe?.diets || [],
       cuisines: recipe?.cuisines || [],
       instructions: recipe?.instructions,
-      readyInMinutes: recipe?.readyInMinutes + min,
+      readyInMinutes: !recipe.readyInMinutes
+        ? undefined
+        : recipe?.readyInMinutes + min,
+      paymentInfo: {
+        paymentStatus: recipe?.paymentInfo?.paymentStatus,
+        price: recipe?.paymentInfo?.price,
+        paymentMethod: recipe?.paymentInfo?.paymentMethod,
+      },
       dishTypes: recipe?.dishTypes || [],
     }));
 
@@ -174,7 +182,6 @@ const createRecipe = async (req) => {
     if (!recipe.paymentInfo) {
       recipe.paymentInfo = {};
     }
-    console.log(req.body.stripeAccountId);
     if (req.body.stripeAccountId) {
       recipe.paymentInfo.paymentStatus = true;
       recipe.paymentInfo.price = req.body.price;
@@ -196,6 +203,7 @@ const createRecipe = async (req) => {
 };
 
 const createRecipeByDraft = async (req) => {
+  let imgurLink;
   if (
     req.body.extendedIngredients &&
     typeof req.body.extendedIngredients === "string"
@@ -218,60 +226,103 @@ const createRecipeByDraft = async (req) => {
   if (req.body.diets && typeof req.body.diets === "string") {
     req.body.diets = JSON.parse(req.body.diets).map((diet) => diet.label);
   }
+  if (req.file !== undefined) {
+    const image = await fs.readFile(req.file.path, {
+      encoding: "base64",
+    });
 
-  const image = await fs.readFile(req.file.path, {
-    encoding: "base64",
-  });
+    const response = await axios({
+      method: "POST",
+      url: "https://detect.roboflow.com/food-ingredient-recognition-51ngf/4",
+      params: {
+        api_key: "6jm9qkQBt3xv4LmGk13g",
+      },
+      data: image,
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+    });
 
-  const response = await axios({
-    method: "POST",
-    url: "https://detect.roboflow.com/food-ingredient-recognition-51ngf/4",
-    params: {
-      api_key: "6jm9qkQBt3xv4LmGk13g",
-    },
-    data: image,
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
-  });
+    if (response.data.predictions.length === 0) {
+      throw ApiError.BadRequest("Image is not a food");
+    }
 
-  if (response.data.predictions.length === 0) {
-    throw ApiError.BadRequest("Image is not a food");
+    const resizedImageBuffer = await sharp(req.file.path)
+      .resize(556, 370)
+      .toBuffer();
+    const imgurResponse = await imgur.uploadBase64(
+      resizedImageBuffer.toString("base64"),
+    );
+    imgurLink = imgurResponse.link;
   }
 
-  const resizedImageBuffer = await sharp(req.file.path)
-    .resize(556, 370)
-    .toBuffer();
-  const imgurResponse = await imgur.uploadBase64(
-    resizedImageBuffer.toString("base64"),
-  );
-  const imgurLink = imgurResponse.link;
+  let language;
+  if (req.body.instructions)
+    language = await detectLanguage(req.body.instructions);
 
-  const language = await detectLanguage(req.body.instructions);
+  const user = await User.findById(req.user.id);
 
   try {
     let recipe = await translateRecipePost(req.body, language);
-    const cost = await parsedIngredients(recipe.extendedIngredients);
+    let cost;
+    if (recipe.extendedIngredients !== undefined) {
+      cost = await parsedIngredients(recipe.extendedIngredients);
+    }
     recipe.pricePerServing = cost;
     recipe.image = imgurLink;
     if (!recipe.paymentInfo) {
       recipe.paymentInfo = {};
     }
-    if (req.body.paymentStatus) {
-      recipe.paymentInfo.paymentStatus = req.body.paymentStatus;
-      recipe.paymentInfo.currency = req.body.currency;
+    if (req.body.stripeAccountId) {
+      recipe.paymentInfo.paymentStatus = true;
       recipe.paymentInfo.price = req.body.price;
-      recipe.paymentInfo.paymentMethod = req.body.paymentMethod;
+      recipe.paymentInfo.paymentMethod = "card";
+      user.stripeAccountId = req.body.stripeAccountId;
+    }
+    recipe = new Recipe(recipe);
+
+    if (req.body.stripeAccountId) {
+      user.boughtRecipes.push(recipe._id);
     }
     recipe.user = req.user.id;
-    recipe.instructions = createInstructionsHTML(recipe.instructions);
+
+    if (recipe.instructions !== undefined) {
+      recipe.instructions = createInstructionsHTML(recipe.instructions);
+    }
+
     await storeRecipe(recipe);
+
     return recipe;
   } catch (error) {
     throw ApiError.BadRequest(error.message);
   }
 };
+const getRecipesCollection = async (req) => {
+  const myrecipes = await Recipe.find({ user: req.user.id });
+  const favouriteRecipes = await FavoriteRecipe.find({ user: req.user.id });
+  const user = await User.findById(req.user.id);
 
+  const recipes = await Recipe.find({
+    "paymentInfo.paymentStatus": true,
+  }).lean();
+
+  recipes.forEach((recipe) => {
+    if (
+      user.boughtRecipes.includes(recipe._id.toString()) &&
+      user.boughtRecipes !== undefined
+    ) {
+    } else {
+      delete recipe.instructions;
+      delete recipe.analyzedInstructions;
+      delete recipe.extendedIngredients;
+    }
+  });
+  const allData = recipes.concat(myrecipes).concat(favouriteRecipes);
+
+  translateRecipeGet(allData, req.query.language);
+  if (req.query.currency) await changeCurrency(allData, req.query.currency);
+  return allData;
+};
 const setFavoriteRecipes = async (req) => {
   try {
     const recipeId = req.params.id;
@@ -601,4 +652,5 @@ module.exports = {
   createRecipeByDraft,
   createCheckoutSession,
   getAllPaymentRecipes,
+  getRecipesCollection,
 };

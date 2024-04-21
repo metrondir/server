@@ -99,7 +99,6 @@ const getRecipeByUserIdAndRecipeId = async (userId, recipeId) => {
   const recipeData = await redis.hget(key, "data");
 
   const recipe = JSON.parse(recipeData);
-
   return recipe;
 };
 const storeRegistrationDetails = async (activationLink, details) => {
@@ -109,10 +108,10 @@ const storeRecipe = async (recipe) => {
   const key = `recipe:${recipe.user}${recipe.id}`;
   const field = "data";
   const value = JSON.stringify(recipe);
-
   await redis.hset(key, field, value);
-  await redis.expire(key, 60);
+  await redis.expire(key, process.env.COOKIE_MAX_AGE / 10000);
 };
+
 const getRegistrationDetailsByActivationLink = async (activationLink) => {
   const detailsString = await redis.hget("registrations", activationLink);
   return detailsString ? JSON.parse(detailsString) : null;

@@ -12,6 +12,7 @@ const {
   loadIngredients,
   createCheckoutSession,
   getAllPaymentRecipes,
+  getRecipesCollection,
 } = require("../controllers/recipeController");
 const { getFavouriteRecipes } = require("../controllers/apiController");
 const authMiddleware = require("../middleware/authMiddleware");
@@ -28,8 +29,13 @@ router.get("/load-ingredients", loadIngredients);
 
 router.get("/favourite", authMiddleware, getFavouriteRecipes);
 router.post("/create-checkout-session", authMiddleware, createCheckoutSession);
+
+router.route("/collection").get(authMiddleware, getRecipesCollection);
+
 router.get("/payment-recipes", authMiddleware, getAllPaymentRecipes);
+
 router.route("/favourite/:id").get(authMiddleware, setFavoriteRecipes);
+
 router.route("/by-draft").post(authMiddleware, createRecipeByDraft);
 
 router

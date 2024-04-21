@@ -192,7 +192,7 @@ async function translateRecipeGet(recipe, language) {
     }
 
     recipe.title = await translateText(recipe.title, language);
-    if (recipe.instructions && recipe.instructions.lenght > 0)
+    if (recipe.instructions && recipe.instructions.length > 0)
       recipe.instructions = await translateText(recipe.instructions, language);
 
     if (!language === "en")
