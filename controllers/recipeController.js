@@ -227,7 +227,7 @@ const createCheckoutSession = asyncHandler(async (req, res, next) => {
   try {
     const session = await recipeService.createCheckoutSession(req);
 
-    res.redirect(session);
+    return res.redirect(301, session);
   } catch (error) {
     console.log(error);
     next(error);
