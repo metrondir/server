@@ -558,8 +558,8 @@ const createCheckoutSession = async (req) => {
 
       mode: "payment",
 
-      success_url: `http://localhost:3000/recipes/${req.body.id}`,
-      cancel_url: "http://localhost:3000",
+      success_url: `${process.env.API_URL}api/recipes/${req.body.id}`,
+      cancel_url: `${process.env.API_URL}`,
     });
     //const shorterUrl = await axios.post(
     //  `${process.env.TINY_URL_API}/create?api_token=${process.env.TINY_URL_API_TOKEN}`,
