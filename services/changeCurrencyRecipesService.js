@@ -4,6 +4,7 @@ const RecipeModel = require("../models/recipeModel");
 
 const changeCurrency = asynchHandler(async (recipes, currency) => {
   const price = await CurencyModel.find({ lan: currency });
+  console.log(price.length);
   if (price && price.length > 0 && recipes.length > 1) {
     const pricePerDollar = price[0].pricePerDollar;
     recipes.forEach((recipe) => {
@@ -36,20 +37,17 @@ const changeCurrency = asynchHandler(async (recipes, currency) => {
     return recipes;
   } else {
     const pricePerDollar = price[0].pricePerDollar;
+    recipes.pricePerServing *= pricePerDollar;
 
-    recipes[0].pricePerServing *= pricePerDollar;
+    recipes.pricePerServing = parseFloat(recipes.pricePerServing.toFixed(2));
 
-    recipes[0].pricePerServing = parseFloat(
-      recipes[0].pricePerServing.toFixed(2),
+    recipes.pricePerServing = `${recipes.pricePerServing} ${price[0].name}`;
+    if (!recipes.paymentInfo) return recipes;
+    recipes.paymentInfo.price *= pricePerDollar;
+    recipes.paymentInfo.price = parseFloat(
+      recipes.paymentInfo.price.toFixed(2),
     );
-
-    recipes[0].pricePerServing = `${recipes[0].pricePerServing} ${price[0].name}`;
-    if (!recipes[0].paymentInfo) return recipes;
-    recipes[0].paymentInfo.price *= pricePerDollar;
-    recipes[0].paymentInfo.price = parseFloat(
-      recipes[0].paymentInfo.price.toFixed(2),
-    );
-    recipes[0].paymentInfo.price = `${recipes[0].paymentInfo.price} ${price[0].name}`;
+    recipes.paymentInfo.price = `${recipes.paymentInfo.price} ${price[0].name}`;
 
     return recipes;
   }
