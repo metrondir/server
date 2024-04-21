@@ -312,9 +312,16 @@ const getRecipesCollection = async (req) => {
       user.boughtRecipes !== undefined
     ) {
     } else {
-      delete recipe.instructions;
+      recipe.instructions = `<ol>
+      <li>Boil water in a large pot.</li>
+      <li>Add pasta to the boiling water.</li>
+      <li>Cook pasta according to package instructions until al dente.</li>
+      <li>Drain pasta in a colander.</li>
+      <li>Return pasta to the pot.</li>
+      <li>Add your favorite sauce and mix well.</li>
+      <li>Serve hot and enjoy!</li>
+    </ol>`;
       delete recipe.analyzedInstructions;
-      delete recipe.extendedIngredients;
     }
   });
   const allData = recipes.concat(myrecipes).concat(favouriteRecipes);
@@ -595,9 +602,16 @@ const getAllPaymentRecipes = async (id, language, currency) => {
         user.boughtRecipes !== undefined
       ) {
       } else {
-        delete recipe.instructions;
+        recipe.instructions = `<ol>
+        <li>Boil water in a large pot.</li>
+        <li>Add pasta to the boiling water.</li>
+        <li>Cook pasta according to package instructions until al dente.</li>
+        <li>Drain pasta in a colander.</li>
+        <li>Return pasta to the pot.</li>
+        <li>Add your favorite sauce and mix well.</li>
+        <li>Serve hot and enjoy!</li>
+      </ol>`;
         delete recipe.analyzedInstructions;
-        delete recipe.extendedIngredients;
       }
     });
 

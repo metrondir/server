@@ -8,15 +8,22 @@ const changeCurrency = asynchHandler(async (recipes, currency) => {
     const pricePerDollar = price[0].pricePerDollar;
     recipes.forEach((recipe) => {
       if (typeof recipe.pricePerServing === "string") {
-        let numericPart = recipe.pricePerServing.match(/\d+\.\d+/);
-        if (numericPart) {
-          recipe.pricePerServing = parseFloat(numericPart[0]);
-        }
+        recipe.pricePerServing = parseFloat(recipe.pricePerServing);
       }
 
       recipe.pricePerServing *= pricePerDollar;
 
-      recipe.pricePerServing = parseFloat(recipe.pricePerServing.toFixed(2));
+      recipe.pricePerServing = parseFloat(recipe.pricePerServing).toFixed(2);
+      //if (typeof recipe.pricePerServing === "number") {
+      //  const pricing = {
+      //    amount: recipe.pricePerServing,
+      //    currency: price[0].name,
+      //  };
+      //  console.log(pricing);
+      //  recipe.pricePerServing += pricing.currency;
+      //  console.log(recipe.pricePerServing);
+      //}
+
       recipe.pricePerServing = `${recipe.pricePerServing} ${price[0].name}`;
       if (!recipe.paymentInfo) return recipes;
       recipe.paymentInfo.price *= pricePerDollar;
