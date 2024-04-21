@@ -69,7 +69,7 @@ const getRecipes = async (currency, language, id) => {
   if (recipes.length === 0) return [];
   if (language === "en" || !language) {
     const updatedRecipes = recipes.map((recipe) => ({
-      ...recipe,
+      ...recipe._doc,
       extendedIngredients: recipe?.extendedIngredients.map(
         (ingredient) => ingredient.original,
       ),
