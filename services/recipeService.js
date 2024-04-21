@@ -528,14 +528,16 @@ const getIngredients = async () => {
 const createCheckoutSession = async (req) => {
   try {
     let currency = req.query.currency;
+    const id = req.params.id;
+    const recipe = await Recipe.findById(id);
+
     const language = req.query.language;
     const currencyName = await CurrencyModel.findOne({ lan: currency });
     if ((currency !== "USD" || !currency) && currencyName) {
       currency = currencyName.name;
-      req.body.price = await changeCurrencyForPayment(req.body.id, currency);
+      recipe.paymentInfo.price = await changeCurrencyForPayment(id, currency);
     }
-    if (language)
-      req.body.title = await translateText(req.body.title, language);
+    if (language) recipe.title = await translateText(recipe.title, language);
     let session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       line_items: [
@@ -544,12 +546,11 @@ const createCheckoutSession = async (req) => {
             currency: currency ? currency : "USD",
             product_data: {
               name:
-                req.body.title.charAt(0).toUpperCase() +
-                req.body.title.slice(1),
+                recipe.title.charAt(0).toUpperCase() + recipe.title.slice(1),
 
-              images: [req.body.image],
+              images: [recipe.image],
             },
-            unit_amount: req.body.price,
+            unit_amount: recipe.paymentInfo.price,
           },
           quantity: 1,
         },

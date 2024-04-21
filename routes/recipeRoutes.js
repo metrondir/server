@@ -29,7 +29,11 @@ router.get("/load-currency-languages", loadCurrencyAndLanguges);
 router.get("/load-ingredients", loadIngredients);
 
 router.get("/favourite", authMiddleware, getFavouriteRecipes);
-router.post("/create-checkout-session", authMiddleware, createCheckoutSession);
+router.get(
+  "/:id/create-checkout-session",
+  authMiddleware,
+  createCheckoutSession,
+);
 
 router.route("/collection").get(authMiddleware, getRecipesCollection);
 
