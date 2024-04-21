@@ -561,8 +561,13 @@ const createCheckoutSession = async (req) => {
       success_url: `http://localhost:3000/recipes/${req.body.id}`,
       cancel_url: "http://localhost:3000",
     });
-
-    return session;
+    const shorterUrl = await axios.post(
+      `${process.env.TINY_URL_API}/create?api_token=${process.env.TINY_URL_API_TOKEN}`,
+      {
+        url: session.url,
+      },
+    );
+    return shorterUrl.data.data.tiny_url;
   } catch (error) {
     console.error(error);
     throw ApiError.BadRequest("Error creating checkout session");

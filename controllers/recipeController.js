@@ -1,6 +1,8 @@
 const asyncHandler = require("express-async-handler");
 const recipeService = require("../services/recipeService");
 const multer = require("multer");
+const axios = require("axios");
+
 const { onDataChanged } = require("../middleware/paginateMiddleware");
 // multer configuration for file upload
 const {
@@ -224,8 +226,8 @@ const loadIngredients = asyncHandler(async (req, res, next) => {
 const createCheckoutSession = asyncHandler(async (req, res, next) => {
   try {
     const session = await recipeService.createCheckoutSession(req);
-    console.log(session.url);
-    res.redirect(`${session.url}`);
+
+    res.redirect(session);
   } catch (error) {
     console.log(error);
     next(error);
