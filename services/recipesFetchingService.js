@@ -503,7 +503,7 @@ const fetchInformationById = async (id, language, currency, refreshToken) => {
         (!user.boughtRecipes ||
           !user.boughtRecipes.includes(data._id.toString()))
       ) {
-        data.instructions = undefined;
+        data.instructions = `<ol><li>Boil water in a large pot.</li><li>Add pasta to the boiling water.</li><li>Cook pasta according to package instructions until al dente.</li><li>Drain pasta in a colander.</li><li>Return pasta to the pot.</li><li>Add your favorite sauce and mix well.</li><li>Serve hot and enjoy!</li></ol>`;
         data.analyzedInstructions = undefined;
       }
     }

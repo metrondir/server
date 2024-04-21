@@ -4,7 +4,6 @@ const RecipeModel = require("../models/recipeModel");
 
 const changeCurrency = asynchHandler(async (recipes, currency) => {
   const price = await CurencyModel.find({ lan: currency });
-  console.log(price.length);
   if (price && price.length > 0 && recipes.length > 1) {
     const pricePerDollar = price[0].pricePerDollar;
     recipes.forEach((recipe) => {
