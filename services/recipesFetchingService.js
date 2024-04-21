@@ -505,6 +505,9 @@ const fetchInformationById = async (id, language, currency, refreshToken) => {
       ) {
         data.instructions = `<ol><li>Boil water in a large pot.</li><li>Add pasta to the boiling water.</li><li>Cook pasta according to package instructions until al dente.</li><li>Drain pasta in a colander.</li><li>Return pasta to the pot.</li><li>Add your favorite sauce and mix well.</li><li>Serve hot and enjoy!</li></ol>`;
         data.analyzedInstructions = undefined;
+        data.paymentStatus = false;
+      } else {
+        data.paymentStatus = true;
       }
     }
 
@@ -532,6 +535,7 @@ const fetchInformationById = async (id, language, currency, refreshToken) => {
         isFavourite: favourites.some(
           (fav) => fav.recipe.toString() === data.id.toString(),
         ),
+        paymentStatus: data?.paymentStatus,
       };
 
       if (currency) return changeCurrency(recipe, currency);
@@ -577,6 +581,7 @@ const fetchInformationById = async (id, language, currency, refreshToken) => {
         isFavourite: favourites.some(
           (fav) => fav.recipe.toString() === data.id.toString(),
         ),
+        paymentStatus: data?.paymentStatus,
       };
       if (currency) return changeCurrency(recipe, currency);
 
