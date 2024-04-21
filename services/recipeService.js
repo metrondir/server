@@ -558,7 +558,7 @@ const createCheckoutSession = async (req) => {
 
       mode: "payment",
 
-      success_url: `${process.env.API_URL}api/recipes/${req.body.id}`,
+      success_url: `${process.env.API_URL}/api/recipes/${id}`,
       cancel_url: `${process.env.API_URL}`,
     });
     //const shorterUrl = await axios.post(
@@ -568,6 +568,7 @@ const createCheckoutSession = async (req) => {
     //  },
     //);
     //return shorterUrl.data.data.tiny_url;
+
     return session.url;
   } catch (error) {
     console.error(error);

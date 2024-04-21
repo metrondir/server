@@ -226,8 +226,11 @@ const loadIngredients = asyncHandler(async (req, res, next) => {
 const createCheckoutSession = asyncHandler(async (req, res, next) => {
   try {
     const session = await recipeService.createCheckoutSession(req);
-
-    return res.redirect(301, session);
+    console.log(session);
+    res.redirect(
+      301,
+      "https://checkout.stripe.com/c/pay/cs_test_a1V33vgCegxv4a3jCl6hep8fkkYOKyIjB34zmHnjIFV6hY8VMMoztUSyK6#fidkdWxOYHwnPyd1blpxYHZxWjA0SmhcMmhBT3w1dHdIcWA8XH1hdWYwaHwyR248YEZWSnFpbEt9VDMzUVB8QFVMYVIxfWp3M00xcFViNVZgMjVUPHc1TFZcTjxdU2dPZDdiQm5hT05rVE4wNTV8M0RGQHRzQCcpJ2N3amhWYHdzYHcnP3F3cGApJ2lkfGpwcVF8dWAnPyd2bGtiaWBabHFgaCcpJ2BrZGdpYFVpZGZgbWppYWB3dic%2FcXdwYHgl",
+    );
   } catch (error) {
     console.log(error);
     next(error);
