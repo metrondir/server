@@ -6,6 +6,7 @@ const paymentInfoSchema = new mongoose.Schema({
     required: true,
   },
   price: Number,
+  bankAccountId: String,
   paymentMethod: String,
   paymentDate: Date,
 });

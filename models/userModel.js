@@ -50,7 +50,7 @@ const userSchema = mongoose.Schema(
         ref: "Recipe",
       },
     ],
-    stripeAccountId: {
+    bankAccounId: {
       type: String,
       required: false,
     },

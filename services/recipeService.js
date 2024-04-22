@@ -183,16 +183,23 @@ const createRecipe = async (req) => {
     if (!recipe.paymentInfo) {
       recipe.paymentInfo = {};
     }
-    if (req.body.stripeAccountId) {
+    if (req.body.price) {
       recipe.paymentInfo.paymentStatus = true;
       recipe.paymentInfo.price = req.body.price;
       recipe.paymentInfo.paymentMethod = "card";
-      user.stripeAccountId = req.body.stripeAccountId;
+      const customers = await stripe.customers.list({
+        email: user.email,
+      });
+      if (customers.data.length <= 0) {
+        await stripe.customers.create({
+          email: user.email,
+        });
+      }
     }
     recipe.instructions = createInstructionsHTML(recipe.instructions);
     recipe = new Recipe(recipe);
     await recipe.save();
-    if (req.body.stripeAccountId) {
+    if (req.body.price) {
       user.boughtRecipes.push(recipe._id);
     }
     await user.save();
@@ -278,7 +285,6 @@ const createRecipeByDraft = async (req) => {
       recipe.paymentInfo.paymentStatus = true;
       recipe.paymentInfo.price = req.body.price;
       recipe.paymentInfo.paymentMethod = "card";
-      user.stripeAccountId = req.body.stripeAccountId;
     }
     recipe = new Recipe(recipe);
 
@@ -526,12 +532,17 @@ const getIngredients = async () => {
   return ingredients;
 };
 
-const createCheckoutSession = async (req) => {
+const createCheckoutSession = async (req, res) => {
   try {
     let currency = req.query.currency;
     const id = req.params.id;
     const recipe = await Recipe.findById(id);
-    const user = await findUserByRefreshToken(req.cookies.refreshToken);
+
+    const customer = await User.findById(recipe.user);
+    console.log(customer, "customer");
+    const user = await User.findById(req.user.id);
+    console.log(user, "customer");
+
     const language = req.query.language;
     const currencyName = await CurrencyModel.findOne({ lan: currency });
     if ((currency !== "USD" || !currency) && currencyName) {
@@ -563,20 +574,45 @@ const createCheckoutSession = async (req) => {
       success_url: `${process.env.API_URL}/api/recipes/${id}`,
       cancel_url: `${process.env.API_URL}`,
     });
+    //const customer = await stripe.customers.list({
+    //  email: Customer.email,
+    //});
+    //const payment_method =
+    //  customer.data[0].invoice_settings.default_payment_method;
+    //const customerId = customer.data[0].id;
 
-    return session.url;
+    //await payoutToUser(id, customerId, payment_method);
+    res.redirect(303, session.url);
   } catch (error) {
     console.error(error);
     throw ApiError.BadRequest("Error creating checkout session");
   }
 };
+
+const payoutToUser = async (id, customerId, payment_method) => {
+  const recipe = await Recipe.findById(id);
+  const price = recipe.paymentInfo.price * 0.9 * 100;
+  const payout = await stripe.paymentIntents.create({
+    amount: price,
+    currency: "USD",
+    customer: customerId,
+    payment_method: payment_method,
+    confirm: true,
+    return_url: `${process.env.API_URL}/api/recipes/${id}`,
+  });
+  await stripe.paymentIntents.confirm(payout.id);
+  console.log(payout);
+  return payout;
+};
+
 const getSesionsStatus = async (req) => {
   const event = req.body;
   console.log(event);
   switch (event.type) {
     case "payment_intent.succeeded":
       const email = event.data.object.charges.data[0].billing_details.email;
-      console.log(email);
+
+      await payoutToUser(req, user);
       break;
     default:
       console.log(`Unhandled event type ${event.type}`);
