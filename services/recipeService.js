@@ -540,7 +540,7 @@ const createCheckoutSession = async (req, res) => {
 
     const customer = await User.findById(recipe.user);
     console.log(customer, "customer");
-    const user = await User.findById(req.user.id);
+    const user = await findUserByRefreshToken(req.cookies.refreshToken);
     console.log(user, "customer");
 
     const language = req.query.language;
