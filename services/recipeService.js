@@ -8,6 +8,7 @@ const fs = require("fs").promises;
 const sharp = require("sharp");
 const axios = require("axios");
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+const { findUserByRefreshToken } = require("./userService");
 const {
   changeCurrency,
   changeCurrencyForPayment,
@@ -530,7 +531,7 @@ const createCheckoutSession = async (req) => {
     let currency = req.query.currency;
     const id = req.params.id;
     const recipe = await Recipe.findById(id);
-
+    const user = await findUserByRefreshToken(req.cookies.refreshToken);
     const language = req.query.language;
     const currencyName = await CurrencyModel.findOne({ lan: currency });
     if ((currency !== "USD" || !currency) && currencyName) {
@@ -540,6 +541,8 @@ const createCheckoutSession = async (req) => {
     if (language) recipe.title = await translateText(recipe.title, language);
     let session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
+      customer_email: user.email,
+
       line_items: [
         {
           price_data: {
@@ -547,7 +550,6 @@ const createCheckoutSession = async (req) => {
             product_data: {
               name:
                 recipe.title.charAt(0).toUpperCase() + recipe.title.slice(1),
-
               images: [recipe.image],
             },
             unit_amount: recipe.paymentInfo.price,
@@ -570,8 +572,9 @@ const createCheckoutSession = async (req) => {
 };
 const getSesionsStatus = async (req) => {
   const event = req.body;
+  console.log(event);
   switch (event.type) {
-    case "payment._intent.succeeded":
+    case "payment_intent.succeeded":
       const email = event.data.object.charges.data[0].billing_details.email;
       console.log(email);
       break;
