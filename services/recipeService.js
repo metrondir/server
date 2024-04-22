@@ -533,60 +533,55 @@ const getIngredients = async () => {
 };
 
 const createCheckoutSession = async (req, res) => {
-  try {
-    let currency = req.query.currency;
-    const id = req.params.id;
-    const recipe = await Recipe.findById(id);
+  let currency = req.query.currency;
+  const id = req.params.id;
+  const recipe = await Recipe.findById(id);
 
-    const customer = await User.findById(recipe.user);
-    console.log(customer, "customer");
-    const user = await User.findById(req.user.id);
-    console.log(user, "user");
+  const customer = await User.findById(recipe.user);
+  console.log(customer, "customer");
+  //const user = await User.findById(req.user.id);
+  //console.log(user, "user");
 
-    const language = req.query.language;
-    const currencyName = await CurrencyModel.findOne({ lan: currency });
-    if ((currency !== "USD" || !currency) && currencyName) {
-      currency = currencyName.name;
-      recipe.paymentInfo.price = await changeCurrencyForPayment(id, currency);
-    }
-    if (language) recipe.title = await translateText(recipe.title, language);
-    let session = await stripe.checkout.sessions.create({
-      payment_method_types: ["card"],
-      customer_email: user.email,
-
-      line_items: [
-        {
-          price_data: {
-            currency: currency ? currency : "USD",
-            product_data: {
-              name:
-                recipe.title.charAt(0).toUpperCase() + recipe.title.slice(1),
-              images: [recipe.image],
-            },
-            unit_amount: recipe.paymentInfo.price,
-          },
-          quantity: 1,
-        },
-      ],
-
-      mode: "payment",
-
-      success_url: `${process.env.API_URL}/api/recipes/${id}`,
-      cancel_url: `${process.env.API_URL}`,
-    });
-    //const customer = await stripe.customers.list({
-    //  email: Customer.email,
-    //});
-    //const payment_method =
-    //  customer.data[0].invoice_settings.default_payment_method;
-    //const customerId = customer.data[0].id;
-
-    //await payoutToUser(id, customerId, payment_method);
-    res.redirect(303, session.url);
-  } catch (error) {
-    console.error(error);
-    throw ApiError.BadRequest("Error creating checkout session");
+  const language = req.query.language;
+  const currencyName = await CurrencyModel.findOne({ lan: currency });
+  if ((currency !== "USD" || !currency) && currencyName) {
+    currency = currencyName.name;
+    recipe.paymentInfo.price = await changeCurrencyForPayment(id, currency);
   }
+  if (language) recipe.title = await translateText(recipe.title, language);
+  let session = await stripe.checkout.sessions.create({
+    payment_method_types: ["card"],
+    //customer_email: user.email,
+
+    line_items: [
+      {
+        price_data: {
+          currency: currency ? currency : "USD",
+          product_data: {
+            name: recipe.title.charAt(0).toUpperCase() + recipe.title.slice(1),
+            images: [recipe.image],
+          },
+          unit_amount: recipe.paymentInfo.price,
+        },
+        quantity: 1,
+      },
+    ],
+
+    mode: "payment",
+
+    success_url: `${process.env.API_URL}/api/recipes/${id}`,
+    cancel_url: `${process.env.API_URL}`,
+  });
+  //const customer = await stripe.customers.list({
+  //  email: Customer.email,
+  //});
+  //const payment_method =
+  //  customer.data[0].invoice_settings.default_payment_method;
+  //const customerId = customer.data[0].id;
+
+  //await payoutToUser(id, customerId, payment_method);
+  console.log(session.url);
+  return res.redirect(process.env.API_URL);
 };
 
 const payoutToUser = async (id, customerId, payment_method) => {

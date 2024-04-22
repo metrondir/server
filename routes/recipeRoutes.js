@@ -10,12 +10,12 @@ const {
   loadDataToSelect,
   loadCurrencyAndLanguges,
   loadIngredients,
-  createCheckoutSession,
   getAllPaymentRecipes,
   getRecipesCollection,
   getSesionsStatus,
 } = require("../controllers/recipeController");
 const { getFavouriteRecipes } = require("../controllers/apiController");
+const { createCheckoutSession } = require("../services/recipeService");
 const authMiddleware = require("../middleware/authMiddleware");
 
 router
@@ -31,7 +31,7 @@ router.get("/load-ingredients", loadIngredients);
 router.get("/favourite", authMiddleware, getFavouriteRecipes);
 router.get(
   "/:id/create-checkout-session",
-  authMiddleware,
+
   createCheckoutSession,
 );
 
