@@ -581,7 +581,7 @@ const createCheckoutSession = async (req, res) => {
 
   //await payoutToUser(id, customerId, payment_method);
   console.log(session.url);
-  return res.redirect(process.env.API_URL);
+  res.redirect(process.env.API_URL);
 };
 
 const payoutToUser = async (id, customerId, payment_method) => {
