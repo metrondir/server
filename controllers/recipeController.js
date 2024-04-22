@@ -225,7 +225,7 @@ const loadIngredients = asyncHandler(async (req, res, next) => {
 
 const createCheckoutSession = asyncHandler(async (req, res, next) => {
   try {
-    return res.redirect(process.env.CLIENT_URL);
+    return res.redirect(process.env.API_URL);
   } catch (error) {
     console.log(error);
     next(error);
