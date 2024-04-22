@@ -580,8 +580,7 @@ const createCheckoutSession = async (req, res) => {
   //const customerId = customer.data[0].id;
 
   //await payoutToUser(id, customerId, payment_method);
-  console.log(session.url);
-  res.redirect(process.env.API_URL);
+  return session.url;
 };
 
 const payoutToUser = async (id, customerId, payment_method) => {

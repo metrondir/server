@@ -225,7 +225,9 @@ const loadIngredients = asyncHandler(async (req, res, next) => {
 
 const createCheckoutSession = asyncHandler(async (req, res, next) => {
   try {
-    return res.redirect(process.env.API_URL);
+    const session = await recipeService.createCheckoutSession(req, res);
+
+    return res.status(200).json(session);
   } catch (error) {
     console.log(error);
     next(error);
