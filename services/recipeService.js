@@ -540,8 +540,8 @@ const createCheckoutSession = async (req, res) => {
 
     const customer = await User.findById(recipe.user);
     console.log(customer, "customer");
-    const user = await findUserByRefreshToken(req.cookies.refreshToken);
-    console.log(user, "customer");
+    const user = await User.findById(req.user.id);
+    console.log(user, "user");
 
     const language = req.query.language;
     const currencyName = await CurrencyModel.findOne({ lan: currency });

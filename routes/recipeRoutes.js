@@ -31,7 +31,7 @@ router.get("/load-ingredients", loadIngredients);
 router.get("/favourite", authMiddleware, getFavouriteRecipes);
 router.get(
   "/:id/create-checkout-session",
-
+  authMiddleware,
   createCheckoutSession,
 );
 
