@@ -82,8 +82,7 @@ const logoutUser = asyncHandler(async (req, res, next) => {
         sameSite: "None",
       })
       .status(200)
-      .json("User logged out successfully")
-      .redirect(process.env.API_URL);
+      .json("User logged out successfully");
   } catch (error) {
     next(error);
   }
