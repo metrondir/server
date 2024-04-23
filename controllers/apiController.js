@@ -17,7 +17,6 @@ const {
 const getRecipes = asyncHandler(async (req, res, next) => {
   try {
     const { refreshToken } = req.cookies;
-
     const {
       query,
       limit,
@@ -57,8 +56,6 @@ const getRecipes = asyncHandler(async (req, res, next) => {
 });
 
 const getRandomRecipes = asyncHandler(async (req, res, next) => {
-  console.log(req);
-
   try {
     const { limit, language, page, size, currency } = req.query;
     const ipAddress =

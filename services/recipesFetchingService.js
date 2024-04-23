@@ -98,6 +98,7 @@ const fetchRecipesByIngredients = async (
     ingredients = await translateText(ingredients, "en");
   }
   let url = `${baseUrl}/findByIngredients?apiKey=${apiKey}&ingredients=${ingredients}&number=${number}&ignorePantry=true`;
+
   try {
     const response = await axios.get(url);
 
@@ -154,19 +155,20 @@ const fetchRecipes = async (
   refreshToken,
 ) => {
   let apiKey = getApiKey();
+
+  if (!query) query = " ";
   const lanQuery = await detectLanguage(query);
-  if (query) {
-    if (lanQuery !== "en") {
-      query = await translateText(query, "en");
-    }
-  }
+  if (lanQuery !== "en") query = await translateText(query, "en");
+
   let url = `${baseUrl}/complexSearch?apiKey=${apiKey}&query=${query}&number=${limit}&addRecipeNutrition=true`;
   if (type) url += `&type=${type}`;
   if (diet) url += `&diet=${diet}`;
   if (cuisine) url += `&cuisine=${cuisine}`;
   if (maxReadyTime) url += `&maxReadyTime=${maxReadyTime}`;
+
   try {
     const response = await axios.get(url);
+    console.log(response.data.results);
     const recipes = await getRecipesFromDatabaseComplex(
       query,
       limit,

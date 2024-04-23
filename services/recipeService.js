@@ -8,7 +8,11 @@ const fs = require("fs").promises;
 const sharp = require("sharp");
 const axios = require("axios");
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
-const { findUserByRefreshToken } = require("./userService");
+const {
+  storeCustomer,
+  deleteCustomer,
+  getCustomer,
+} = require("../middleware/paginateMiddleware");
 const {
   changeCurrency,
   changeCurrencyForPayment,
@@ -190,9 +194,13 @@ const createRecipe = async (req) => {
       const customers = await stripe.customers.list({
         email: user.email,
       });
-      if (customers.data.length <= 0) {
-        await stripe.customers.create({
+      if (customers.data.length === 0) {
+        const createdCustomer = await stripe.customers.create({
           email: user.email,
+          name: user.name,
+        });
+        const card = await stripe.customers.createSource(createdCustomer.id, {
+          source: "tok_mastercard",
         });
       }
     }
@@ -537,10 +545,9 @@ const createCheckoutSession = async (req, res) => {
   const id = req.params.id;
   const recipe = await Recipe.findById(id);
 
-  const customer = await User.findById(recipe.user);
-  console.log(customer, "customer");
-  //const user = await User.findById(req.user.id);
-  //console.log(user, "user");
+  const Customer = await User.findById(recipe.user);
+
+  const user = await User.findById(req.user.id);
 
   const language = req.query.language;
   const currencyName = await CurrencyModel.findOne({ lan: currency });
@@ -551,7 +558,7 @@ const createCheckoutSession = async (req, res) => {
   if (language) recipe.title = await translateText(recipe.title, language);
   let session = await stripe.checkout.sessions.create({
     payment_method_types: ["card"],
-    //customer_email: user.email,
+    customer_email: user.email,
 
     line_items: [
       {
@@ -572,14 +579,12 @@ const createCheckoutSession = async (req, res) => {
     success_url: `${process.env.API_URL}/api/recipes/${id}`,
     cancel_url: `${process.env.API_URL}`,
   });
-  //const customer = await stripe.customers.list({
-  //  email: Customer.email,
-  //});
-  //const payment_method =
-  //  customer.data[0].invoice_settings.default_payment_method;
-  //const customerId = customer.data[0].id;
-
-  //await payoutToUser(id, customerId, payment_method);
+  const customer = await stripe.customers.list({
+    email: Customer.email,
+  });
+  const paymentMethod = customer.data[0].default_source;
+  const stored = await storeCustomer(customer);
+  console.log(session);
   return session.url;
 };
 
@@ -594,19 +599,16 @@ const payoutToUser = async (id, customerId, payment_method) => {
     confirm: true,
     return_url: `${process.env.API_URL}/api/recipes/${id}`,
   });
-  await stripe.paymentIntents.confirm(payout.id);
-  console.log(payout);
+
   return payout;
 };
 
 const getSesionsStatus = async (req) => {
   const event = req.body;
-  console.log(event);
   switch (event.type) {
     case "payment_intent.succeeded":
-      const email = event.data.object.charges.data[0].billing_details.email;
-
-      await payoutToUser(req, user);
+      const paymentIntent = event.data.object;
+      console.log(paymentIntent);
       break;
     default:
       console.log(`Unhandled event type ${event.type}`);

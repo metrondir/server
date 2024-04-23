@@ -120,6 +120,25 @@ const getRegistrationDetailsByActivationLink = async (activationLink) => {
 const deleteRegistrationDetailsByActivationLink = async (activationLink) => {
   await redis.hdel("registrations", activationLink);
 };
+const storeCustomer = async (customer) => {
+  const key = `customer:${customer.data[0].id}`;
+  const field = "data";
+  const value = JSON.stringify(customer);
+  await redis.hset(key, field, value);
+  await redis.expire(key, 600);
+
+  const customerData = await redis.hget(key, "data");
+  return JSON.parse(customerData);
+};
+const getCustomer = async (customerId) => {
+  const key = `customer:${customerId}`;
+  const customerData = await redis.hget(key, "data");
+  return JSON.parse(customerData);
+};
+const deleteCustomer = async (customerId) => {
+  const key = `customer:${customerId}`;
+  await redis.del(key);
+};
 
 const calculatePagination = (page, size, totalItems) => {
   const startIndex = (page - 1) * size;
@@ -202,4 +221,7 @@ module.exports = {
   storeRecipe,
   getRecipesFromUserIdFromRedis,
   getRecipeByUserIdAndRecipeId,
+  storeCustomer,
+  getCustomer,
+  deleteCustomer,
 };
