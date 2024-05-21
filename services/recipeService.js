@@ -40,6 +40,7 @@ const {
 } = require("../middleware/paginateMiddleware");
 const { languageData } = require("../utils/languageData");
 const ApiError = require("../middleware/apiError");
+const { connect } = require("http2");
 
 const getRecipe = async (id) => {
   const data = await Recipe.findById(id);
@@ -191,18 +192,22 @@ const createRecipe = async (req) => {
       recipe.paymentInfo.paymentStatus = false;
       recipe.paymentInfo.price = req.body.price;
       recipe.paymentInfo.paymentMethod = "card";
-      //const customers = await stripe.customers.list({
-      //  email: user.email,
-      //});
-      //if (customers.data.length === 0) {
-      //  const createdCustomer = await stripe.customers.create({
-      //    email: user.email,
-      //    name: user.name,
-      //  });
-      //  const card = await stripe.customers.createSource(createdCustomer.id, {
-      //    source: "tok_mastercard",
-      //  });
-      //}
+      const customer = await stripe.customers.list({
+        email: user.email,
+      });
+
+      if (customer.data.length !== 0) {
+        const account = await stripe.accounts.create({
+          type: "express",
+          country: "US",
+          email: user.email,
+          capabilities: {
+            card_payments: { requested: true },
+            transfers: { requested: true },
+          },
+        });
+        user.stripeAccountId = account.id;
+      }
     }
     recipe.instructions = createInstructionsHTML(recipe.instructions);
     recipe = new Recipe(recipe);
@@ -540,71 +545,25 @@ const getIngredients = async () => {
   return ingredients;
 };
 
-const createCheckoutSession = async (req, res) => {
-  let currency = req.query.currency;
-  const id = req.params.id;
-  const recipe = await Recipe.findById(id);
+const createPaymentIntent = async (req, res) => {
+  const { recipeId } = req.body;
+  const recipe = await Recipe.findById(recipeId);
+  if (!recipe) throw ApiError.BadRequest("Recipe not found");
+  const user = await User.findById(recipe.user);
 
-  const Customer = await User.findById(recipe.user);
-
-  const user = await User.findById(req.user.id);
-  const customer = await stripe.customers.list({
-    email: Customer.email,
-  });
-  const language = req.query.language;
-  const currencyName = await CurrencyModel.findOne({ lan: currency });
-  if ((currency !== "USD" || !currency) && currencyName) {
-    currency = currencyName.name;
-    recipe.paymentInfo.price = await changeCurrencyForPayment(id, currency);
-  }
-  if (language) recipe.title = await translateText(recipe.title, language);
-  console.log(customer.data[0].id);
-  const session = await stripe.checkout.sessions.create({
-    payment_method_types: ["card"],
-    customer_email: user.email,
-
-    line_items: [
-      {
-        price_data: {
-          currency: currency ? currency : "USD",
-          product_data: {
-            name: recipe.title.charAt(0).toUpperCase() + recipe.title.slice(1),
-            images: [recipe.image],
-          },
-          unit_amount: recipe.paymentInfo.price,
-        },
-        quantity: 1,
-      },
-    ],
-    mode: "payment",
-    success_url: `${process.env.API_URL}/api/recipes/${id}`,
-    cancel_url: `${process.env.API_URL}`,
-    client_reference_id: "acct_1P8JnIP3b9edNp8o",
-  });
-  const transfer = await stripe.transfers.create({
-    amount: recipe.paymentInfo.price * 0.9 * 100,
+  const paymentIntent = await stripe.paymentIntents.create({
+    amount: recipe.paymentInfo.price * 100,
     currency: currency ? currency : "USD",
-    destination: customer.data[0].id,
-  });
-  console.log(transfer);
-  //const paymentMethod = customer.data[0].default_source;
-  //await payoutToUser(id, customer.data[0].id, paymentMethod);
-  return session.url;
-};
-
-const payoutToUser = async (id, customerId, payment_method) => {
-  const recipe = await Recipe.findById(id);
-  const price = recipe.paymentInfo.price * 0.9 * 100;
-  const payout = await stripe.paymentIntents.create({
-    amount: price,
-    currency: "USD",
-    customer: customerId,
-    payment_method: payment_method,
-    confirm: true,
-    return_url: `${process.env.API_URL}/api/recipes/${id}`,
+    transfer_data: {
+      destination: user.stripeAccountId,
+    },
+    metadata: {
+      userId: req.user.id,
+      recipeId: recipeId,
+    },
   });
 
-  return payout;
+  return paymentIntent.client_secret;
 };
 
 const getSesionsStatus = async (req) => {
@@ -613,12 +572,17 @@ const getSesionsStatus = async (req) => {
     case "payment_intent.succeeded":
       const paymentIntent = event.data.object;
       console.log(paymentIntent);
+      console.log(event.data.object.metadata.userId, "USERID");
+      const user = await User.findById(event.data.object.metadata.userId);
+      user.boughtRecipes.push(paymentIntent.metadata.recipeId);
+      await user.save();
       break;
     default:
       console.log(`Unhandled event type ${event.type}`);
   }
   return { received: true };
 };
+
 const getAllPaymentRecipes = async (id, language, currency) => {
   try {
     const user = await User.findById(id);
@@ -662,19 +626,6 @@ const getAllPaymentRecipes = async (id, language, currency) => {
   }
 };
 
-const paytoUser = async (req) => {
-  const user = await User.findById(req.user.id);
-  const recipe = await Recipe.findById(req.body.id);
-  const transfer = await stripe.transfers.create({
-    amount: req.body.price * 0.9,
-    currency: "USD",
-    destination: user.stripeAccountId,
-    transfer_group: "recipe_payment",
-  });
-  console.log(transfer);
-  return transfer;
-};
-
 module.exports = {
   getRecipe,
   getRecipes,
@@ -686,7 +637,7 @@ module.exports = {
   getCurrencyAndLanguges,
   getIngredients,
   createRecipeByDraft,
-  createCheckoutSession,
+  createPaymentIntent,
   getAllPaymentRecipes,
   getRecipesCollection,
   getSesionsStatus,

@@ -223,11 +223,11 @@ const loadIngredients = asyncHandler(async (req, res, next) => {
   }
 });
 
-const createCheckoutSession = asyncHandler(async (req, res, next) => {
+const createPaymentIntent = asyncHandler(async (req, res, next) => {
   try {
-    const session = await recipeService.createCheckoutSession(req, res);
+    const payment = await recipeService.createPaymentIntent(req, res);
 
-    return res.status(200).json(session);
+    return res.status(200).json(payment);
   } catch (error) {
     console.log(error);
     next(error);
@@ -292,7 +292,7 @@ module.exports = {
   loadDataToSelect,
   loadCurrencyAndLanguges,
   loadIngredients,
-  createCheckoutSession,
+  createPaymentIntent,
   getAllPaymentRecipes,
   getRecipesCollection,
   getSesionsStatus,

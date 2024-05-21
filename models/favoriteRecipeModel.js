@@ -1,16 +1,5 @@
 const mongoose = require("mongoose");
 
-//const favoriteRecipeSchema = new mongoose.Schema({
-//  user: {
-//    type: mongoose.Schema.Types.ObjectId,
-//    ref: "User",
-//    required: true,
-//  },
-//  recipe: {
-//    type: String,
-//    required: true,
-//  },
-//});
 const paymentInfoSchema = new mongoose.Schema({
   paymentStatus: {
     type: Boolean,
