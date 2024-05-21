@@ -25,7 +25,9 @@ const changeCurrency = asynchHandler(async (recipes, currency) => {
       //}
 
       recipe.pricePerServing = `${recipe.pricePerServing} ${price[0].name}`;
-      if (recipe.paymentInfo) return recipes;
+
+      if (recipe.paymentInfo == undefined && !recipe.paymentInfo.price)
+        return recipes;
       recipe.paymentInfo.price *= pricePerDollar;
       recipe.paymentInfo.price = parseFloat(
         recipe.paymentInfo.price.toFixed(2),
@@ -41,7 +43,8 @@ const changeCurrency = asynchHandler(async (recipes, currency) => {
     recipes.pricePerServing = parseFloat(recipes.pricePerServing.toFixed(2));
 
     recipes.pricePerServing = `${recipes.pricePerServing} ${price[0].name}`;
-    if (recipes.paymentInfo) return recipes;
+    if (recipes.paymentInfo == undefined && !recipes.paymentInfo.price)
+      return recipes;
     recipes.paymentInfo.price *= pricePerDollar;
     recipes.paymentInfo.price = parseFloat(
       recipes.paymentInfo.price.toFixed(2),
