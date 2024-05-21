@@ -82,7 +82,7 @@ const googleOauthHandler = asyncHandler(async (req, res, next) => {
       httpOnly: true,
       sameSite: "None",
     });
-    res.redirect(`${process.env.CLIENT_URL}`);
+    res.redirect(`${process.env.API_URL}`);
   } catch (error) {
     throw ApiError.BadRequest(error.response?.data || error.message);
   }

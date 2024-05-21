@@ -93,7 +93,7 @@ const registration = asyncHandler(async (username, email, password) => {
   });
   await sendActivationEmail(
     email,
-    `${process.env.CLIENT_URL}/api/users/activate/${activationLink}`,
+    `${process.env.API_URL}/api/users/activate/${activationLink}`,
   );
 
   return "To complete your registration, please check your email for activation instructions.";
