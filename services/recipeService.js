@@ -188,21 +188,21 @@ const createRecipe = async (req) => {
       recipe.paymentInfo = {};
     }
     if (req.body.price) {
-      recipe.paymentInfo.paymentStatus = true;
+      recipe.paymentInfo.paymentStatus = false;
       recipe.paymentInfo.price = req.body.price;
       recipe.paymentInfo.paymentMethod = "card";
-      const customers = await stripe.customers.list({
-        email: user.email,
-      });
-      if (customers.data.length === 0) {
-        const createdCustomer = await stripe.customers.create({
-          email: user.email,
-          name: user.name,
-        });
-        const card = await stripe.customers.createSource(createdCustomer.id, {
-          source: "tok_mastercard",
-        });
-      }
+      //const customers = await stripe.customers.list({
+      //  email: user.email,
+      //});
+      //if (customers.data.length === 0) {
+      //  const createdCustomer = await stripe.customers.create({
+      //    email: user.email,
+      //    name: user.name,
+      //  });
+      //  const card = await stripe.customers.createSource(createdCustomer.id, {
+      //    source: "tok_mastercard",
+      //  });
+      //}
     }
     recipe.instructions = createInstructionsHTML(recipe.instructions);
     recipe = new Recipe(recipe);
@@ -548,7 +548,9 @@ const createCheckoutSession = async (req, res) => {
   const Customer = await User.findById(recipe.user);
 
   const user = await User.findById(req.user.id);
-
+  const customer = await stripe.customers.list({
+    email: Customer.email,
+  });
   const language = req.query.language;
   const currencyName = await CurrencyModel.findOne({ lan: currency });
   if ((currency !== "USD" || !currency) && currencyName) {
@@ -556,7 +558,8 @@ const createCheckoutSession = async (req, res) => {
     recipe.paymentInfo.price = await changeCurrencyForPayment(id, currency);
   }
   if (language) recipe.title = await translateText(recipe.title, language);
-  let session = await stripe.checkout.sessions.create({
+  console.log(customer.data[0].id);
+  const session = await stripe.checkout.sessions.create({
     payment_method_types: ["card"],
     customer_email: user.email,
 
@@ -573,18 +576,19 @@ const createCheckoutSession = async (req, res) => {
         quantity: 1,
       },
     ],
-
     mode: "payment",
-
     success_url: `${process.env.API_URL}/api/recipes/${id}`,
     cancel_url: `${process.env.API_URL}`,
+    client_reference_id: "acct_1P8JnIP3b9edNp8o",
   });
-  const customer = await stripe.customers.list({
-    email: Customer.email,
+  const transfer = await stripe.transfers.create({
+    amount: recipe.paymentInfo.price * 0.9 * 100,
+    currency: currency ? currency : "USD",
+    destination: customer.data[0].id,
   });
-  const paymentMethod = customer.data[0].default_source;
-  const stored = await storeCustomer(customer);
-  console.log(session);
+  console.log(transfer);
+  //const paymentMethod = customer.data[0].default_source;
+  //await payoutToUser(id, customer.data[0].id, paymentMethod);
   return session.url;
 };
 

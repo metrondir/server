@@ -499,22 +499,25 @@ const fetchInformationById = async (id, language, currency, refreshToken) => {
       const user = await findUserByRefreshToken(refreshToken);
       favourites = await FavoriteRecipe.find({ user: user._id });
       if (
-        data.paymentInfo &&
-        (!user.boughtRecipes ||
-          !user.boughtRecipes.includes(data._id.toString()))
+        !data.paymentStatus &&
+        !user.boughtRecipes.includes(data._id.toString())
       ) {
         data.instructions = `<ol><li>Boil water in a large pot.</li><li>Add pasta to the boiling water.</li><li>Cook pasta according to package instructions until al dente.</li><li>Drain pasta in a colander.</li><li>Return pasta to the pot.</li><li>Add your favorite sauce and mix well.</li><li>Serve hot and enjoy!</li></ol>`;
         data.analyzedInstructions = undefined;
         data.paymentStatus = false;
-      } else {
+      } else if (
+        !data.paymentStatus &&
+        user.boughtRecipes.includes(data._id.toString())
+      ) {
+        data.paymentStatus = true;
+      } else if (data.paymentStatus) {
         data.paymentStatus = true;
       }
-    } else {
-      if (data.paymentInfo.paymentStatus === true) {
-        data.instructions = `<ol><li>Boil water in a large pot.</li><li>Add pasta to the boiling water.</li><li>Cook pasta according to package instructions until al dente.</li><li>Drain pasta in a colander.</li><li>Return pasta to the pot.</li><li>Add your favorite sauce and mix well.</li><li>Serve hot and enjoy!</li></ol>`;
-      } else {
-        data.paymentStatus = true;
-      }
+    }
+    if (!data.paymentStatus) {
+      data.instructions = `<ol><li>Boil water in a large pot.</li><li>Add pasta to the boiling water.</li><li>Cook pasta according to package instructions until al dente.</li><li>Drain pasta in a colander.</li><li>Return pasta to the pot.</li><li>Add your favorite sauce and mix well.</li><li>Serve hot and enjoy!</li></ol>`;
+      data.analyzedInstructions = undefined;
+      data.paymentStatus = false;
     }
     if (!data) {
       throw ApiError.BadRequest("Recipe not found");
