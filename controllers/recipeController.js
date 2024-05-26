@@ -1,7 +1,6 @@
 const asyncHandler = require("express-async-handler");
 const recipeService = require("../services/recipeService");
 const multer = require("multer");
-const axios = require("axios");
 
 const { onDataChanged } = require("../middleware/paginateMiddleware");
 // multer configuration for file upload
@@ -24,20 +23,6 @@ const upload = multer({
   storage: storage,
   limits: { fileSize: 1024 * 1024 * 5 },
 });
-
-function parseNestedArray(arr) {
-  if (!Array.isArray(arr)) {
-    throw new Error("Expected an array");
-  }
-
-  return arr.map((item) => {
-    if (Array.isArray(item)) {
-      return parseNestedArray(item);
-    } else {
-      return JSON.parse(item).original;
-    }
-  });
-}
 
 //@desc Get recipe
 //@route GET /api/recipe:/id
@@ -173,7 +158,9 @@ const deleteRecipe = asyncHandler(async (req, res, next) => {
     next(error);
   }
 });
-
+//@access load Data with language
+//@desc Load data to select
+//@route GET /api/recipe/loadDataToSelect
 const loadDataToSelect = asyncHandler(async (req, res, next) => {
   try {
     const { language, page, size } = req.query;
@@ -190,6 +177,9 @@ const loadDataToSelect = asyncHandler(async (req, res, next) => {
     next(error);
   }
 });
+// @desc Load currency and languages
+// @route GET /api/recipe/loadCurrencyAndLanguges
+// @access public
 const loadCurrencyAndLanguges = asyncHandler(async (req, res, next) => {
   try {
     const { page, size } = req.query;
@@ -205,7 +195,9 @@ const loadCurrencyAndLanguges = asyncHandler(async (req, res, next) => {
     next(error);
   }
 });
-
+// @desc Load ingredients
+// @route GET /api/recipe/loadIngredients
+// @access public
 const loadIngredients = asyncHandler(async (req, res, next) => {
   try {
     const { page, size } = req.query;
@@ -222,7 +214,9 @@ const loadIngredients = asyncHandler(async (req, res, next) => {
     next(error);
   }
 });
-
+// @desc Create payment intent
+// @route POST /api/recipe/create-payment-intent
+// @access private
 const createPaymentIntent = asyncHandler(async (req, res, next) => {
   try {
     const payment = await recipeService.createPaymentIntent(req, res);
@@ -233,7 +227,9 @@ const createPaymentIntent = asyncHandler(async (req, res, next) => {
     next(error);
   }
 });
-
+// @desc Get all payment recipes
+// @route GET /api/recipe/payment-recipes
+// @access public
 const getAllPaymentRecipes = asyncHandler(async (req, res, next) => {
   try {
     const { page, size, language, currency } = req.query;
@@ -253,6 +249,9 @@ const getAllPaymentRecipes = asyncHandler(async (req, res, next) => {
   }
 });
 
+// @desc Get recipes collection
+// @route GET /api/recipe/collection
+// @access public
 const getRecipesCollection = asyncHandler(async (req, res, next) => {
   try {
     const { page, size, language, currency } = req.query;
@@ -269,7 +268,9 @@ const getRecipesCollection = asyncHandler(async (req, res, next) => {
     console.log(error);
   }
 });
-
+// @desc Get sesions status
+// @route GET /api/recipe/sesions-status
+// @access public
 const getSesionsStatus = asyncHandler(async (req, res, next) => {
   try {
     const session = await recipeService.getSesionsStatus(req);

@@ -75,30 +75,41 @@ const getRecipesFromDatabaseComplex = async (
   diet,
   cuisine,
   maxReadyTime,
+  sort,
+  sortDirection,
 ) => {
   const pipeline = [{ $match: {} }, { $sample: { size: Math.floor(limit) } }];
 
-  if (query !== "undefined" && query !== "") {
+  if (query && query !== "undefined" && query !== "") {
     pipeline[0].$match.title = { $regex: new RegExp(query, "i") };
   }
-  if (type !== "undefined" && type !== "") {
+  if (type && type !== "undefined" && type !== "") {
     pipeline[0].$match.dishTypes = type;
   }
-
-  if (diet !== "undefined" && diet !== "") {
+  if (diet && diet !== "undefined" && diet !== "") {
     pipeline[0].$match.diets = diet;
   }
-
-  if (cuisine !== "undefined" && cuisine !== "") {
+  if (cuisine && cuisine !== "undefined" && cuisine !== "") {
     pipeline[0].$match.cuisines = cuisine;
   }
-  if (maxReadyTime !== "undefined" && maxReadyTime !== "") {
+  if (maxReadyTime && maxReadyTime !== "undefined" && maxReadyTime !== "") {
     pipeline[0].$match.readyInMinutes = { $lte: Number(maxReadyTime) };
   }
   try {
-    console.log(pipeline);
-    const recipes = await Recipe.aggregate(pipeline);
-    console.log(recipes);
+    let recipes = await Recipe.aggregate(pipeline);
+    if (sort && sortDirection) {
+      const sortDirectionFactor = sortDirection === "desc" ? -1 : 1;
+      recipes = recipes.sort((a, b) => {
+        if (sort === "time") {
+          return sortDirectionFactor * (a.readyInMinutes - b.readyInMinutes);
+        } else if (sort === "popularity") {
+          return sortDirectionFactor * (a.aggregateLikes - b.aggregateLikes);
+        } else if (sort === "price") {
+          return sortDirectionFactor * (a.pricePerServing - b.pricePerServing);
+        }
+        return 0;
+      });
+    }
     return recipes;
   } catch (error) {
     throw ApiError.BadRequest(error.message);

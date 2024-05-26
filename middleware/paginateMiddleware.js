@@ -63,6 +63,7 @@ const redisGetModelsWithPaginating = async (
       return paginatedResult;
     } else {
       console.log("FROM DB");
+
       const data = await func(limit, language, refreshToken, currency, ...args);
 
       redis.setex(redisKey, 60, JSON.stringify(data));
@@ -95,7 +96,6 @@ const getRecipesFromUserIdFromRedis = async (userId) => {
 };
 const getRecipeByUserIdAndRecipeId = async (userId, recipeId) => {
   const key = `recipe:${userId}${recipeId}`;
-
   const recipeData = await redis.hget(key, "data");
 
   const recipe = JSON.parse(recipeData);
@@ -160,14 +160,14 @@ const paginateArray = (data, page, size) => {
     const pageSize = parseInt(size) || totalItems;
 
     if (isNaN(pageNumber) || pageNumber < 1) {
-      throw new Error("Page must be greater than 0");
+      throw ApiError.BadRequest("Page must be greater than 0");
     }
     if (isNaN(pageSize) || pageSize < 1) {
-      throw new Error("Limit must be greater than 0");
+      throw ApiError.BadRequest("Limit must be greater than 0");
     }
 
     if (totalItems <= 0) {
-      throw new Error(`Dont have items ${totalItems}`);
+      throw ApiError.BadRequest(`Dont have items ${totalItems}`);
     }
     const { startIndex, endIndex, hasPrevious, hasNext } = calculatePagination(
       pageNumber,
@@ -190,7 +190,7 @@ const paginateArray = (data, page, size) => {
     return result;
   } catch (error) {
     console.log(error);
-    throw new Error(error);
+    throw ApiError.BadRequest(error);
   }
 };
 

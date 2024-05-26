@@ -178,6 +178,9 @@ const changePasswordUserLink = asyncHandler(async (req, res, next) => {
   }
 });
 
+//@desc Delete user by id
+//@route DELETE /api/users/delete
+//@access private with id
 const deleteUserById = asyncHandler(async (req, res, next) => {
   try {
     await deleteUser(req.user.id);

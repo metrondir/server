@@ -1,68 +1,55 @@
 const cheerio = require("cheerio");
 const axios = require("axios");
 const CurrencyModel = require("../models/curencyModel");
-const cron = require("node-cron");
 
-const ParseCurrencyExchange = async () => {
+const parseCurrencyExchange = async () => {
   try {
     const response = await axios.get(
       "https://www.exchangerates.org.uk/US-Dollar-USD-currency-table.html",
     );
-
     const $ = cheerio.load(response.data);
 
-    const currencyDiv = $(".css-panes");
+    const currencyTables = $(".css-panes table.currencypage-mini");
 
-    if (currencyDiv.length > 0) {
-      const tables = currencyDiv.find('table[class="currencypage-mini"]');
+    if (currencyTables.length > 0) {
+      const updateOperations = [];
 
-      if (tables.length > 0) {
-        const updateOperations = [];
+      currencyTables.each((tableIndex, table) => {
+        const rows = $(table).find('tr[class^="col"]');
 
-        tables.each(async (tableIndex, table) => {
-          const $table = $(table);
+        rows.each((rowIndex, row) => {
+          const $row = $(row);
+          const flag = $row.find(".flag:not(.us)");
+          const country = flag.attr("class").split(" ")[1];
+          const exchangeRate = parseFloat($row.find("td b").text().trim());
 
-          const rows = $table.find('tr[class^="col"]');
+          const updateOperation = {
+            updateOne: {
+              filter: { lan: country },
+              update: { pricePerDollar: exchangeRate },
+            },
+          };
 
-          rows.each(async (rowIndex, row) => {
-            const $row = $(row);
+          updateOperations.push(updateOperation);
 
-            const flag = $row.find(".flag:not(.us)");
-
-            const country = flag.attr("class").split(" ")[1];
-
-            const exchangeRate = parseFloat($row.find("td b").text().trim());
-
-            const updateOperation = {
-              updateOne: {
-                filter: { lan: country },
-                update: { pricePerDollar: exchangeRate },
-              },
-            };
-
-            updateOperations.push(updateOperation);
-
-            console.log(`Updating ${country} - Exchange Rate: ${exchangeRate}`);
-          });
+          console.log(`Updating ${country} - Exchange Rate: ${exchangeRate}`);
         });
+      });
 
-        if (updateOperations.length > 0) {
-          try {
-            const result = await CurrencyModel.bulkWrite(updateOperations);
-            console.log(result);
-            console.log("Currency updates complete!");
-          } catch (error) {
-            throw new Error(error);
-          }
-        } else {
-          console.log("No updates found");
+      if (updateOperations.length > 0) {
+        try {
+          const result = await CurrencyModel.bulkWrite(updateOperations);
+        } catch (error) {
+          throw ApiError.BadRequest("Error updating currency exchange rates");
         }
+      } else {
+        console.log("No updates found");
       }
     }
   } catch (error) {
     console.error("Error fetching data:", error.message);
-    throw new Error(error);
+    throw ApiError.BadRequest("Error fetching data");
   }
 };
 
-module.exports = { ParseCurrencyExchange };
+module.exports = { parseCurrencyExchange };

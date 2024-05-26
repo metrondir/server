@@ -32,8 +32,7 @@ async function detectLanguage(text) {
       response.data.translations[0].detected_source_language;
     return detectedLanguage.toLowerCase();
   } catch (error) {
-    console.error("Error detecting language with DeepL:", error);
-    throw error;
+    throw ApiError.BadRequest(error.message);
   }
 }
 
@@ -175,8 +174,7 @@ async function translateRecipePost(recipe, language) {
 
     return recipe;
   } catch (error) {
-    console.log(error);
-    throw new Error(error);
+    throw ApiError.BadRequest(error.message);
   }
 }
 
@@ -234,8 +232,7 @@ async function translateRecipeGet(recipe, language) {
       );
     return recipe;
   } catch (error) {
-    console.log(error);
-    throw new Error(error);
+    throw ApiError.BadRequest(error.message);
   }
 }
 
@@ -249,7 +246,7 @@ const TranslateRecipeInformation = async (recipe, language) => {
       translatedRecipe[key] = await translateText(recipe[key], language);
     } else if (Array.isArray(recipe[key])) {
       translatedRecipe[key] = await Promise.all(
-        recipe[key].map(async (item) => {
+        recipe[key].mapa(async (item) => {
           if (typeof item === "string") {
             return await translateText(item, language);
           } else if (typeof item === "object") {

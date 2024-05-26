@@ -152,8 +152,7 @@ const activate = asyncHandler(async (activationLink) => {
     await saveTokens(userDto.id, tokens.refreshToken);
     return { ...tokens, user: userDto };
   } catch (error) {
-    console.log(error);
-    throw new Error(error);
+    throw ApiError.BadRequest(error.message);
   }
 });
 

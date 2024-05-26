@@ -11,9 +11,9 @@ const { transports, format } = require("winston");
 const helmet = require("helmet");
 require("winston-mongodb");
 const logger = require("./utils/logger");
-connectDb();
 const port = process.env.PORT || 5000;
 const app = express();
+connectDb();
 
 app.disable("x-powered-by");
 app.use(helmet());

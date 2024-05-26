@@ -64,4 +64,16 @@ const changeCurrencyForPayment = asynchHandler(async (id, currency) => {
   );
   return parseFloat(recipe.paymentInfo.price.toFixed(2));
 });
-module.exports = { changeCurrency, changeCurrencyForPayment };
+
+const changeCurrencyPrice = asynchHandler(async (price, currency) => {
+  const currencyBd = await CurencyModel.find({ name: currency });
+  const pricePerDollar = currencyBd[0].pricePerDollar;
+  price *= pricePerDollar;
+  return parseFloat(price.toFixed(2));
+});
+
+module.exports = {
+  changeCurrency,
+  changeCurrencyForPayment,
+  changeCurrencyPrice,
+};
