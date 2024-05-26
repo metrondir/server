@@ -536,12 +536,12 @@ const createPaymentIntent = async (req, res) => {
     ];
 
     if (currency && !validCurrencies.includes(currency)) {
-      throw new ApiError.BadRequest("Invalid currency code");
+      throw ApiError.BadRequest("Invalid currency code");
     }
 
     const user = await User.findById(recipe.user);
     if (!user) {
-      throw new ApiError.BadRequest("User not found");
+      throw ApiError.BadRequest("User not found");
     }
 
     const paymentIntent = await stripe.paymentIntents.create({
