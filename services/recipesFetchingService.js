@@ -161,7 +161,6 @@ const fetchRecipesUnified = async (
   if (!query) query = " ";
   //const lanQuery = await detectLanguage(query);
   //if (lanQuery !== "en") query = await translateText(query, "en");
-
   let url = `${baseUrl}/complexSearch?apiKey=${apiKey}&query=${query}&number=${limit}&addRecipeNutrition=true`;
   if (type) url += `&type=${type}`;
   if (diet) url += `&diet=${diet}`;
@@ -169,7 +168,6 @@ const fetchRecipesUnified = async (
   if (maxReadyTime) url += `&maxReadyTime=${maxReadyTime}`;
   if (sort) url += `&sort=${sort}`;
   if (sortDirection) url += `&sortDirection=${sortDirection}`;
-
   try {
     const response = await axios.get(url);
     const recipesFromApi = response.data.results;
@@ -312,7 +310,7 @@ const fetchRecommendedRecipes = async (id, language, currency) => {
       if (stringId.length <= 7) {
         return Promise.all(
           response.data.map(async (recipe) =>
-            fetchInformationByRecomended(recipe.id, language, currency),
+            fetchInformationByRecommended(recipe.id, language, currency),
           ),
         );
       }

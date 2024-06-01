@@ -34,7 +34,6 @@ const getRecipes = asyncHandler(async (req, res, next) => {
       sort,
       sortDirection,
     } = req.query;
-
     const ipAddress =
       req.headers["x-forwarded-for"] || req.connection.remoteAddress;
     const clientIp = ipAddress.split(",")[0];

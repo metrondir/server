@@ -167,7 +167,7 @@ const paginateArray = (data, page, size) => {
     }
 
     if (totalItems <= 0) {
-      throw ApiError.BadRequest(`Dont have items ${totalItems}`);
+      return [];
     }
     const { startIndex, endIndex, hasPrevious, hasNext } = calculatePagination(
       pageNumber,
