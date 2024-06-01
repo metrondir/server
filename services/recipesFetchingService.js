@@ -344,10 +344,9 @@ const fetchInformationByRecommended = async (
 
     const response = await axios.get(url);
 
-    if (!response.data || !response.data.instructions) {
-      throw ApiError.BadRequest("Recipe not found");
+    if (response.data.instructions == null) {
+      return;
     }
-
     const recipeData = response.data;
     const isFavourite = favourites.some(
       (fav) => fav.recipe.toString() === recipeData.id.toString(),
