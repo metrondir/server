@@ -570,25 +570,24 @@ const createPaymentIntent = async (req, res) => {
 const getSesionsStatus = async (req) => {
   const event = req.body;
   let received = false;
-  switch (event.type) {
+  switch (event?.type) {
     case "payment_intent.succeeded": {
-      const paymentIntent = event.data.object;
-      const user = await User.findById(event.data.object.metadata.userId);
-      user.boughtRecipes.push(paymentIntent.metadata.recipeId);
-      await user.save();
+      const paymentIntent = event?.data?.object;
+      const user = await User.findById(event?.data?.object?.metadata?.userId);
+      user?.boughtRecipes?.push(paymentIntent?.metadata?.recipeId);
+      await user?.save();
       received = true;
       break;
     }
     case "payment_intent.payment_failed": {
-      intent = event.data.object;
-      const message =
-        intent.last_payment_error && intent.last_payment_error.message;
-      console.log("Failed:", intent.id, message);
+      let intent = event?.data?.object;
+      const message = intent?.last_payment_error?.message;
+      console.log("Failed:", intent?.id, message);
 
       break;
     }
     default:
-      console.log(`Unhandled event type ${event.type}`);
+      console.log(`Unhandled event type ${event?.type}`);
   }
   return { received };
 };
