@@ -132,7 +132,8 @@ async function translateRecipePost(recipe, language) {
       return recipe;
     }
 
-    recipe.title = await translateText(recipe.title, (language = "en"));
+    let lang = "en";
+    recipe.title = await translateText(recipe.title, lang);
     recipe.instructions = await translateText(recipe.instructions, language);
     if (!language == "en")
       recipe.readyInMinutes += await translateText("min", language);

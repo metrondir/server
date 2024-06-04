@@ -115,7 +115,7 @@ const fetchRecipesByIngredients = async (
     );
     const recipe = Promise.all(
       RandomSample.map(async (recipe) =>
-        fetchInformationByRecomended(
+        fetchInformationByRecommended(
           recipe.id,
           language,
           currency,
