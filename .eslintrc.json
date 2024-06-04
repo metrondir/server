@@ -1,0 +1,9 @@
+{
+  "extends": ["prettier"],
+
+  "parserOptions": {
+    "ecmaVersion": "latest",
+    "sourceType": "script"
+  },
+  "rules": {}
+}

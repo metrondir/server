@@ -1,0 +1,46 @@
+version: "3"
+services:
+  node-app1:
+    image: rmn0201/grannys-recipes:v1
+    container_name: node-app1
+    environment:
+      - PORT=3001
+    ports:
+      - "3001:3001"
+    networks:
+      - backend_network
+
+  node-app2:
+    image: rmn0201/grannys-recipes:v1
+    container_name: node-app2
+    environment:
+      - PORT=3002
+    ports:
+      - "3002:3002"
+    networks:
+      - backend_network
+  node-app3:
+    image: rmn0201/grannys-recipes:v1
+    container_name: node-app3
+    environment:
+      - PORT=3003
+    ports:
+      - "3003:3003"
+    networks:
+      - backend_network
+
+  nginx:
+    build:
+      context: ./nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - node-app1
+      - node-app2
+      - node-app3
+    networks:
+      - backend_network
+
+networks:
+  backend_network:
