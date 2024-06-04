@@ -38,7 +38,7 @@ const parseCurrencyExchange = async () => {
 
       if (updateOperations.length > 0) {
         try {
-          const result = await CurrencyModel.bulkWrite(updateOperations);
+          await CurrencyModel.bulkWrite(updateOperations);
         } catch (error) {
           throw ApiError.BadRequest("Error updating currency exchange rates");
         }

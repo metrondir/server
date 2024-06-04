@@ -128,13 +128,13 @@ async function translateRecipePost(recipe, language) {
   if (language == "sp") language = "es";
 
   try {
-    if (language === "en" || !language) {
+    if (language == "en" || !language) {
       return recipe;
     }
 
     recipe.title = await translateText(recipe.title, (language = "en"));
     recipe.instructions = await translateText(recipe.instructions, language);
-    if (!language === "en")
+    if (!language == "en")
       recipe.readyInMinutes += await translateText("min", language);
 
     if (Array.isArray(recipe.dishTypes)) {
@@ -184,7 +184,7 @@ async function translateRecipeGet(recipe, language) {
   if (language == "sp") language = "es";
 
   try {
-    if (language === "en" || !language) {
+    if (language == "en" || !language) {
       recipe.readyInMinutes += " min";
       return recipe;
     }
@@ -193,7 +193,7 @@ async function translateRecipeGet(recipe, language) {
     if (recipe.instructions && recipe.instructions.length > 0)
       recipe.instructions = await translateText(recipe.instructions, language);
 
-    if (!language === "en")
+    if (!language == "en")
       recipe.readyInMinutes += await translateText("min", language);
 
     if (Array.isArray(recipe.dishTypes)) {

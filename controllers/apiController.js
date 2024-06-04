@@ -184,8 +184,8 @@ const getRecipesByIngridients = asyncHandler(async (req, res, next) => {
       fetchRecipesByIngredients,
       number,
       language,
-      currency,
       refreshToken,
+      currency,
       ingredients,
     );
     res.status(200).json(recipes);

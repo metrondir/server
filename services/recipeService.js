@@ -70,7 +70,7 @@ const getRecipes = async (currency, language, id) => {
     dishTypes: recipe?.dishTypes || [],
   });
 
-  if (language === "en" || !language) {
+  if (language == "en" || !language) {
     const minSuffix = " min";
     let updatedRecipes = recipes.map((recipe) =>
       transformRecipe(recipe, language, currency, minSuffix),
@@ -345,6 +345,15 @@ const setFavoriteRecipes = async (req) => {
       { recipe: { $in: recipeId } },
       { $inc: { aggregateLikes: +1 } },
     );
+    let instructions;
+    if (Array.isArray(recipe.instructions)) {
+      instructions = recipe.instructions.join("\n");
+    } else if (typeof recipe.instructions === "string") {
+      instructions = recipe.instructions;
+    } else {
+      instructions = undefined;
+    }
+
     const newFavoriteRecipe = new FavoriteRecipe({
       recipeId: recipe.id,
       title: recipe.title,
@@ -352,11 +361,7 @@ const setFavoriteRecipes = async (req) => {
       pricePerServing: recipe.pricePerServing,
       cuisines: recipe.cuisines,
       dishTypes: recipe.dishTypes,
-      instructions: Array.isArray(recipe.instructions)
-        ? recipe.instructions.join("\n")
-        : typeof recipe.instructions === "string"
-          ? recipe.instructions
-          : undefined,
+      instructions: instructions,
       aggregateLikes:
         foundAggLike.length !== 0
           ? foundAggLike[0].aggregateLikes + 1
@@ -471,7 +476,7 @@ const deleteRecipe = async (req) => {
 };
 
 const loadData = async (language) => {
-  if (language === "en" || language === undefined) {
+  if (language == "en" || language == undefined) {
     return data;
   }
   const translatedData = await TranslateRecipeInformation(data, language);
@@ -564,17 +569,28 @@ const createPaymentIntent = async (req, res) => {
 
 const getSesionsStatus = async (req) => {
   const event = req.body;
+  let received = false;
   switch (event.type) {
-    case "payment_intent.succeeded":
+    case "payment_intent.succeeded": {
       const paymentIntent = event.data.object;
       const user = await User.findById(event.data.object.metadata.userId);
       user.boughtRecipes.push(paymentIntent.metadata.recipeId);
       await user.save();
+      received = true;
       break;
+    }
+    case "payment_intent.payment_failed": {
+      intent = event.data.object;
+      const message =
+        intent.last_payment_error && intent.last_payment_error.message;
+      console.log("Failed:", intent.id, message);
+
+      break;
+    }
     default:
       console.log(`Unhandled event type ${event.type}`);
   }
-  return { received: true };
+  return { received };
 };
 
 const getAllPaymentRecipes = async (id, language, currency) => {

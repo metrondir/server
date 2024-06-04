@@ -29,24 +29,20 @@ const getRandomSample = (array, size) => {
 const markFavorites = async (allRecipes, userId) => {
   const favourites = await FavoriteRecipe.find({ user: userId });
 
-  allRecipes.map((item) => {
-    if ((item && item.id) || item._id) {
-      const isFavoriteRecipe = favourites.some((recipe) => {
-        const recipeId = recipe.recipe && recipe.recipe.toString();
-        const itemId = item.id && item.id.toString();
-        const itemObjectId = item._id && item._id.toString();
+  allRecipes.forEach((item) => {
+    const recipeId = item?.id || item?._id?.toString();
+    const isFavoriteRecipe = favourites.some((recipe) => {
+      const recipeIdString = recipe?.recipe?.toString();
+      return recipeIdString === recipeId;
+    });
 
-        return recipeId === itemId || recipeId === itemObjectId;
-      });
-
-      item.isFavourite = isFavoriteRecipe;
-    }
+    item.isFavourite = isFavoriteRecipe;
   });
 
   return allRecipes;
 };
 const fetchRecipesData = async (response, language, currency) => {
-  if (language === "en" || !language) {
+  if (language == "en" || !language) {
     return response.map((recipe) => ({
       id: recipe.id || recipe._id,
       title: recipe.title,
@@ -94,9 +90,8 @@ const fetchRecipesByIngredients = async (
 ) => {
   let apiKey = getApiKey();
   const lanIngredients = await detectLanguage(ingredients);
-  if (lanIngredients !== "en") {
+  if (lanIngredients !== "en")
     ingredients = await translateText(ingredients, "en");
-  }
   let url = `${baseUrl}/findByIngredients?apiKey=${apiKey}&ingredients=${ingredients}&number=${number}&ignorePantry=true`;
 
   try {
@@ -156,18 +151,17 @@ const fetchRecipesUnified = async (
   sort,
   sortDirection,
 ) => {
-  let apiKey = getApiKey();
+  const url = buildRecipeUrl(
+    query,
+    limit,
+    type,
+    diet,
+    cuisine,
+    maxReadyTime,
+    sort,
+    sortDirection,
+  );
 
-  if (!query) query = " ";
-  //const lanQuery = await detectLanguage(query);
-  //if (lanQuery !== "en") query = await translateText(query, "en");
-  let url = `${baseUrl}/complexSearch?apiKey=${apiKey}&query=${query}&number=${limit}&addRecipeNutrition=true`;
-  if (type) url += `&type=${type}`;
-  if (diet) url += `&diet=${diet}`;
-  if (cuisine) url += `&cuisine=${cuisine}`;
-  if (maxReadyTime) url += `&maxReadyTime=${maxReadyTime}`;
-  if (sort) url += `&sort=${sort}`;
-  if (sortDirection) url += `&sortDirection=${sortDirection}`;
   try {
     const response = await axios.get(url);
     const recipesFromApi = response.data.results;
@@ -184,36 +178,10 @@ const fetchRecipesUnified = async (
     );
 
     let allRecipes = recipesFromApi.concat(recipesFromDb);
-    if (sort) {
-      const sortDirectionFactor = sortDirection === "desc" ? -1 : 1;
-      if (sort === "time") {
-        allRecipes.sort(
-          (a, b) => sortDirectionFactor * (a.readyInMinutes - b.readyInMinutes),
-        );
-      } else if (sort === "popularity") {
-        const changeRecipesLike = await getSpoonAcularChangedLikeRecipe(
-          limit,
-          sortDirection,
-        );
-        changeRecipesLike.forEach((change) => {
-          allRecipes.forEach((recipe) => {
-            if (change.id === recipe.id) {
-              recipe.aggregateLikes = change.aggregateLikes;
-            }
-          });
-        });
-        allRecipes.sort(
-          (a, b) => sortDirectionFactor * (a.aggregateLikes - b.aggregateLikes),
-        );
-      } else if (sort === "price") {
-        allRecipes.sort(
-          (a, b) =>
-            sortDirectionFactor * (a.pricePerServing - b.pricePerServing),
-        );
-      }
-    }
+    allRecipes = sortRecipes(allRecipes, sort, sortDirection);
 
     allRecipes.splice(limit, allRecipes.length - limit);
+
     if (refreshToken) {
       const user = await findUserByRefreshToken(refreshToken);
       await markFavorites(allRecipes, user._id);
@@ -240,6 +208,33 @@ const fetchRecipesUnified = async (
       sortDirection,
     );
   }
+};
+
+const buildRecipeUrl = (query, limit, ...otherParams) => {
+  let url = `${baseUrl}/complexSearch?apiKey=${getApiKey()}&query=${query}&number=${limit}&addRecipeNutrition=true`;
+  otherParams.forEach((param) => {
+    if (param) url += `&${param[0]}=${param[1]}`;
+  });
+  return url;
+};
+
+const sortRecipes = (recipes, sort, sortDirection) => {
+  if (sort) {
+    const sortFactor = sortDirection === "desc" ? -1 : 1;
+    let sortCallback;
+    if (sort === "time") {
+      sortCallback = (factor) => (a, b) =>
+        factor * (a.readyInMinutes - b.readyInMinutes);
+    } else if (sort === "popularity") {
+      sortCallback = (factor) => (a, b) =>
+        factor * (a.aggregateLikes - b.aggregateLikes);
+    } else if (sort === "price") {
+      sortCallback = (factor) => (a, b) =>
+        factor * (a.pricePerServing - b.pricePerServing);
+    }
+    recipes.sort(sortCallback(sortFactor));
+  }
+  return recipes;
 };
 
 const fetchRandomRecipes = async (limit, language, refreshToken, currency) => {
@@ -411,7 +406,7 @@ const parsedIngredients = async (ingredients) => {
 
   const calculateTotalEstimatedCost = (data) => {
     return data.reduce((total, item) => {
-      if (item.estimatedCost && item.estimatedCost.value) {
+      if (item?.estimatedCost?.value) {
         return total + item.estimatedCost.value;
       }
       return total;
@@ -459,7 +454,7 @@ const fetchInformationById = async (id, language, currency, refreshToken) => {
         data.extendedIngredients?.map((ingredient) => ingredient.original) ||
         [],
       pricePerServing,
-      readyInMinutes: data.readyInMinutes + (language === "en" ? " min" : ""),
+      readyInMinutes: data.readyInMinutes + (language == "en" ? " min" : ""),
       dishTypes: data.dishTypes || [],
       aggregateLikes: data.aggregateLikes,
       isFavourite,
@@ -587,7 +582,7 @@ const fetchFavoriteRecipes = async (id, language, currency) => {
       favoriteRecipesByDb.map(async (fetchedRecipe) => {
         try {
           let recipe;
-          if (language === "en" || !language) {
+          if (language == "en" || !language) {
             recipe = getRecipeObject(fetchedRecipe);
           } else {
             await translateRecipeFavInformation(fetchedRecipe, language);

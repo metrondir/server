@@ -23,12 +23,8 @@ function validateAccessToken(accessToken) {
   }
 }
 async function validateRefreshToken(refreshToken) {
-  try {
-    const tokenDocument = await findToken(refreshToken);
-    return tokenDocument;
-  } catch (error) {
-    throw error;
-  }
+  const tokenDocument = await findToken(refreshToken);
+  return tokenDocument;
 }
 const saveTokens = asyncHandler(async (userId, refreshToken) => {
   const tokenData = await tokenModel.findOne({ user: userId });
