@@ -188,7 +188,7 @@ const fetchRecipesUnified = async (
     }
 
     const finalRecipes = await fetchRecipesData(allRecipes, language, currency);
-    if (currency) return changeCurrency(finalRecipes, currency);
+    if (currency) return await changeCurrency(finalRecipes, currency);
 
     return finalRecipes;
   } catch (error) {
@@ -273,7 +273,7 @@ const fetchRandomRecipes = async (limit, language, refreshToken, currency) => {
     const finalSample = randomSample.slice(0, limit);
 
     if (currency) {
-      return changeCurrency(finalSample, currency);
+      await changeCurrency(finalSample, currency);
     }
 
     return finalSample;
@@ -365,7 +365,7 @@ const fetchInformationByRecommended = async (
     }
 
     if (currency) {
-      return await changeCurrency(recipeBase, currency);
+      await changeCurrency(recipeBase, currency);
     }
 
     return recipeBase;
@@ -441,7 +441,7 @@ const fetchInformationById = async (id, language, currency, refreshToken) => {
 
   const createRecipeObject = (data, isFavourite, currency, language) => {
     const pricePerServing = currency
-      ? parseFloat(data.pricePerServing)
+      ? data.pricePerServing
       : parseFloat(data.pricePerServing) + " USD";
 
     return {
@@ -516,7 +516,9 @@ const fetchInformationById = async (id, language, currency, refreshToken) => {
     if (language !== "en" && language) {
       await handleRecipeTranslation(data, language);
     }
-
+    if (currency) {
+      await changeCurrency(data, currency);
+    }
     return createRecipeObject(data, isFavourite, currency, language);
   };
 
@@ -537,7 +539,9 @@ const fetchInformationById = async (id, language, currency, refreshToken) => {
     if (language !== "en" && language) {
       await handleRecipeTranslation(data, language);
     }
-
+    if (currency) {
+      await changeCurrency(data, currency);
+    }
     return createRecipeObject(data, isFavourite, currency, language);
   };
 
@@ -590,7 +594,7 @@ const fetchFavoriteRecipes = async (id, language, currency) => {
           }
 
           if (currency) {
-            return await changeCurrency(recipe, currency);
+            await changeCurrency(recipe, currency);
           }
           return recipe;
         } catch (error) {
