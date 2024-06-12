@@ -454,7 +454,8 @@ const fetchInformationById = async (id, language, currency, refreshToken) => {
         data.extendedIngredients?.map((ingredient) => ingredient.original) ||
         [],
       pricePerServing,
-      readyInMinutes: data.readyInMinutes + (language == "en" ? " min" : ""),
+      readyInMinutes:
+        data.readyInMinutes + (language == "en" ? " min" : " min"),
       dishTypes: data.dishTypes || [],
       aggregateLikes: data.aggregateLikes,
       isFavourite,
