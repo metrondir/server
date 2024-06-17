@@ -164,6 +164,7 @@ const fetchRecipesUnified = async (
 
   try {
     const response = await axios.get(url);
+    console.log(url);
     const recipesFromApi = response.data.results;
 
     const recipesFromDb = await getRecipesFromDatabaseComplex(
@@ -210,11 +211,17 @@ const fetchRecipesUnified = async (
   }
 };
 
-const buildRecipeUrl = (query, limit, ...otherParams) => {
-  let url = `${baseUrl}/complexSearch?apiKey=${getApiKey()}&query=${query}&number=${limit}&addRecipeNutrition=true`;
-  otherParams.forEach((param) => {
-    if (param) url += `&${param[0]}=${param[1]}`;
-  });
+const buildRecipeUrl = (
+  query,
+  limit,
+  type,
+  diet,
+  cuisine,
+  maxReadyTime,
+  sort,
+  sortDirection,
+) => {
+  let url = `${baseUrl}/complexSearch?apiKey=${getApiKey()}&query=${query}&number=${limit}&addRecipeNutrition=true&type=${type}&diet=${diet}&cuisine=${cuisine}&maxReadyTime=${maxReadyTime}&sort=${sort}&sortDirection=${sortDirection}`;
   return url;
 };
 
