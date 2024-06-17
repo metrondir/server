@@ -164,7 +164,6 @@ const fetchRecipesUnified = async (
 
   try {
     const response = await axios.get(url);
-    console.log(url);
     const recipesFromApi = response.data.results;
 
     const recipesFromDb = await getRecipesFromDatabaseComplex(
@@ -210,7 +209,6 @@ const fetchRecipesUnified = async (
     );
   }
 };
-
 const buildRecipeUrl = (
   query,
   limit,
@@ -221,6 +219,27 @@ const buildRecipeUrl = (
   sort,
   sortDirection,
 ) => {
+  const convertToJsonString = (param) => {
+    if (typeof param === "string") {
+      try {
+        const paramArray = JSON.parse(param);
+        if (Array.isArray(paramArray) && paramArray.length > 0) {
+          return paramArray.map((p) => p.value).join(" ");
+        } else {
+          return "";
+        }
+      } catch (error) {
+        console.error(`Error parsing ${param} JSON:`, error);
+        return "";
+      }
+    }
+    return param;
+  };
+
+  cuisine = convertToJsonString(cuisine);
+  type = convertToJsonString(type);
+  diet = convertToJsonString(diet);
+
   let url = `${baseUrl}/complexSearch?apiKey=${getApiKey()}&query=${query}&number=${limit}&addRecipeNutrition=true&type=${type}&diet=${diet}&cuisine=${cuisine}&maxReadyTime=${maxReadyTime}&sort=${sort}&sortDirection=${sortDirection}`;
   return url;
 };
