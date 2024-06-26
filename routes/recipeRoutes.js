@@ -29,7 +29,7 @@ router.get("/data", loadDataToSelect);
 router.get("/load-currency-languages", loadCurrencyAndLanguges);
 router.get("/load-ingredients", loadIngredients);
 
-router.get("/favourite", authMiddleware, getFavouriteRecipes);
+router.get("/favourite", getFavouriteRecipes);
 router.post("/create-payment-intent", authMiddleware, createPaymentIntent);
 
 router.route("/collection").get(authMiddleware, getRecipesCollection);
