@@ -183,6 +183,7 @@ const paginateArray = (data, page, size) => {
         ? { page: pageNumber - 1, size: pageSize }
         : undefined,
       totalItems: totalItems,
+      totalPages: Math.ceil(totalItems / pageSize),
     };
 
     result.results = data.slice(startIndex, endIndex);
