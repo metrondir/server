@@ -186,13 +186,12 @@ const refresh = asyncHandler(async (refreshToken) => {
   }
 
   const userData = await validateRefreshToken(refreshToken);
-  const tokenFromDb = await findToken(refreshToken);
 
-  if (!userData || !tokenFromDb) {
+  if (!userData) {
     throw ApiError.Forbbiden("User unauthenticated");
   }
 
-  const user = await User.findById(tokenFromDb.user);
+  const user = await User.findById(userData.user);
   const userDto = new UserDto(user);
   const tokens = generateTokens({ ...userDto });
 
