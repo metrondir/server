@@ -142,19 +142,18 @@ const getRecommendedRecipes = asyncHandler(async (req, res, next) => {
 // @access private
 const getFavouriteRecipes = asyncHandler(async (req, res, next) => {
   try {
-    const id = req.user.id;
+    //const id = req.user.id;
     const { language, page, size, currency } = req.query;
     const ipAddress =
       req.headers["x-forwarded-for"] || req.connection.remoteAddress;
     const clientIp = ipAddress.split(",")[0];
-    const redisKey = `${clientIp}favourite-recipes${id}${language}${currency}`;
+    const redisKey = `${clientIp}favourite-recipes${language}${currency}`;
 
     const recipes = await redisGetModelsWithPaginating(
       page,
       redisKey,
       size,
       fetchFavoriteRecipes,
-      id,
       language,
       currency,
     );
