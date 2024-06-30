@@ -32,7 +32,7 @@ async function validateAccessToken(accessToken, refreshToken) {
       throw ApiError.UnauthorizedError("User unauthorized");
     }
     const userData = new UserDto(user);
-    const tokens = await generateTokens({ ...userData });
+    const tokens = generateTokens({ ...userData });
     await saveTokens(userData.id, tokens.refreshToken);
 
     return { userData, tokens };

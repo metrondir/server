@@ -153,18 +153,8 @@ const setBlackListToken = async (token) => {
 };
 
 const checkBlackListToken = async (token) => {
-  try {
-    const exists = await redis.hexists("blacklist", token);
-
-    if (exists) {
-      return true;
-    }
-
-    return false;
-  } catch (error) {
-    console.error(`Error checking blacklist for token ${token}:`, error);
-    return false;
-  }
+  const exists = await redis.hexists("blacklist", token);
+  return exists;
 };
 
 const onDataChanged = async (ipAddress) => {
