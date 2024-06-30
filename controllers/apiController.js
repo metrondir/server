@@ -7,9 +7,7 @@ const {
   fetchFavoriteRecipes,
   fetchRecipesByIngredients,
 } = require("../services/recipesFetchingService");
-const {
-  redisGetModelsWithPaginating,
-} = require("../middleware/paginateMiddleware");
+const { redisGetModelsWithPaginating } = require("../services/redisService");
 const {
   TranslateRecipeInformation,
 } = require("../services/translationService");

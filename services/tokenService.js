@@ -2,30 +2,57 @@ const jwt = require("jsonwebtoken");
 const asyncHandler = require("express-async-handler");
 const tokenModel = require("../models/tokenModel");
 const ApiError = require("../middleware/apiError");
+const { checkBlackListToken } = require("./redisService");
+const UserDto = require("../dtos/userDtos");
+const User = require("../models/userModel");
+
 function generateTokens(payload) {
   const accessToken = jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, {
-    expiresIn: "15min",
+    expiresIn: process.env.ACCESS_TOKEN_EXPIRATION_TIME,
   });
   const refreshToken = jwt.sign(payload, process.env.REFRESH_TOKEN_SECRET, {
-    expiresIn: "7d",
+    expiresIn: process.env.REFRESH_TOKEN_EXPIRATION_TIME,
   });
 
   return { accessToken, refreshToken };
 }
 
-function validateAccessToken(accessToken) {
-  try {
-    const userData = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
+async function validateAccessToken(accessToken, refreshToken) {
+  if ((await checkBlackListToken(accessToken)) === true) {
+    throw ApiError.UnauthorizedError("User unauthorized");
+  }
+  const decodedData = jwt.decode(accessToken);
+  if (decodedData.exp * 1000 <= new Date().getTime()) {
+    const valiadtionRefresh = await validateRefreshToken(refreshToken);
+    if (!valiadtionRefresh) {
+      throw ApiError.UnauthorizedError("User unauthorized");
+    }
+    const user = await User.findById(valiadtionRefresh.user);
+    if (!user) {
+      throw ApiError.UnauthorizedError("User unauthorized");
+    }
+    const userData = new UserDto(user);
+    const tokens = await generateTokens({ ...userData });
+    await saveTokens(userData.id, tokens.refreshToken);
 
-    return userData;
+    return { userData, tokens };
+  }
+  const userData = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
+  if (!userData) {
+    throw ApiError.UnauthorizedError("User unauthorized");
+  }
+  return { userData, tokens: null };
+}
+
+async function validateRefreshToken(refreshToken) {
+  try {
+    const tokenDocument = await findToken(refreshToken);
+    return tokenDocument;
   } catch (error) {
-    throw ApiError.UnauthorizedError("Invalid access token");
+    throw ApiError.BadRequest("Something went wrong");
   }
 }
-async function validateRefreshToken(refreshToken) {
-  const tokenDocument = await findToken(refreshToken);
-  return tokenDocument;
-}
+
 const saveTokens = asyncHandler(async (userId, refreshToken) => {
   const tokenData = await tokenModel.findOne({ user: userId });
   if (tokenData) {

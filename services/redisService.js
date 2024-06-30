@@ -1,7 +1,6 @@
-const asyncHandler = require("express-async-handler");
-const ApiError = require("./apiError");
+const ApiError = require("../middleware/apiError");
 const redis = require("../config/redisClient");
-
+const { paginateArray } = require("./paginatedService");
 const redisGetModels = async (model, req, res, next, conditions = {}) => {
   try {
     const redisKey = `${model.modelName.toLowerCase()}`;
@@ -140,58 +139,31 @@ const deleteCustomer = async (customerId) => {
   await redis.del(key);
 };
 
-const calculatePagination = (page, size, totalItems) => {
-  const startIndex = (page - 1) * size;
-  const endIndex = page * size;
+const setBlackListToken = async (token) => {
+  try {
+    const expirationTime =
+      parseInt(process.env.ACCESS_TOKEN_EXPIRATION_TIME, 10) * 60;
 
-  const hasPrevious = page > 1;
-  const hasNext = endIndex < totalItems;
+    await redis.hset("blacklist", token, "blacklisted");
 
-  return { startIndex, endIndex, hasPrevious, hasNext };
+    await redis.expire("blacklist", expirationTime);
+  } catch (error) {
+    console.error(`Error setting blacklist for token ${token}:`, error);
+  }
 };
 
-const paginateArray = (data, page, size) => {
+const checkBlackListToken = async (token) => {
   try {
-    if (!size || !page) {
-      return data;
-    }
-    const totalItems = data.length;
-    const pageNumber = parseInt(page) || 1;
-    const pageSize = parseInt(size) || totalItems;
+    const exists = await redis.hexists("blacklist", token);
 
-    if (isNaN(pageNumber) || pageNumber < 1) {
-      throw ApiError.BadRequest("Page must be greater than 0");
-    }
-    if (isNaN(pageSize) || pageSize < 1) {
-      throw ApiError.BadRequest("Limit must be greater than 0");
+    if (exists) {
+      return true;
     }
 
-    if (totalItems <= 0) {
-      return [];
-    }
-    const { startIndex, endIndex, hasPrevious, hasNext } = calculatePagination(
-      pageNumber,
-      pageSize,
-      totalItems,
-    );
-
-    const result = {
-      next: hasNext
-        ? { page: pageNumber + 1, size: totalItems - pageSize * page }
-        : undefined,
-      previous: hasPrevious
-        ? { page: pageNumber - 1, size: pageSize }
-        : undefined,
-      totalItems: totalItems,
-      totalPages: Math.ceil(totalItems / pageSize),
-    };
-
-    result.results = data.slice(startIndex, endIndex);
-
-    return result;
+    return false;
   } catch (error) {
-    console.log(error);
-    throw ApiError.BadRequest(error);
+    console.error(`Error checking blacklist for token ${token}:`, error);
+    return false;
   }
 };
 
@@ -225,4 +197,6 @@ module.exports = {
   storeCustomer,
   getCustomer,
   deleteCustomer,
+  setBlackListToken,
+  checkBlackListToken,
 };

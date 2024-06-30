@@ -32,7 +32,7 @@ const { currencyData } = require("../utils/currencyData");
 const {
   storeRecipe,
   getRecipesFromUserIdFromRedis,
-} = require("../middleware/paginateMiddleware");
+} = require("./redisService");
 const { languageData } = require("../utils/languageData");
 const ApiError = require("../middleware/apiError");
 

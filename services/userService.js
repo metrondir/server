@@ -22,7 +22,8 @@ const {
   storeRegistrationDetails,
   getRegistrationDetailsByActivationLink,
   deleteRegistrationDetailsByActivationLink,
-} = require("../middleware/paginateMiddleware");
+  setBlackListToken,
+} = require("./redisService");
 
 async function validateEmailUniqueness(email) {
   const candidate = await User.findOne({ email });
@@ -96,7 +97,7 @@ const registration = asyncHandler(async (username, email, password) => {
     `${process.env.API_URL}/api/users/activate/${activationLink}`,
   );
 
-  return "To complete your registration, please check your email for activation instructions.";
+  return true;
 });
 
 const activate = asyncHandler(async (activationLink) => {
@@ -175,9 +176,15 @@ const login = asyncHandler(async (email, password) => {
   return { ...tokens, user: userDto };
 });
 
-const logout = asyncHandler(async (refreshToken) => {
-  const token = await removeToken(refreshToken);
-  return token;
+const logout = asyncHandler(async (req) => {
+  try {
+    await removeToken(req.cookies.refreshToken);
+    await setBlackListToken(req.cookies.accessToken);
+    return true;
+  } catch (error) {
+    console.log(error.message);
+    throw ApiError.BadRequest("Something went wrong");
+  }
 });
 
 const refresh = asyncHandler(async (refreshToken) => {
@@ -303,10 +310,10 @@ module.exports = {
   activate,
   login,
   logout,
-  refresh,
   forgetPassword,
   changePassword,
   changePasswordLink,
   deleteUser,
   findUserByRefreshToken,
+  refresh,
 };

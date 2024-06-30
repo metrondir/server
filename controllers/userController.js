@@ -39,9 +39,13 @@ const registerUser = asyncHandler(async (req, res, next) => {
     }
 
     const { username, email, password } = req.body;
-    const userData = await registration(username, email, password);
+    await registration(username, email, password);
 
-    return res.status(201).json(userData);
+    return res
+      .status(201)
+      .json(
+        "To complete your registration, please check your email for activation instructions.",
+      );
   } catch (error) {
     throw ApiError.BadRequest(error);
   }
@@ -61,7 +65,13 @@ const loginUser = asyncHandler(async (req, res, next) => {
       sameSite: "None",
       httpOnly: true,
     });
-    return res.status(200).json(userData);
+    res.cookie("accessToken", userData.accessToken, {
+      maxAge: process.env.COOKIE_MAX_AGE,
+      secure: true,
+      sameSite: "None",
+      httpOnly: true,
+    });
+    return res.status(200).json(userData.user);
   } catch (error) {
     next(error);
   }
@@ -73,17 +83,20 @@ const loginUser = asyncHandler(async (req, res, next) => {
 
 const logoutUser = asyncHandler(async (req, res, next) => {
   try {
-    const { refreshToken } = req.cookies;
-    await logout(refreshToken);
-    return res
-      .clearCookie("refreshToken", {
-        secure: true,
-        httpOnly: true,
-        sameSite: "None",
-      })
-      .status(200)
-      .json("User logged out successfully");
+    await logout(req);
+    res.clearCookie("refreshToken", {
+      secure: true,
+      httpOnly: true,
+      sameSite: "None",
+    });
+    res.clearCookie("accessToken", {
+      secure: true,
+      httpOnly: true,
+      sameSite: "None",
+    });
+    return res.status(200).json("User logged out successfully");
   } catch (error) {
+    console.log(error);
     next(error);
   }
 });
@@ -101,6 +114,12 @@ const refreshTokenUser = asyncHandler(async (req, res, next) => {
       secure: true,
       httpOnly: true,
       sameSite: "None",
+    });
+    res.cookie("accessToken", userData.accessToken, {
+      maxAge: process.env.COOKIE_MAX_AGE,
+      secure: true,
+      sameSite: "None",
+      httpOnly: true,
     });
     return res.status(200).json(userData);
   } catch (error) {
@@ -121,6 +140,12 @@ const activateUser = asyncHandler(async (req, res, next) => {
       secure: true,
       httpOnly: true,
       sameSite: "None",
+    });
+    res.cookie("accessToken", tokens.accessToken, {
+      maxAge: process.env.COOKIE_MAX_AGE,
+      secure: true,
+      httpOnly: true,
+      sameSite: "none",
     });
     res.redirect(process.env.CLIENT_URL);
   } catch (error) {
@@ -184,14 +209,17 @@ const changePasswordUserLink = asyncHandler(async (req, res, next) => {
 const deleteUserById = asyncHandler(async (req, res, next) => {
   try {
     await deleteUser(req.user.id);
-    return res
-      .clearCookie("refreshToken", {
-        secure: true,
-        httpOnly: true,
-        sameSite: "None",
-      })
-      .status(200)
-      .json("User deleted successfully");
+    res.clearCookie("refreshToken", {
+      secure: true,
+      httpOnly: true,
+      sameSite: "None",
+    });
+    res.clearCookie("accessToken", {
+      secure: true,
+      httpOnly: true,
+      sameSite: "None",
+    });
+    return res.status(200).json("User deleted successfully");
   } catch (error) {
     next(error);
   }

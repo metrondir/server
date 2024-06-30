@@ -26,7 +26,7 @@ router.post(
 
 router.post("/login", loginUser);
 
-router.get("/logout", logoutUser);
+router.get("/logout", authMiddleware, logoutUser);
 
 router.get("/activate/:link", activateUser);
 

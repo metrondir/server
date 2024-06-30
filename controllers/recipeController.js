@@ -2,11 +2,11 @@ const asyncHandler = require("express-async-handler");
 const recipeService = require("../services/recipeService");
 const multer = require("multer");
 
-const { onDataChanged } = require("../middleware/paginateMiddleware");
 // multer configuration for file upload
 const {
   redisGetModelsWithPaginating,
-} = require("../middleware/paginateMiddleware");
+  onDataChanged,
+} = require("../services/redisService");
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, "./uploads");

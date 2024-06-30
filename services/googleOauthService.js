@@ -82,6 +82,12 @@ const googleOauthHandler = asyncHandler(async (req, res, next) => {
       httpOnly: true,
       sameSite: "None",
     });
+    res.cookie("accessToken", tokens.accessToken, {
+      maxAge: process.env.COOKIE_MAX_AGE,
+      secure: true,
+      httpOnly: true,
+      sameSite: "None",
+    });
     res.redirect(`${process.env.API_URL}`);
   } catch (error) {
     throw ApiError.BadRequest(error.response?.data || error.message);
