@@ -5,14 +5,19 @@ const ApiError = require("../middleware/apiError");
 const { checkBlackListToken } = require("./redisService");
 const UserDto = require("../dtos/userDtos");
 const User = require("../models/userModel");
+const { uuidv7 } = require("uuidv7");
 
 function generateTokens(payload) {
   const accessToken = jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, {
-    expiresIn: process.env.ACCESS_TOKEN_EXPIRATION_TIME,
-  });
-  const refreshToken = jwt.sign(payload, process.env.REFRESH_TOKEN_SECRET, {
     expiresIn: process.env.REFRESH_TOKEN_EXPIRATION_TIME,
   });
+  const refreshToken = jwt.sign(
+    { id: uuidv7() },
+    process.env.REFRESH_TOKEN_SECRET,
+    {
+      expiresIn: process.env.REFRESH_TOKEN_EXPIRATION_TIME,
+    },
+  );
 
   return { accessToken, refreshToken };
 }
@@ -21,6 +26,9 @@ async function validateAccessToken(accessToken, refreshToken) {
   if ((await checkBlackListToken(accessToken)) === true) {
     throw ApiError.UnauthorizedError("User unauthorized");
   }
+  let userData = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET, {
+    ignoreExpiration: true,
+  });
   const decodedData = jwt.decode(accessToken);
   if (decodedData.exp * 1000 <= new Date().getTime()) {
     const valiadtionRefresh = await validateRefreshToken(refreshToken);
@@ -31,15 +39,11 @@ async function validateAccessToken(accessToken, refreshToken) {
     if (!user) {
       throw ApiError.UnauthorizedError("User unauthorized");
     }
-    const userData = new UserDto(user);
+    userData = new UserDto(user);
     const tokens = generateTokens({ ...userData });
     await saveTokens(userData.id, tokens.refreshToken);
 
     return { userData, tokens };
-  }
-  const userData = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
-  if (!userData) {
-    throw ApiError.UnauthorizedError("User unauthorized");
   }
   return { userData, tokens: null };
 }
