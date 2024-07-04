@@ -68,7 +68,7 @@ const getRecipes = asyncHandler(async (req, res, next) => {
  * @param {string} req.cookies.refreshToken - The refresh token of the user
  * @param {string} req.query.id - The  id of the recipe
  * @param {string} req.user.id - The  id of the user
- * @returns {Promise<string>} - Favorite recipe created
+ * @returns {Promise<void>} - Favorite recipe created
  */
 const setFavoriteRecipes = asyncHandler(async (req, res, next) => {
   try {
@@ -88,21 +88,24 @@ const setFavoriteRecipes = asyncHandler(async (req, res, next) => {
 });
 
 /**
- * @desc Create recipe
+ * @desc Create a recipe route handler.
  * @route POST /api/recipes
  * @access private
  * @param {Object} req - The request object
- * @returns {Promise<string>} - Recipe created
+ * @param {Object} res - The response object
+ * @returns {Promise<void>}
  */
 const createRecipe = [
   upload.single("image"),
   asyncHandler(async (req, res, next) => {
     try {
       await recipeService.createRecipe(req);
+
       const ipAddress =
         req.headers["x-forwarded-for"] || req.connection.remoteAddress;
       const clientIp = ipAddress.split(",")[0].concat("my-recipes");
       onDataChanged(clientIp);
+
       return res.status(201).json("Recipe created");
     } catch (error) {
       next(error);
@@ -115,7 +118,7 @@ const createRecipe = [
  * @route POST /api/recipes/by-draft
  * @access private
  * @param {Object} req - The request object
- * @returns {Promise<string>} - Recipe created By draft for 3 days
+ * @returns {Promise<void>} - Recipe created By draft for 3 days
  */
 const createRecipeByDraft = [
   upload.single("image"),

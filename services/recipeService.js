@@ -288,7 +288,7 @@ const createRecipeByDraft = async (req) => {
 /**
  * @desc Handle the image upload.
  * @param {string} path - The path to the image.
- * @returns {Promise<string>}  - The uploaded image link.
+ * @returns {Promise<void>}  - The uploaded image link.
  */
 const handleImageUpload = async (path) => {
   const imageBase64 = await readImageAsBase64(path);
@@ -374,7 +374,7 @@ const translateRecipes = async (recipes, language) => {
  * @param {string} recipeId  - The id of the recipe.
  * @param {string} userId - The id of the user.
  * @param {string} refreshToken - The refresh token
- * @returns {Object} - The favorite recipe.
+ * @returns {Promise<Object>} - The favorite recipe.
  */
 const setFavoriteRecipes = async (recipeId, userId, refreshToken) => {
   try {
@@ -533,7 +533,7 @@ const updateSpoonacularRecipeLikes = async (
 /**
  * @desc Update a recipe.
  * @param {Object} req - The request object.
- * @returns {Object} The updated recipe.
+ * @returns {Promise<Object>} The updated recipe.
  */
 const updateRecipe = async (req) => {
   const recipe = await Recipe.findById(req.params.id);
@@ -638,7 +638,7 @@ const getIngredients = async () => {
  * @param {string} recipeId - The id of the recipe.
  * @param {string} userId - The id of the user.
  * @param {string} currency - The currency to change to.
- * @returns {Object} The created payment intent.
+ * @returns {Promise<Object>} The created payment intent.
  */
 const createPaymentIntent = async (recipeId, userId, currency) => {
   try {
@@ -697,7 +697,7 @@ const createPaymentIntent = async (recipeId, userId, currency) => {
 /**
  * @desc Get the status of the session.
  * @param {Object} event - The event object.
- * @returns {string} - The status of the session.
+ * @returns {Promise<Object>} - The status of the session.
  */
 const getSesionsStatus = async (event) => {
   let received = false;
