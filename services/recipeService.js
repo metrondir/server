@@ -171,17 +171,16 @@ const processRequestBody = (body) => {
 /**
  * @desc Read the image as a base64 string.
  * @param {string} path - The path to the image.
- * @returns {string} The image as a base64 string.
+ * @returns {Promise<string>} The image as a base64 string.
  */
 const readImageAsBase64 = async (path) => {
-  const imageBuffer = await fs.readFile(path);
-  return imageBuffer.toString("base64");
+  return (await fs.readFile(path)).toString("base64");
 };
 
 /**
  * @desc Detect the food ingredients in the image.
  * @param {string} imageBase64 - The image as a base64 string.
- * @returns {Objecy} The detected food ingredients.
+ * @returns {Promise<Object>} The detected food ingredients.
  */
 const detectFoodIngredients = async (imageBase64) => {
   const response = await axios.post(
@@ -199,7 +198,7 @@ const detectFoodIngredients = async (imageBase64) => {
 /**
  * @desc Upload the image to imgur.
  * @param {string} path - The path to the image.
- * @returns {string} The uploaded image link.
+ * @returns {Promise<string>} The uploaded image link.
  */
 const uploadToImgur = async (path) => {
   const resizedImageBuffer = await sharp(path).resize(556, 370).toBuffer();
@@ -214,7 +213,7 @@ const uploadToImgur = async (path) => {
  * @param {Object} body - The request body.
  * @param {Object} user - The user object.
  * @param {Object} recipe - The recipe object.
- * @returns {Object} The updated recipe.
+ * @returns {Promise<Object>} The updated recipe.
  */
 const handlePaymentInfo = async (body, user, recipe) => {
   if (body.price) {
@@ -288,7 +287,7 @@ const createRecipeByDraft = async (req) => {
 /**
  * @desc Handle the image upload.
  * @param {string} path - The path to the image.
- * @returns {Promise<void>}  - The uploaded image link.
+ * @returns {Promise<string>}  - The uploaded image link.
  */
 const handleImageUpload = async (path) => {
   const imageBase64 = await readImageAsBase64(path);
@@ -359,7 +358,7 @@ const updateRecipesWithDefaultInstructions = (recipes, user) => {
  * @desc Translate recipes
  * @param {Array} recipes - The recipes to update.
  * @param {string} language - The language to translate to.
- * @returns {Promise} The translated recipes.
+ * @returns {Promise<Object>} The translated recipes.
  */
 const translateRecipes = async (recipes, language) => {
   if (language) {
@@ -588,7 +587,7 @@ const deleteRecipe = async (recipeId, userId) => {
 /**
  * @desc Load the data.
  * @param {string} language - The language to load the data in.
- * @returns {Object} The dishtypes cuisines diets.
+ * @returns {Promise<Object>} The dishtypes cuisines diets.
  */
 const loadData = async (language) => {
   if (language == "en" || language == undefined) {
@@ -690,7 +689,7 @@ const createPaymentIntent = async (recipeId, userId, currency) => {
 
     return paymentIntent.client_secret;
   } catch (error) {
-    return error;
+    throw ApiError.BadRequest("Error creating payment intent");
   }
 };
 
@@ -723,7 +722,7 @@ const getSesionsStatus = async (event) => {
  * @param {string} userId - The id of the user.
  * @param {string} language - The language to translate to.
  * @param {string} currency - The currency to change to.
- * @returns {Object} The payment recipes.
+ * @returns {Promis<Object>} The payment recipes.
  */
 const getAllPaymentRecipes = async (userId, language, currency) => {
   try {
@@ -747,7 +746,7 @@ const getAllPaymentRecipes = async (userId, language, currency) => {
  * @desc Format the recipe prices.
  * @param {Array} recipes - The recipes to format.
  * @param {string} currency - The currency to change to.
- * @returns {Promise} The formatted recipes.
+ * @returns {Promise<Object>} The formatted recipes.
  */
 const formatRecipePrices = async (recipes, currency) => {
   if (currency) {

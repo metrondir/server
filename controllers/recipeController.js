@@ -290,7 +290,7 @@ const getAllPaymentRecipes = asyncHandler(async (req, res, next) => {
   try {
     const userId = req.user.id;
     const { page, size, language, currency } = req.query;
-    const redisKey = `AllPaymentRecipes${language}${currency}`;
+    const redisKey = `AllPaymentRecipes${language}${currency}${userId}${page}${size}`;
     const recipes = await redisGetModelsWithPaginating(
       page,
       redisKey,
