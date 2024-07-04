@@ -17,8 +17,6 @@ const {
 const UserDto = require("../dtos/userDtos");
 const ApiError = require("../middleware/apiError");
 const {
-  redisGetModelsWithPaginating,
-  redisGetModels,
   storeRegistrationDetails,
   getRegistrationDetailsByActivationLink,
   deleteRegistrationDetailsByActivationLink,
@@ -85,7 +83,7 @@ async function sendActivationEmail(to, link) {
 /**
  * @desc Find user by refresh token.
  * @param {string} refreshToken - The refresh token to find user.
- * @returns {Object} The user found by refresh token.
+ * @returns {Promise} The user found by refresh token.
  */
 const findUserByRefreshToken = async (refreshToken) => {
   const tokenData = await findToken(refreshToken);

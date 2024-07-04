@@ -35,7 +35,7 @@ const getRandomSample = (array, size) => {
  * @desc Mark the recipes as favourites.
  * @param {Array} allRecipes - The array of recipes to mark as favourites.
  * @param {string} userId - The id of the user.
- * @returns {Array} The array of recipes with the favourites marked.
+ * @returns {Promise<Object>} The array of recipes with the favourites marked.
  */
 const markFavorites = async (allRecipes, userId) => {
   const favourites = await FavoriteRecipe.find({ user: userId });
@@ -58,7 +58,7 @@ const markFavorites = async (allRecipes, userId) => {
  * @param {Array} response - The array of recipes to fetch data from.
  * @param {string} language - The language to translate to.
  * @param {string} currency - The currency to change to.
- * @returns {Array} The array of recipes with the fetched data.
+ * @returns {Promise<Array>} The array of recipes with the fetched data.
  */
 const fetchRecipesData = async (response, language, currency) => {
   if (language == "en" || !language) {

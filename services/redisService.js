@@ -161,7 +161,7 @@ const storeRecipe = async (recipe) => {
 /**
  * @desc Gets the registration details by the activation link.
  * @param {string} activationLink - The activation link.
- * @returns {Object} The details.
+ * @returns {Promise<Object>} The details.
  */
 const getRegistrationDetailsByActivationLink = async (activationLink) => {
   const detailsString = await redis.hget("registrations", activationLink);
