@@ -134,7 +134,7 @@ const getRecipesFromDatabaseComplex = async (
   if (cuisine && cuisine !== "undefined" && cuisine !== "") {
     pipeline[0].$match.cuisines = cuisine;
   }
-  if (maxReadyTime && maxReadyTime !== "undefined" && maxReadyTime !== "") {
+  if (maxReadyTime && maxReadyTime != "undefined" && maxReadyTime != "") {
     pipeline[0].$match.readyInMinutes = { $lte: Number(maxReadyTime) };
   }
   try {
