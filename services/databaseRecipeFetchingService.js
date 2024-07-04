@@ -6,7 +6,7 @@ const mongoose = require("mongoose");
 /**
  * @desc Get the recipes from the database randomly.
  * @param {number} limit // The limit of the query.
- * @returns {Object} The result of the query.
+ * @returns {Promise<Object>} The result of the query.
  */
 const getRecipesFromDatabaseRandom = async (limit) => {
   return await Recipe.aggregate([{ $sample: { size: Math.floor(limit) } }]);
@@ -16,7 +16,7 @@ const getRecipesFromDatabaseRandom = async (limit) => {
  * @desc Get the recipes from the database with the changed like recipe.
  * @param {number} limit - The limit of the query.
  * @param {string} userId - The id of the user.
- * @returns {Object} The result of the query.
+ * @returns {Promise<Object>} The result of the query.
  */
 const getRecipesFromDatabaseRandomWithUsers = async (limit, userId) => {
   return await Recipe.aggregate([
@@ -29,7 +29,7 @@ const getRecipesFromDatabaseRandomWithUsers = async (limit, userId) => {
  * @desc Get the recipes from spoonacular the database with the changed like recipe.
  * @param {number} limit - The limit of the query.
  * @param {string} sortDirection - The direction of the sort.
- * @returns {Object} The result of the query.
+ * @returns {Promise<Object>} The result of the query.
  */
 const getSpoonAcularChangedLikeRecipe = async (limit, sortDirection) => {
   let query = SpoonacularRecipeModel.find();
@@ -53,7 +53,7 @@ const getSpoonAcularChangedLikeRecipe = async (limit, sortDirection) => {
  * @param {string} sortDirection - The direction of the sort.
  * @param {string} valueSort - The value to sort by.
  * @param {string} query - The query to search by.
- * @returns {Object} The result of the query.
+ * @returns {Promise<Object>} The result of the query.
  */
 const getRecipesByCategories = async (sortDirection, valueSort, query) => {
   let sortValue = sortDirection === "desc" ? -1 : 1;
@@ -84,7 +84,7 @@ const getRecipesByCategories = async (sortDirection, valueSort, query) => {
  * @desc Get the recipes from the database with the given ingredients.
  * @param {number} limit - The limit of the query.
  * @param {string} ingredients - The ingredients to search by.
- * @returns {Object} The result of the query.
+ * @returns {Promise<Object>} The result of the query.
  */
 const getRecipesFromDatabaseByIngridients = async (limit, ingredients) => {
   ingredients = ingredients.split(",");
@@ -108,7 +108,7 @@ const getRecipesFromDatabaseByIngridients = async (limit, ingredients) => {
  * @param {number} maxReadyTime - The max ready time of the recipe.
  * @param {string} sort - The value to sort by.
  * @param {string} sortDirection - The direction of the sort.
- * @returns {Object} -The result of the query.
+ * @returns {Promise<Object>} -The result of the query.
  */
 const getRecipesFromDatabaseComplex = async (
   query,
