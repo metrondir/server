@@ -1,6 +1,5 @@
 const asyncHandler = require("express-async-handler");
 const {
-  getAllUsers,
   registration,
   activate,
   login,
@@ -13,22 +12,16 @@ const {
 } = require("../services/userService");
 const { validationResult } = require("express-validator");
 const ApiError = require("../middleware/apiError");
-//@desc Get all users
-//@route GET /api/users/allusers
-//@access private
 
-const getUsers = asyncHandler(async (req, res, next) => {
-  try {
-    const users = await getAllUsers(req, res, next);
-    return res.status(200).json(users);
-  } catch (error) {
-    next(error);
-  }
-});
-
-//@desc Register a user
-//@route POST /api/users/register
-//@access public
+/**
+ * @desc Register a user
+ * @route POST /api/users/register
+ * @access public
+ * @param {string} username - The username of the user
+ * @param {string} email - The email of the user
+ * @param {string} password - The password of the user
+ * @returns {string} To complete your registration, please check your email for activation instructions.
+ */
 
 const registerUser = asyncHandler(async (req, res, next) => {
   try {
@@ -51,9 +44,15 @@ const registerUser = asyncHandler(async (req, res, next) => {
   }
 });
 
-//@desc loginUser a user
-//@route POST /api/users/login
-//@access public
+/**
+ * @desc Login a user
+ * @route POST /api/users/login
+ * @access public
+ * @param {string} req.body.email - The email of the user
+ * @param {string} req.body.password - The password of the user
+ * @returns {Cookie} The refresh token and access token
+ * @returns {Object} The user data
+ */
 
 const loginUser = asyncHandler(async (req, res, next) => {
   try {
@@ -77,13 +76,21 @@ const loginUser = asyncHandler(async (req, res, next) => {
   }
 });
 
-//@desc logoutUser a user
-//@route POST /api/users/logout
-//@access private with refreshtoken
+/**
+ * @desc logout a user
+ * @route GET /api/users/logout
+ * @access private
+ * @param {Cookie} req.cookies.refreshToken - The refresh token of the user
+ * @param {Cookie} req.cookies.accessToken - The access token of the user
+ * @returns {Cookie} The refresh token and access token cleared
+ * @returns {string}  - User logged out successfully
+ */
 
 const logoutUser = asyncHandler(async (req, res, next) => {
   try {
-    await logout(req);
+    const { refreshToken } = req.cookies.refreshToken;
+    const { accessToken } = req.cookies.accessToken;
+    await logout(refreshToken, accessToken);
     res.clearCookie("refreshToken", {
       secure: true,
       httpOnly: true,
@@ -101,9 +108,14 @@ const logoutUser = asyncHandler(async (req, res, next) => {
   }
 });
 
-//@desc refreshToken from user
-//@route GET /api/users/refresh
-//@access private with refreshtoken
+/**
+ * @desc refresh a access token
+ * @route GET /api/users/refresh
+ * @access public
+ * @param {string} req.cookies.refreshToken - The refresh token of the user
+ * @returns {Cookie} The refresh token and access token updated
+ * @returns {Object} The user data
+ */
 
 const refreshTokenUser = asyncHandler(async (req, res, next) => {
   try {
@@ -121,16 +133,20 @@ const refreshTokenUser = asyncHandler(async (req, res, next) => {
       sameSite: "None",
       httpOnly: true,
     });
-    return res.status(200).json(userData);
+    return res.status(200).json(userData.user);
   } catch (error) {
     next(error);
   }
 });
 
-//@desc Activate a user
-//@route POST /api/users/activate/:link
-//@access private with activationLink
-
+/**
+ * @desc activate a user
+ * @route GET /api/users/activate/:link
+ * @access public
+ * @param {string} req.params.link - The activation link of the user
+ * @returns {Cookie} The refresh token and access token set
+ * @returns  redirect to client url
+ */
 const activateUser = asyncHandler(async (req, res, next) => {
   try {
     const activationLink = req.params.link;
@@ -153,10 +169,14 @@ const activateUser = asyncHandler(async (req, res, next) => {
   }
 });
 
-//@desc Change password of user
-//@route POST /api/users/change-password
-//@access private with email and password
-
+/**
+ * @desc change password of user
+ * @route POST /api/users/change-password
+ * @access public
+ * @param {string} req.body.email - The email of the user
+ * @param {string} req.body.password - The password of the user
+ * @returns {string} Password changed successfully
+ */
 const changePasswordUser = asyncHandler(async (req, res, next) => {
   try {
     const { email, password } = req.body;
@@ -167,10 +187,13 @@ const changePasswordUser = asyncHandler(async (req, res, next) => {
   }
 });
 
-//@desc Forget password of user
-//@route POST /api/users/forgot-password
-//@access public with email and password
-
+/**
+ * @desc forget password of user
+ * @route POST /api/users/forget-password
+ * @access public
+ * @param {string} req.body.email - The email of the user
+ * @returns {string} Forget password link has been sent to your email
+ */
 const forgetPasswordUser = asyncHandler(async (req, res, next) => {
   try {
     const errors = validationResult(req);
@@ -189,10 +212,13 @@ const forgetPasswordUser = asyncHandler(async (req, res, next) => {
   }
 });
 
-//@desc Confirm Link to change password of user
-//@route POST /api/users/change-password/:link
-//@access private with link
-
+/**
+ * @desc change passwordUser link
+ * @route POST /api/users/forgot-password
+ * @access public
+ * @param {string} req.params.link - The link of the user
+ * @returns redirect to client url/new-password
+ */
 const changePasswordUserLink = asyncHandler(async (req, res, next) => {
   try {
     const PasswordLink = req.params.link;
@@ -203,12 +229,17 @@ const changePasswordUserLink = asyncHandler(async (req, res, next) => {
   }
 });
 
-//@desc Delete user by id
-//@route DELETE /api/users/delete
-//@access private with id
+/**
+ * @desc delete user
+ * @route DELETE /api/users/delete-user
+ * @access private
+ * @param {string} req.user.id - The id of the user
+ * @returns {string} User deleted successfully
+ */
 const deleteUserById = asyncHandler(async (req, res, next) => {
   try {
-    await deleteUser(req.user.id);
+    const userId = req.user.id;
+    await deleteUser(userId);
     res.clearCookie("refreshToken", {
       secure: true,
       httpOnly: true,
@@ -231,7 +262,6 @@ module.exports = {
   logoutUser,
   refreshTokenUser,
   activateUser,
-  getUsers,
   changePasswordUser,
   changePasswordUserLink,
   forgetPasswordUser,

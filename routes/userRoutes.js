@@ -8,7 +8,6 @@ const {
   forgetPasswordUser,
   changePasswordUserLink,
   changePasswordUser,
-  getUsers,
   deleteUserById,
 } = require("../controllers/userController");
 const { googleOauthHandler } = require("../services/googleOauthService");
@@ -41,8 +40,6 @@ router.post(
 );
 
 router.get("/refresh", refreshTokenUser);
-
-router.get("/allusers", authMiddleware, getUsers);
 
 router.get("/sessions/oauth/google", googleOauthHandler);
 

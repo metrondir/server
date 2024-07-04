@@ -2,6 +2,10 @@ const cheerio = require("cheerio");
 const axios = require("axios");
 const CurrencyModel = require("../models/curencyModel");
 
+/**
+ * @desc Fetches and parses the currency exchange rates.
+ * @returns {Object} The result of the query.
+ */
 const parseCurrencyExchange = async () => {
   try {
     const response = await axios.get(

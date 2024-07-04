@@ -1,6 +1,6 @@
 const express = require("express");
 const {
-  getRecipes,
+  getUnifiedRecipes,
   getRandomRecipes,
   getInformationById,
   getRecommendedRecipes,
@@ -10,7 +10,7 @@ const {
 
 const router = express.Router();
 
-router.get("/", getRecipes);
+router.get("/", getUnifiedRecipes);
 
 router.post("/translate", translateRecipe);
 

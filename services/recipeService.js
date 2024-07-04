@@ -36,10 +36,17 @@ const {
 const { languageData } = require("../utils/languageData");
 const ApiError = require("../middleware/apiError");
 
-const getRecipes = async (currency, language, id) => {
+/**
+ * @desc Get the recipes.
+ * @param {string} currency - The currency of the data.
+ * @param {string} language - The language of the data.
+ * @param {string} userId - The id of the user.
+ * @returns {Object} The recipes.
+ */
+const getRecipes = async (currency, language, userId) => {
   const [recipesDraft, recipeFromDb] = await Promise.all([
-    getRecipesFromUserIdFromRedis(id),
-    Recipe.find({ user: id }),
+    getRecipesFromUserIdFromRedis(userId),
+    Recipe.find({ user: userId }),
   ]);
 
   let recipes = recipesDraft ? recipeFromDb.concat(recipesDraft) : recipeFromDb;
@@ -100,6 +107,11 @@ const getRecipes = async (currency, language, id) => {
   }
 };
 
+/**
+ * @desc Create a recipe.
+ * @param {Object} req - The request object.
+ * @returns {Object} The created recipe.
+ */
 const createRecipe = async (req) => {
   try {
     const processedBody = processRequestBody(req.body);
@@ -138,6 +150,11 @@ const createRecipe = async (req) => {
   }
 };
 
+/**
+ * @desc Process the request body.
+ * @param {Object} body - The request body.
+ * @returns {Object} The processed request body.
+ */
 const processRequestBody = (body) => {
   const parseJsonField = (field) =>
     typeof field === "string" ? JSON.parse(field) : field;
@@ -151,11 +168,21 @@ const processRequestBody = (body) => {
   };
 };
 
+/**
+ * @desc Read the image as a base64 string.
+ * @param {string} path - The path to the image.
+ * @returns {string} The image as a base64 string.
+ */
 const readImageAsBase64 = async (path) => {
   const imageBuffer = await fs.readFile(path);
   return imageBuffer.toString("base64");
 };
 
+/**
+ * @desc Detect the food ingredients in the image.
+ * @param {string} imageBase64 - The image as a base64 string.
+ * @returns {Objecy} The detected food ingredients.
+ */
 const detectFoodIngredients = async (imageBase64) => {
   const response = await axios.post(
     "https://detect.roboflow.com/food-ingredient-recognition-51ngf/4",
@@ -169,6 +196,11 @@ const detectFoodIngredients = async (imageBase64) => {
   return response.data.predictions;
 };
 
+/**
+ * @desc Upload the image to imgur.
+ * @param {string} path - The path to the image.
+ * @returns {string} The uploaded image link.
+ */
 const uploadToImgur = async (path) => {
   const resizedImageBuffer = await sharp(path).resize(556, 370).toBuffer();
   const imgurResponse = await imgur.uploadBase64(
@@ -177,6 +209,13 @@ const uploadToImgur = async (path) => {
   return imgurResponse.link;
 };
 
+/**
+ * @desc Handle the payment info.
+ * @param {Object} body - The request body.
+ * @param {Object} user - The user object.
+ * @param {Object} recipe - The recipe object.
+ * @returns {Object} The updated recipe.
+ */
 const handlePaymentInfo = async (body, user, recipe) => {
   if (body.price) {
     recipe.paymentInfo = {
@@ -201,6 +240,11 @@ const handlePaymentInfo = async (body, user, recipe) => {
   }
 };
 
+/**
+ * @desc Create a recipe by draft.
+ * @param {Object} req - The request object.
+ * @returns {Object} The created recipe by draft.
+ */
 const createRecipeByDraft = async (req) => {
   try {
     const processedBody = processRequestBody(req.body);
@@ -241,6 +285,11 @@ const createRecipeByDraft = async (req) => {
   }
 };
 
+/**
+ * @desc
+ * @param {string} path - The path to the image.
+ * @returns {string}  - The uploaded image link.
+ */
 const handleImageUpload = async (path) => {
   const imageBase64 = await readImageAsBase64(path);
   const detectedIngredients = await detectFoodIngredients(imageBase64);
@@ -255,12 +304,19 @@ const handleImageUpload = async (path) => {
   return imgurResponse.link;
 };
 
-const getRecipesCollection = async (req) => {
+/**
+ * @desc get recipes collection
+ * @param {string} userId - The user id.
+ * @param {string} currency - The currency.
+ * @param {string} language - The language.
+ * @returns {Object} The recipes collection.
+ */
+const getRecipesCollection = async (userId, currency, language) => {
   try {
     const [myRecipes, favoriteRecipes, user, allRecipes] = await Promise.all([
-      Recipe.find({ user: req.user.id }).lean(),
-      FavoriteRecipe.find({ user: req.user.id }).lean(),
-      User.findById(req.user.id).lean(),
+      Recipe.find({ user: userId }).lean(),
+      FavoriteRecipe.find({ user: userId }).lean(),
+      User.findById(userId).lean(),
       Recipe.find({ "paymentInfo.paymentStatus": false }).lean(),
     ]);
 
@@ -271,9 +327,9 @@ const getRecipesCollection = async (req) => {
 
     const allData = [...myRecipes, ...favoriteRecipes, ...updatedRecipes];
 
-    await translateRecipes(allData, req.query.language);
-    if (req.query.currency) {
-      await changeCurrency(allData, req.query.currency);
+    await translateRecipes(allData, language);
+    if (currency) {
+      await changeCurrency(allData, currency);
     }
 
     return allData;
@@ -283,6 +339,12 @@ const getRecipesCollection = async (req) => {
   }
 };
 
+/**
+ * @desc Update payment recipes instructions with default instructions.
+ * @param {Array} recipes - The recipes to update.
+ * @param {Object} user - The user object.
+ * @returns {Array} The updated recipes.
+ */
 const updateRecipesWithDefaultInstructions = (recipes, user) => {
   return recipes.map((recipe) => {
     if (!user.boughtRecipes.includes(recipe._id.toString())) {
@@ -293,6 +355,12 @@ const updateRecipesWithDefaultInstructions = (recipes, user) => {
   });
 };
 
+/**
+ * @desc Translate recipes
+ * @param {Array} recipes - The recipes to update.
+ * @param {string} language - The language to translate to.
+ * @returns {Promise} The translated recipes.
+ */
 const translateRecipes = async (recipes, language) => {
   if (language) {
     await Promise.all(
@@ -301,13 +369,18 @@ const translateRecipes = async (recipes, language) => {
   }
 };
 
-const setFavoriteRecipes = async (req) => {
+/**
+ * @desc Set favorite recipes
+ * @param {string} recipeId  - The id of the recipe.
+ * @param {string} userId - The id of the user.
+ * @param {string} refreshToken - The refresh token
+ * @returns {Object} - The favorite recipe.
+ */
+const setFavoriteRecipes = async (recipeId, userId, refreshToken) => {
   try {
-    const recipeId = req.params.id;
-
     const existingFavoriteRecipe = await FavoriteRecipe.findOne({
       recipe: recipeId,
-      user: req.user.id,
+      user: userId,
     });
     const existedSpoonacularRecipe = await SpoonacularRecipeModel.findOne({
       id: recipeId,
@@ -330,7 +403,7 @@ const setFavoriteRecipes = async (req) => {
       recipeId,
       "en",
       null,
-      req.cookies.refreshToken,
+      refreshToken,
     );
     let foundAggLike;
     if (recipeId.length <= 8) {
@@ -369,7 +442,7 @@ const setFavoriteRecipes = async (req) => {
       diets: recipe.diets,
       image: recipe.image,
       readyInMinutes: recipe.readyInMinutes,
-      user: req.user.id,
+      user: userId,
       recipe: recipeId,
     });
     await newFavoriteRecipe.save();
@@ -378,11 +451,17 @@ const setFavoriteRecipes = async (req) => {
 
     return { isDeleted: false, data: newFavoriteRecipe };
   } catch (error) {
-    console.error(error);
     throw ApiError.BadRequest("Recipe not found");
   }
 };
 
+/**
+ * @desc Delete favorite recipe
+ * @param {Object} existingFavoriteRecipe - The existing favorite recipe.
+ * @param {string} recipeId - The id of the recipe.
+ * @param {Object} existedSpoonacularRecipe - The existed spoonacular recipe.
+ * @returns {boolean} - The deleted favorite recipe.
+ */
 const deleteFavoriteRecipe = async (
   existingFavoriteRecipe,
   recipeId,
@@ -400,6 +479,13 @@ const deleteFavoriteRecipe = async (
   return deletedFavoriteRecipe;
 };
 
+/**
+ * @desc Update recipe likes
+ * @param {string} recipeId - The id of the recipe.
+ * @param {Object} existedSpoonacularRecipe - The existed spoonacular recipe.
+ * @param {number} likesDelta - The delta of likes.
+ * @returns {Promise} The updated recipe likes.
+ */
 const updateRecipeLikes = async (
   recipeId,
   existedSpoonacularRecipe,
@@ -418,6 +504,13 @@ const updateRecipeLikes = async (
   }
 };
 
+/**
+ * @desc Update spoonacular recipe likes
+ * @param {Object} existedSpoonacularRecipe - The existed spoonacular recipe.
+ * @param {string} recipeId - The id of the recipe.
+ * @param {number} likesDelta - The delta of likes.
+ * @returns {Promise} The updated spoonacular recipe likes.
+ */
 const updateSpoonacularRecipeLikes = async (
   existedSpoonacularRecipe,
   recipeId,
@@ -437,6 +530,11 @@ const updateSpoonacularRecipeLikes = async (
   }
 };
 
+/**
+ * @desc Update a recipe.
+ * @param {Object} req - The request object.
+ * @returns {Object} The updated recipe.
+ */
 const updateRecipe = async (req) => {
   const recipe = await Recipe.findById(req.params.id);
   if (!recipe) {
@@ -465,16 +563,33 @@ const updateRecipe = async (req) => {
   return updatedRecipe;
 };
 
-const deleteRecipe = async (req) => {
-  const recipe = await Recipe.findById(req.params.id);
+/**
+ * @desc Deletes a recipe.
+ * @param {string} recipeId - The id of the recipe.
+ * @param {string} userId - The id of the user.
+ * @returns {Promise} The deleted recipe.
+ */
+const deleteRecipe = async (recipeId, userId) => {
+  const user = await User.findById(userId);
+  if (!user) {
+    throw ApiError.BadRequest("User not found");
+  }
+
+  const recipe = await Recipe.findById(recipeId);
+  if (recipe.user.toString() !== userId) {
+    throw ApiError.BadRequest("You can't delete this recipe");
+  }
   if (!recipe) {
     throw ApiError.BadRequest("Recipe not found");
   }
-  await Recipe.deleteOne({ id: req.params.id });
-
-  return recipe;
+  return await Recipe.deleteOne({ id: recipeId });
 };
 
+/**
+ * @desc Load the data.
+ * @param {string} language - The language to load the data in.
+ * @returns {Object} The dishtypes cuisines diets.
+ */
 const loadData = async (language) => {
   if (language == "en" || language == undefined) {
     return data;
@@ -484,6 +599,10 @@ const loadData = async (language) => {
   return translatedData;
 };
 
+/**
+ * @desc Get the currency and languages.
+ * @returns {Object} The currency and language data.
+ */
 const getCurrencyAndLanguges = async () => {
   const result = {
     languageData: languageData.languageData,
@@ -493,6 +612,10 @@ const getCurrencyAndLanguges = async () => {
   return result;
 };
 
+/**
+ * @desc Get the ingredients.
+ * @returns {Array} The ingredients.
+ */
 const getIngredients = async () => {
   let ingredients;
   try {
@@ -503,18 +626,22 @@ const getIngredients = async () => {
 
     ingredients = fileContent.split("\r\n");
   } catch (error) {
-    console.error("Error reading file:", error);
-    return [];
+    console.error(error.message);
+    throw ApiError.BadRequest("Error fetching ingredients");
   }
 
   return ingredients;
 };
 
-const createPaymentIntent = async (req, res) => {
+/**
+ * @desc Create a payment intent.
+ * @param {string} recipeId - The id of the recipe.
+ * @param {string} userId - The id of the user.
+ * @param {string} currency - The currency to change to.
+ * @returns {Object} The created payment intent.
+ */
+const createPaymentIntent = async (recipeId, userId, currency) => {
   try {
-    const { recipeId } = req.body;
-    let { currency } = req.query;
-
     const currencyMap = {
       ua: "uah",
       cz: "czk",
@@ -556,7 +683,7 @@ const createPaymentIntent = async (req, res) => {
         destination: user.stripeAccountId,
       },
       metadata: {
-        userId: req.user.id,
+        userId: userId,
         recipeId: recipeId,
       },
     });
@@ -567,8 +694,12 @@ const createPaymentIntent = async (req, res) => {
   }
 };
 
-const getSesionsStatus = async (req) => {
-  const event = req.body;
+/**
+ * @desc Get the status of the session.
+ * @param {Object} event - The event object.
+ * @returns {string} - The status of the session.
+ */
+const getSesionsStatus = async (event) => {
   let received = false;
   switch (event?.type) {
     case "payment_intent.succeeded": {
@@ -580,21 +711,23 @@ const getSesionsStatus = async (req) => {
       break;
     }
     case "payment_intent.payment_failed": {
-      let intent = event?.data?.object;
-      const message = intent?.last_payment_error?.message;
-      console.log("Failed:", intent?.id, message);
-
       break;
     }
     default:
-      console.log(`Unhandled event type ${event?.type}`);
   }
   return { received };
 };
 
-const getAllPaymentRecipes = async (id, language, currency) => {
+/**
+ * @desc Get all payment recipes.
+ * @param {string} userId - The id of the user.
+ * @param {string} language - The language to translate to.
+ * @param {string} currency - The currency to change to.
+ * @returns {Object} The payment recipes.
+ */
+const getAllPaymentRecipes = async (userId, language, currency) => {
   try {
-    const user = await User.findById(id).lean();
+    const user = await User.findById(userId).lean();
     const recipes = await Recipe.find({
       "paymentInfo.paymentStatus": true,
     }).lean();
@@ -610,13 +743,19 @@ const getAllPaymentRecipes = async (id, language, currency) => {
   }
 };
 
+/**
+ * @desc Format the recipe prices.
+ * @param {Array} recipes - The recipes to format.
+ * @param {string} currency - The currency to change to.
+ * @returns {Promise} The formatted recipes.
+ */
 const formatRecipePrices = async (recipes, currency) => {
   if (currency) {
     await Promise.all(
       recipes.map((recipe) => changeCurrency(recipe, currency)),
     );
   } else {
-    recipes.forEach((recipe) => {
+    recipes.map((recipe) => {
       recipe.pricePerServing = `${recipe.pricePerServing} USD`;
       if (recipe.paymentInfo?.price) {
         recipe.paymentInfo.price = `${recipe.paymentInfo.price} USD`;

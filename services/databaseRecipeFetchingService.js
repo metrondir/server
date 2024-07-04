@@ -1,12 +1,23 @@
 const Recipe = require("../models/recipeModel");
 const ApiError = require("../middleware/apiError");
 const SpoonacularRecipeModel = require("../models/spoonacularRecipeModel");
-
 const mongoose = require("mongoose");
+
+/**
+ * @desc Get the recipes from the database randomly.
+ * @param {number} limit // The limit of the query.
+ * @returns {Object} The result of the query.
+ */
 const getRecipesFromDatabaseRandom = async (limit) => {
   return await Recipe.aggregate([{ $sample: { size: Math.floor(limit) } }]);
 };
 
+/**
+ * @desc Get the recipes from the database with the changed like recipe.
+ * @param {number} limit - The limit of the query.
+ * @param {string} userId - The id of the user.
+ * @returns {Object} The result of the query.
+ */
 const getRecipesFromDatabaseRandomWithUsers = async (limit, userId) => {
   return await Recipe.aggregate([
     { $match: { user: { $ne: new mongoose.Types.ObjectId(userId) } } },
@@ -14,6 +25,12 @@ const getRecipesFromDatabaseRandomWithUsers = async (limit, userId) => {
   ]);
 };
 
+/**
+ * @desc Get the recipes from spoonacular the database with the changed like recipe.
+ * @param {number} limit - The limit of the query.
+ * @param {string} sortDirection - The direction of the sort.
+ * @returns {Object} The result of the query.
+ */
 const getSpoonAcularChangedLikeRecipe = async (limit, sortDirection) => {
   let query = SpoonacularRecipeModel.find();
 
@@ -31,6 +48,13 @@ const getSpoonAcularChangedLikeRecipe = async (limit, sortDirection) => {
   return recipes;
 };
 
+/**
+ * @desc Get the recipes from the database with the given categories.
+ * @param {string} sortDirection - The direction of the sort.
+ * @param {string} valueSort - The value to sort by.
+ * @param {string} query - The query to search by.
+ * @returns {Object} The result of the query.
+ */
 const getRecipesByCategories = async (sortDirection, valueSort, query) => {
   let sortValue = sortDirection === "desc" ? -1 : 1;
   try {
@@ -56,6 +80,12 @@ const getRecipesByCategories = async (sortDirection, valueSort, query) => {
   }
 };
 
+/**
+ * @desc Get the recipes from the database with the given ingredients.
+ * @param {number} limit - The limit of the query.
+ * @param {string} ingredients - The ingredients to search by.
+ * @returns {Object} The result of the query.
+ */
 const getRecipesFromDatabaseByIngridients = async (limit, ingredients) => {
   ingredients = ingredients.split(",");
   return await Recipe.aggregate([
@@ -68,6 +98,18 @@ const getRecipesFromDatabaseByIngridients = async (limit, ingredients) => {
   ]);
 };
 
+/**
+ * @desc Get the recipes from the database with the given query.
+ * @param {string} query - The query to search by.
+ * @param {number} limit - The limit of the query.
+ * @param {string} type - The type of the recipe.
+ * @param {string} diet - The diet of the recipe.
+ * @param {string} cuisine - The cuisine of the recipe.
+ * @param {number} maxReadyTime - The max ready time of the recipe.
+ * @param {string} sort - The value to sort by.
+ * @param {string} sortDirection - The direction of the sort.
+ * @returns {Object} -The result of the query.
+ */
 const getRecipesFromDatabaseComplex = async (
   query,
   limit,

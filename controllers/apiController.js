@@ -12,13 +12,27 @@ const {
   TranslateRecipeInformation,
 } = require("../services/translationService");
 
-// @desc Get recipes
-// @route GET /api/spoonacular/recipes?query=chicken&limit=10&type=main course&diet=vegetarian&cuisine=italian&maxReadyTime=20&language=en&currency=USD&page=1&size=10&sort=popularity&sortDirection=desc
-// @access public
-const getRecipes = asyncHandler(async (req, res, next) => {
+/**
+ * @desc    Get Unified recipes
+ * @route   GET /api/spoonacular/recipes
+ * @access  public
+ * @param   {string} req.query.query - Query string for the recipes
+ * @param   {number} req.query.limit - Number of recipes to fetch
+ * @param   {string} req.query.language - Language for the recipes
+ * @param   {number} req.query.page - Page number for pagination
+ * @param   {number} req.query.size - Size of the page for pagination
+ * @param   {string} req.query.currency - Currency for recipe pricing
+ * @param   {Object} req.query.type - Type of the recipe
+ * @param   {Object} req.query.diet - Diet of the recipe
+ * @param   {Object} req.query.cuisine - Cuisine of the recipe
+ * @param   {number} req.query.maxReadyTime - Max ready time of the recipe
+ * @param   {string} req.query.sort - Sort by value
+ * @param   {string} req.cookies.refreshToken - Refresh token
+ * @returns {Object} - The response object unified recipes
+ */
+const getUnifiedRecipes = asyncHandler(async (req, res, next) => {
   try {
     const { refreshToken } = req.cookies.refreshToken;
-    console.log(refreshToken);
     const {
       query,
       limit,
@@ -54,15 +68,24 @@ const getRecipes = asyncHandler(async (req, res, next) => {
       sort,
       sortDirection,
     );
-
     res.status(200).json(recipes);
   } catch (error) {
     next(error);
   }
 });
-// @desc Get random recipes
-// @route GET /api/spoonacular/recipes/random
-// @access public
+
+/**
+ * @desc    Get random recipes
+ * @route   GET /api/spoonacular/recipes/random
+ * @access  public
+ * @param   {number} req.query.limit - Number of recipes to fetch
+ * @param   {string} req.query.language - Language for the recipes
+ * @param   {number} req.query.page - Page number for pagination
+ * @param   {number} req.query.size - Size of the page for pagination
+ * @param   {string} req.query.currency - Currency for recipe pricing
+ * @param   {string} req.cookies.refreshToken - Refresh token
+ * @returns {Object} - The response object random recipes
+ */
 const getRandomRecipes = asyncHandler(async (req, res, next) => {
   try {
     const { limit, language, page, size, currency } = req.query;
@@ -83,50 +106,67 @@ const getRandomRecipes = asyncHandler(async (req, res, next) => {
       refreshToken,
       currency,
     );
-
     res.status(200).json(recipes);
   } catch (error) {
     console.log(error);
     next(error);
   }
 });
-// @desc Get information by id
-// @route GET /api/spoonacular/recipes/:id
-// @access public
+
+/**
+ * @desc    Get recipe information by ID
+ * @route   GET /api/spoonacular/recipes/:id
+ * @access  public
+ * @param   {Object} req - Express request object
+ * @param   {string} req.params - Recipe ID
+ * @param   {string} req.query.language - Language for the recipes
+ * @param   {string} req.query.currency - Currency for recipe pricing
+ * @param   {string} req.cookies.refreshToken - Refresh token
+ * @returns {Object} - The response object inforamation about recipe
+ */
 const getInformationById = asyncHandler(async (req, res, next) => {
   try {
-    const { id } = req.params;
+    const { recipeId } = req.params;
     const { language, currency } = req.query;
     const refreshToken = req.cookies.refreshToken;
-    const recipes = await fetchInformationById(
-      id,
+    const recipe = await fetchInformationById(
+      recipeId,
       language,
       currency,
       refreshToken,
     );
-    res.status(200).json(recipes);
+    res.status(200).json(recipe);
   } catch (error) {
     console.log(error);
     next(error);
   }
 });
-// @desc Get recommended recipes
-// @route GET /api/spoonacular/recipes/recommended/:id
-// @access public
+
+/**
+ * @desc    Get recommended recipes
+ * @route   GET /api/spoonacular/recipes/recommended/:recipeId
+ * @access  public
+ * @param   {string} req.params - Recipe ID
+ * @param   {string} req.query.language - Language for the recipes
+ * @param   {string} req.query.currency - Currency for recipe pricing
+ * @param   {number} req.query.page - Page number for pagination
+ * @param   {number} req.query.size - Size of the page for pagination
+ * @returns {Object} - The response object recommended recipes
+ */
 const getRecommendedRecipes = asyncHandler(async (req, res, next) => {
   try {
-    const { id } = req.params;
+    const { recipeId } = req.params;
     const { language, currency, page, size } = req.query;
     const ipAddress =
       req.headers["x-forwarded-for"] || req.connection.remoteAddress;
     const clientIp = ipAddress.split(",")[0];
-    const redisKey = `${clientIp}recomended-recipes${id}${language}${currency}`;
+    const redisKey = `${clientIp}recomended-recipes${recipeId}${language}${currency}`;
     const recipes = await redisGetModelsWithPaginating(
       page,
       redisKey,
       size,
       fetchRecommendedRecipes,
-      id,
+      recipeId,
       language,
       currency,
     );
@@ -136,24 +176,33 @@ const getRecommendedRecipes = asyncHandler(async (req, res, next) => {
     next(error);
   }
 });
-// @desc Get favourite recipes
-// @route GET /api/spoonacular/recipes/favourite
-// @access private
+
+/**
+ * @desc    Get favourite recipes
+ * @route   GET /api/spoonacular/recipes/favourite
+ * @access  private
+ * @param   {string} req.query.language - Language for the recipes
+ * @param   {string} req.query.id -  User ID
+ * @param   {string} req.query.currency - Currency for recipe pricing
+ * @param   {number} req.query.page - Page number for pagination
+ * @param   {number} req.query.size - Size of the page for pagination
+ * @returns {Object} - The response object favourite recipes
+ */
 const getFavouriteRecipes = asyncHandler(async (req, res, next) => {
   try {
-    const id = req.user.id;
+    const userId = req.user.id;
     const { language, page, size, currency } = req.query;
     const ipAddress =
       req.headers["x-forwarded-for"] || req.connection.remoteAddress;
     const clientIp = ipAddress.split(",")[0];
-    const redisKey = `${clientIp}favourite-recipes${id}${language}${currency}`;
+    const redisKey = `${clientIp}favourite-recipes${userId}${language}${currency}`;
 
     const recipes = await redisGetModelsWithPaginating(
       page,
       redisKey,
       size,
       fetchFavoriteRecipes,
-      id,
+      userId,
       language,
       currency,
     );
@@ -163,9 +212,20 @@ const getFavouriteRecipes = asyncHandler(async (req, res, next) => {
     next(error);
   }
 });
-// @desc Get recipes by ingredients
-// @route GET /api/spoonacular/recipes/findByIngredients?ingredients=apples&number=5&language=en&currency=USD&page=1&size=10
-// @access public
+
+/**
+ * @desc    Get recipes by ingredients
+ * @route   GET /api/spoonacular/recipes/ingredients
+ * @access  public
+ * @param   {string} req.query.ingredients - Ingredients for the recipes search format (plus separated)
+ * @param   {number} req.query.number - Number of recipes to fetch
+ * @param   {string} req.query.language - Language for the recipes
+ * @param   {number} req.query.page - Page number for pagination
+ * @param   {number} req.query.size - Size of the page for pagination
+ * @param   {string} req.query.currency - Currency for recipe pricing
+ * @param   {string} req.cookies.refreshToken - Refresh token
+ * @returns {Object} - The response object recipes by ingredients
+ */
 const getRecipesByIngridients = asyncHandler(async (req, res, next) => {
   try {
     const { refreshToken } = req.cookies.refreshToken;
@@ -192,9 +252,17 @@ const getRecipesByIngridients = asyncHandler(async (req, res, next) => {
     next(error);
   }
 });
-// @desc Translate recipe
-// @route POST /api/spoonacular/recipes/translate
-// @access public
+
+/**
+ * @desc    Get translated recipes
+ * @route   GET /api/spoonacular/recipes/translate
+ * @access  public
+ * @param   {string} req.query.language - Language for the recipes
+ * @param   {number} req.query.page - Page number for pagination
+ * @param   {number} req.query.size - Size of the page for pagination
+ * @param   {Object} req.body - The recipes to translate
+ * @returns {Object} - The response object translated recipes
+ */
 const translateRecipe = asyncHandler(async (req, res, next) => {
   try {
     const { language, page, size } = req.query;
@@ -202,7 +270,7 @@ const translateRecipe = asyncHandler(async (req, res, next) => {
       req.headers["x-forwarded-for"] || req.connection.remoteAddress;
     const clientIp = ipAddress.split(",")[0];
 
-    const redisKey = `${clientIp}translate-recipes$${language}`;
+    const redisKey = `${clientIp}translate-recipes$${language}${page}${size}`;
     const recipes = await redisGetModelsWithPaginating(
       page,
       redisKey,
@@ -211,7 +279,6 @@ const translateRecipe = asyncHandler(async (req, res, next) => {
       req.body,
       language,
     );
-
     res.status(200).json(recipes);
   } catch (error) {
     next(error);
@@ -219,7 +286,7 @@ const translateRecipe = asyncHandler(async (req, res, next) => {
 });
 
 module.exports = {
-  getRecipes,
+  getUnifiedRecipes,
   getRandomRecipes,
   getInformationById,
   getRecommendedRecipes,

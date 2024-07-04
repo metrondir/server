@@ -7,6 +7,11 @@ const ApiError = require("../middleware/apiError");
 const UserDto = require("../dtos/userDtos");
 const { generateTokens, saveTokens } = require("./tokenService");
 
+/**
+ * @desc Get the Google OAuth tokens.
+ * @param {string} code - The code to get the Google OAuth tokens.
+ * @returns {Object} The Google OAuth tokens.
+ */
 const getGoogleOauthTokens = asyncHandler(async (code) => {
   const url = "https://oauth2.googleapis.com/token";
   const data = {
@@ -31,6 +36,12 @@ const getGoogleOauthTokens = asyncHandler(async (code) => {
   }
 });
 
+/**
+ * @desc Get the Google user data.
+ * @param {string} id_token - The id token.
+ * @param {string} access_token - The access token.
+ * @returns {Object} The Google user data.
+ */
 const getGoogleUser = asyncHandler(async ({ id_token, access_token }) => {
   try {
     const response = await axios.get(
@@ -49,11 +60,25 @@ const getGoogleUser = asyncHandler(async ({ id_token, access_token }) => {
   }
 });
 
+/**
+ * @desc Find and update the user.
+ * @param {Object} query - The query to search by.
+ * @param {Object} update - The update to apply.
+ * @param {Object} options - The options to apply.
+ * @returns {boolean} The result of the query.
+ */
 const findAndUpdateUser = asyncHandler(async (query, update, options = {}) => {
   return User.findOneAndUpdate(query, update, options);
 });
 
-const googleOauthHandler = asyncHandler(async (req, res, next) => {
+/**
+ * @desc Google OAuth handler
+ * @access public
+ * @param {string} req.query.code - The code to get the Google OAuth tokens.
+ * @returns {Cookie}  The refresh token and access token set
+ * @returns  redirect to client url
+ */
+const googleOauthHandler = asyncHandler(async (req, res) => {
   const code = req.query.code;
   try {
     const { id_token, access_token } = await getGoogleOauthTokens(code);

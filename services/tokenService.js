@@ -7,6 +7,11 @@ const UserDto = require("../dtos/userDtos");
 const User = require("../models/userModel");
 const { uuidv7 } = require("uuidv7");
 
+/**
+ * @desc Generate the tokens.
+ * @param {Object} payload - The payload to generate the tokens.
+ * @returns {Object} The accessTokens and the refresh token.
+ */
 function generateTokens(payload) {
   const accessToken = jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, {
     expiresIn: process.env.REFRESH_TOKEN_EXPIRATION_TIME,
@@ -22,6 +27,12 @@ function generateTokens(payload) {
   return { accessToken, refreshToken };
 }
 
+/**
+ * @desc Validate the access token.
+ * @param {string} accessToken - The access token to validate.
+ * @param {string} refreshToken - The refresh token to validate.
+ * @returns {Object} The user data and the tokens.
+ */
 async function validateAccessToken(accessToken, refreshToken) {
   if ((await checkBlackListToken(accessToken)) === true) {
     throw ApiError.UnauthorizedError("User unauthorized");
@@ -48,31 +59,41 @@ async function validateAccessToken(accessToken, refreshToken) {
   return { userData, tokens: null };
 }
 
+/**
+ * @desc Validate the refresh token.
+ * @param {string} refreshToken - The refresh token to validate.
+ * @returns {Object} The refreshToken.
+ */
 async function validateRefreshToken(refreshToken) {
-  try {
-    const tokenDocument = await findToken(refreshToken);
-    return tokenDocument;
-  } catch (error) {
-    throw ApiError.BadRequest("Something went wrong");
-  }
+  return await findToken(refreshToken);
 }
 
+/**
+ * @desc Save the token.
+ * @param {string} userId - The id of the user.
+ * @param {string} refreshToken - The refresh token.
+ * @returns {Promise} The result of the query.
+ */
 const saveTokens = asyncHandler(async (userId, refreshToken) => {
-  const tokenData = await tokenModel.findOne({ user: userId });
-  if (tokenData) {
-    tokenData.refreshToken = refreshToken;
-    return tokenData.save();
-  }
-  const token = await tokenModel.create({ user: userId, refreshToken });
-  return token;
+  return await tokenModel.create({ user: userId, refreshToken });
 });
+
+/**
+ * @desc Remove the token.
+ * @param {string} refreshToken - The refresh token.
+ * @returns {Promise} The result of the query.
+ */
 const removeToken = asyncHandler(async (refreshToken) => {
-  const tokenData = await tokenModel.deleteOne({ refreshToken });
-  return tokenData;
+  return await tokenModel.deleteOne({ refreshToken });
 });
+
+/**
+ * @desc Find the token.
+ * @param {string} refreshToken - The refresh token.
+ * @returns {Promise} The result of the query.
+ */
 const findToken = asyncHandler(async (refreshToken) => {
-  const tokenData = await tokenModel.findOne({ refreshToken });
-  return tokenData;
+  return await tokenModel.findOne({ refreshToken });
 });
 
 module.exports = {

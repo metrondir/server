@@ -25,6 +25,11 @@ const {
   setBlackListToken,
 } = require("./redisService");
 
+/**
+ * @desc Validate the email uniqueness.
+ * @param {string} email - The email to validate.
+ * @returns {Promise} The email uniqueness validation.
+ */
 async function validateEmailUniqueness(email) {
   const candidate = await User.findOne({ email });
   if (candidate) {
@@ -34,6 +39,15 @@ async function validateEmailUniqueness(email) {
   }
 }
 
+/**
+ * @desc Create the user.
+ * @param {string} username - The username to create.
+ * @param {string} email - The email to create.
+ * @param {string} hashedPassword - The hashed password to create.
+ * @param {string} activationLink - The activation link to create.
+ * @param {string} activationLinkExpiration - The activation link expiration to create.
+ * @returns {Promise} The created user.
+ */
 async function createUser(
   username,
   email,
@@ -50,33 +64,41 @@ async function createUser(
   });
 }
 
+/**
+ * @desc Create the link with time.
+ * @returns {Promise} The expiration timestamp.
+ */
 async function createLinkWithTime() {
   const expirationDuration = 10;
-  const expirationTimestamp = moment()
-    .add(expirationDuration, "minutes")
-    .toISOString();
-
-  return expirationTimestamp;
+  return moment().add(expirationDuration, "minutes").toISOString();
 }
 
+/**
+ * @desc Send the activation email.
+ * @param {string} to - The email to send to.
+ * @param {string} link - The link to send.
+ * @returns {Promise} The email sent result.
+ */
 async function sendActivationEmail(to, link) {
   await gmailService.sendActivationGmail(to, link);
 }
+/**
+ * @desc Find user by refresh token.
+ * @param {string} refreshToken - The refresh token to find user.
+ * @returns {Object} The user found by refresh token.
+ */
 const findUserByRefreshToken = async (refreshToken) => {
   const tokenData = await findToken(refreshToken);
-
-  const user = await User.findById(tokenData.user);
-  return user;
+  return await User.findById(tokenData.user);
 };
 
-const getAllUsers = asyncHandler(async (req, res, next) => {
-  if (req.query.page && req.query.limit) {
-    await redisGetModelsWithPaginating(User, req, res, next);
-  } else {
-    await redisGetModels(User, req, res, next);
-  }
-});
-
+/**
+ * @desc Register the user.
+ * @param {string} username - The username to register.
+ * @param {string} email - The email to register.
+ * @param {string} password - The password to register.
+ * @returns {Promise} The registration result.
+ */
 const registration = asyncHandler(async (username, email, password) => {
   await validateEmailUniqueness(email);
 
@@ -92,14 +114,17 @@ const registration = asyncHandler(async (username, email, password) => {
     activationLink,
     activationLinkExpiration,
   });
-  await sendActivationEmail(
+  return await sendActivationEmail(
     email,
     `${process.env.API_URL}/api/users/activate/${activationLink}`,
   );
-
-  return true;
 });
 
+/**
+ * @desc Activate the user.
+ * @param {string} activationLink - The activation link to activate.
+ * @returns {Object} The user data and tokens.
+ */
 const activate = asyncHandler(async (activationLink) => {
   try {
     const registrationDetails =
@@ -157,6 +182,12 @@ const activate = asyncHandler(async (activationLink) => {
   }
 });
 
+/**
+ * @desc Login the user.
+ * @param {string} email - The email to login.
+ * @param {string} password - The password to login.
+ * @returns {Object} The userData and tokens.
+ */
 const login = asyncHandler(async (email, password) => {
   const user = await User.findOne({ email });
   if (!user) {
@@ -176,17 +207,26 @@ const login = asyncHandler(async (email, password) => {
   return { ...tokens, user: userDto };
 });
 
-const logout = asyncHandler(async (req) => {
+/**
+ * @desc Logout the user.
+ * @param {Object} req - The request object.
+ * @returns {Promise} The logout result.
+ */
+const logout = asyncHandler(async (refreshToken, accessToken) => {
   try {
-    await removeToken(req.cookies.refreshToken);
-    await setBlackListToken(req.cookies.accessToken);
-    return true;
+    await removeToken(refreshToken);
+    return await setBlackListToken(accessToken);
   } catch (error) {
     console.log(error.message);
     throw ApiError.BadRequest("Something went wrong");
   }
 });
 
+/**
+ * @desc Refresh the tokens.
+ * @param {string} refreshToken - The refresh token to refresh.
+ * @returns {Object} The tokens and user data
+ */
 const refresh = asyncHandler(async (refreshToken) => {
   if (!refreshToken) {
     throw ApiError.Forbbiden("User unauthenticated");
@@ -206,6 +246,11 @@ const refresh = asyncHandler(async (refreshToken) => {
   return { ...tokens, user: userDto };
 });
 
+/**
+ * @desc Forget the password.
+ * @param {string} email - The email to forget password.
+ * @returns {string}  The change password link.
+ */
 const forgetPassword = asyncHandler(async (email) => {
   const user = await User.findOne({ email });
   if (!user) {
@@ -229,6 +274,12 @@ const forgetPassword = asyncHandler(async (email) => {
   return changePasswordLink;
 });
 
+/**
+ * @desc Change the password.
+ * @param {string} email - The email to change password.
+ * @param {string} password - The password to change.
+ * @returns {Object} The user and tokens.
+ */
 const changePassword = asyncHandler(async (email, password) => {
   if (!password) {
     throw ApiError.BadRequest("Incorrect new password");
@@ -266,6 +317,11 @@ const changePassword = asyncHandler(async (email, password) => {
   return { ...tokens, user: userDto };
 });
 
+/**
+ * @desc Change the password link.
+ * @param {string} changePasswordLink - The change password link to change password.
+ * @returns {Promise} The change password link result.
+ */
 const changePasswordLink = asyncHandler(async (changePasswordLink) => {
   const user = await User.findOne({ changePasswordLink: changePasswordLink });
   if (!user) {
@@ -290,12 +346,17 @@ const changePasswordLink = asyncHandler(async (changePasswordLink) => {
   await user.save();
 });
 
-const deleteUser = asyncHandler(async (id) => {
-  const user = await User.findByIdAndDelete(id);
-  await Recipe.deleteMany({ user: id });
-  await FavoriteRecipe.deleteMany({ user: id });
+/**
+ * @desc Delete the user by the id.
+ * @param {string} userId - The id to delete.
+ * @returns {Promise} The delete result.
+ */
+const deleteUser = asyncHandler(async (userId) => {
+  const user = await User.findByIdAndDelete(userId);
+  await Recipe.deleteMany({ user: userId });
+  await FavoriteRecipe.deleteMany({ user: userId });
   await FavoriteRecipe.updateMany(
-    { user: { $in: id } },
+    { user: { $in: userId } },
     { $inc: { aggregateLikes: -1 } },
   );
   await removeToken(user.refreshToken);
@@ -305,7 +366,6 @@ const deleteUser = asyncHandler(async (id) => {
 });
 
 module.exports = {
-  getAllUsers,
   registration,
   activate,
   login,

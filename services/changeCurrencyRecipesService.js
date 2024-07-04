@@ -2,6 +2,12 @@ const asynchHandler = require("express-async-handler");
 const CurencyModel = require("../models/curencyModel");
 const RecipeModel = require("../models/recipeModel");
 
+/**
+ * @desc Change the currency of the recipes.
+ * @param {Array} recipes - The array of recipes to change the currency.
+ * @param {string} currency - The currency to change to.
+ * @returns {Array} The array of recipes with the changed currency.
+ */
 const changeCurrency = asynchHandler(async (recipes, currency) => {
   const price = await CurencyModel.find({ lan: currency });
   if (price && price.length > 0 && recipes.length > 1) {
@@ -46,9 +52,14 @@ const changeCurrency = asynchHandler(async (recipes, currency) => {
   }
 });
 
-const changeCurrencyForPayment = asynchHandler(async (id, currency) => {
+/**
+ * @param {string} recipeId - The id of the recipe.
+ * @param {string} currency - The currency to change to.
+ * @returns {number} The price with the changed currency.
+ */
+const changeCurrencyForPayment = asynchHandler(async (recipeId, currency) => {
   const price = await CurencyModel.find({ name: currency });
-  const recipe = await RecipeModel.findById(id);
+  const recipe = await RecipeModel.findById(recipeId);
   const pricePerDollar = price[0].pricePerDollar;
 
   recipe.paymentInfo.price = parseFloat(
@@ -57,6 +68,11 @@ const changeCurrencyForPayment = asynchHandler(async (id, currency) => {
   return parseFloat(recipe.paymentInfo.price.toFixed(2));
 });
 
+/**
+ * @param {number} price - The price to change.
+ * @param {string} currency - The currency to change to.
+ * @returns {number} The price with the changed currency.
+ */
 const changeCurrencyPrice = asynchHandler(async (price, currency) => {
   const currencyBd = await CurencyModel.find({ name: currency });
   const pricePerDollar = currencyBd[0].pricePerDollar;

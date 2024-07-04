@@ -1,4 +1,12 @@
 const ApiError = require("../middleware/apiError");
+
+/**
+ * @desc Calculate the pagination.
+ * @param {number} page - The page number.
+ * @param {number} size - The size of the page.
+ * @param {number} totalItems - The total number of items.
+ * @returns {Object} The pagination object.
+ */
 const calculatePagination = (page, size, totalItems) => {
   const startIndex = (page - 1) * size;
   const endIndex = page * size;
@@ -9,6 +17,13 @@ const calculatePagination = (page, size, totalItems) => {
   return { startIndex, endIndex, hasPrevious, hasNext };
 };
 
+/**
+ * @desc Paginates an array of data.
+ * @param {Array} data - The array of data to paginate.
+ * @param {number} page - The page number.
+ * @param {number} size - The size of the page.
+ * @returns {Object} The paginated data.
+ */
 const paginateArray = (data, page, size) => {
   try {
     if (!size || !page) {

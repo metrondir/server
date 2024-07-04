@@ -1,7 +1,15 @@
 const ApiError = require("../middleware/apiError");
 const redis = require("../config/redisClient");
 const { paginateArray } = require("./paginatedService");
-const redisGetModels = async (model, req, res, next, conditions = {}) => {
+
+/**
+ * @desc Gets the models from Redis or the database.
+ * @param {string} model - The model to get from Redis or the database.
+ * @param {Object} res - The response object.
+ * @param {Object} conditions - The conditions to pass to the query.
+ * @returns {Promise} The result of the query.
+ */
+const redisGetModels = async (model, res, conditions = {}) => {
   try {
     const redisKey = `${model.modelName.toLowerCase()}`;
     const redisModels = await new Promise((resolve, reject) => {
@@ -32,6 +40,19 @@ const redisGetModels = async (model, req, res, next, conditions = {}) => {
   }
 };
 
+/**
+ * @desc Gets the models with pagination from Redis or the database.
+ * @param {number} page - The page number.
+ * @param {string} redisKey - The key to store in Redis.
+ * @param {number} size - The size of the page.
+ * @param {function} func - The function to call if the data is not in Redis.
+ * @param {number} limit - The limit of the query.
+ * @param {string} language - The language of the data.
+ * @param {string} refreshToken - The refresh token.
+ * @param {string} currency - The currency of the data.
+ * @param {any} args - The arguments to pass to the function.
+ * @returns {Promise} The paginated result.
+ */
 const redisGetModelsWithPaginating = async (
   page,
   redisKey,
@@ -79,6 +100,12 @@ const redisGetModelsWithPaginating = async (
     throw ApiError.BadRequest(error.message);
   }
 };
+
+/**
+ * @desc Gets the recipes from the user id.
+ * @param {string} userId  The user id.
+ * @returns {Object} The recipes from the user.
+ */
 const getRecipesFromUserIdFromRedis = async (userId) => {
   const keys = await redis.keys(`recipe:${userId}*`);
 
@@ -93,6 +120,13 @@ const getRecipesFromUserIdFromRedis = async (userId) => {
 
   return recipes;
 };
+
+/**
+ * @desc Gets the recipe by the user id and recipe id.
+ * @param {string} userId - The user id.
+ * @param {string} recipeId - The recipe id.
+ * @returns {Object} The recipe.
+ */
 const getRecipeByUserIdAndRecipeId = async (userId, recipeId) => {
   const key = `recipe:${userId}${recipeId}`;
   const recipeData = await redis.hget(key, "data");
@@ -100,9 +134,22 @@ const getRecipeByUserIdAndRecipeId = async (userId, recipeId) => {
   const recipe = JSON.parse(recipeData);
   return recipe;
 };
+
+/**
+ * @desc Stores the registration details.
+ * @param {string} activationLink - The activation link.
+ * @param {Object} details - The details to store.
+ * @returns {Promise} The result of the query.
+ */
 const storeRegistrationDetails = async (activationLink, details) => {
   await redis.hset("registrations", activationLink, JSON.stringify(details));
 };
+
+/**
+ * @desc Stores the recipe.
+ * @param {Object} recipe - The recipe to store.
+ * @returns {Promise} The result of the query.
+ */
 const storeRecipe = async (recipe) => {
   const key = `recipe:${recipe.user}${recipe.id}`;
   const field = "data";
@@ -111,14 +158,30 @@ const storeRecipe = async (recipe) => {
   await redis.expire(key, process.env.COOKIE_MAX_AGE / 10000);
 };
 
+/**
+ * @desc Gets the registration details by the activation link.
+ * @param {string} activationLink - The activation link.
+ * @returns {Object} The details.
+ */
 const getRegistrationDetailsByActivationLink = async (activationLink) => {
   const detailsString = await redis.hget("registrations", activationLink);
   return detailsString ? JSON.parse(detailsString) : null;
 };
 
+/**
+ * @desc Deletes the registration details by the activation link.
+ * @param {string} activationLink
+ * @returns {Promise} The result of the query.
+ */
 const deleteRegistrationDetailsByActivationLink = async (activationLink) => {
   await redis.hdel("registrations", activationLink);
 };
+
+/**
+ * @desc Stores the customer.
+ * @param {Object} customer - The customer to store.
+ * @returns {Promise} The result of the query.
+ */
 const storeCustomer = async (customer) => {
   const key = `customer:${customer.data[0].id}`;
   const field = "data";
@@ -129,16 +192,33 @@ const storeCustomer = async (customer) => {
   const customerData = await redis.hget(key, "data");
   return JSON.parse(customerData);
 };
+
+/**
+ * @desc Gets the customer.
+ * @param {string} customerId - The customer id.
+ * @returns {Object} The customer.
+ */
 const getCustomer = async (customerId) => {
   const key = `customer:${customerId}`;
   const customerData = await redis.hget(key, "data");
   return JSON.parse(customerData);
 };
+
+/**
+ * @desc Deletes the customer.
+ * @param {string} customerId - The customer id.
+ * @returns {Promise} The result of the query.
+ */
 const deleteCustomer = async (customerId) => {
   const key = `customer:${customerId}`;
   await redis.del(key);
 };
 
+/**
+ * @desc Sets the token to the blacklist.
+ * @param {string} token - The token to blacklist.
+ * @returns {Promise} The result of the query.
+ */
 const setBlackListToken = async (token) => {
   try {
     const expirationTime =
@@ -152,11 +232,21 @@ const setBlackListToken = async (token) => {
   }
 };
 
+/**
+ * @desc Checks if the token is in the blacklist.
+ * @param {string} token - The token to check.
+ * @returns {Promise} The result of the query.
+ */
 const checkBlackListToken = async (token) => {
   const exists = await redis.hexists("blacklist", token);
   return exists;
 };
 
+/**
+ * @desc Deletes the keys that match the pattern.
+ * @param {string} ipAddress - The ip address to match.
+ * @returns {Promise} The result of the query.
+ */
 const onDataChanged = async (ipAddress) => {
   try {
     const pattern = `${ipAddress}*`;

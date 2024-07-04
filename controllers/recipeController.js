@@ -24,32 +24,27 @@ const upload = multer({
   limits: { fileSize: 1024 * 1024 * 5 },
 });
 
-//@desc Get recipe
-//@route GET /api/recipe:/id
-//@access private
-
-const getRecipe = asyncHandler(async (req, res, next) => {
-  const { id } = req.params;
-  try {
-    const recipe = await recipeService.getRecipe(id);
-    return res.status(200).json(recipe);
-  } catch (error) {
-    next(error);
-  }
-});
-
-//@desc Get all recipes
-//@route GET /api/recipe
-//@access private
+/**
+ * @desc Get a recipes
+ * @route GET /api/recipes
+ * @access private
+ * @param {string} req.query.page - The page number
+ * @param {string} req.query.size - The size of the page
+ * @param {string} req.query.language - The language of the data
+ * @param {string} req.query.currency - The currency of the data
+ * @param {string} req.user.id - The id of the user
+ * @returns {Object} The recipes
+ */
 
 const getRecipes = asyncHandler(async (req, res, next) => {
   try {
     const { page, size, language, currency } = req.query;
-    const id = req.user.id;
+    const userId = req.user.id;
+
     const ipAddress =
       req.headers["x-forwarded-for"] || req.connection.remoteAddress;
     const clientIp = ipAddress.split(",")[0];
-    const redisKey = `${clientIp}my-recipes${id}${language}${currency}`;
+    const redisKey = `${clientIp}my-recipes${userId}${language}${currency}`;
 
     const recipes = await redisGetModelsWithPaginating(
       page,
@@ -58,22 +53,29 @@ const getRecipes = asyncHandler(async (req, res, next) => {
       recipeService.getRecipes,
       currency,
       language,
-      id,
+      userId,
     );
-
     res.status(200).json(recipes);
   } catch (error) {
     next(error);
   }
 });
 
-//@desc Create new Favorite recipe
-//@route GET /api/recipe/favourite/:id
-//@access private
-
+/**
+ * @desc Set  favorite recipe
+ * @route Get /api/recipes/favourite:id
+ * @access private
+ * @param {string} req.cookies.refreshToken - The refresh token of the user
+ * @param {string} req.query.id - The  id of the recipe
+ * @param {string} req.user.id - The  id of the user
+ * @returns {string} - Favorite recipe created
+ */
 const setFavoriteRecipes = asyncHandler(async (req, res, next) => {
   try {
-    await recipeService.setFavoriteRecipes(req);
+    const { recipeId } = req.query.id;
+    const userId = req.user.id;
+    const refreshToken = req.cookies.refreshToken;
+    await recipeService.setFavoriteRecipes(recipeId, userId, refreshToken);
     const ipAddress =
       req.headers["x-forwarded-for"] || req.connection.remoteAddress;
     const clientIp = ipAddress.split(",")[0];
@@ -85,10 +87,13 @@ const setFavoriteRecipes = asyncHandler(async (req, res, next) => {
   }
 });
 
-//@desc Create new recipe
-//@route POST /api/recipe
-//@access private
-
+/**
+ * @desc Create recipe
+ * @route POST /api/recipes
+ * @access private
+ * @param {Object} req - The request object
+ * @returns {string} - Recipe created
+ */
 const createRecipe = [
   upload.single("image"),
   asyncHandler(async (req, res, next) => {
@@ -105,10 +110,13 @@ const createRecipe = [
   }),
 ];
 
-//@desc Update recipe
-//@route PUT /api/recipe:/id
-//@access private
-
+/**
+ * @desc Create recipe
+ * @route POST /api/recipes/by-draft
+ * @access private
+ * @param {Object} req - The request object
+ * @returns {string} - Recipe created By draft for 3 days
+ */
 const createRecipeByDraft = [
   upload.single("image"),
   asyncHandler(async (req, res, next) => {
@@ -125,10 +133,13 @@ const createRecipeByDraft = [
   }),
 ];
 
-//@desc Update recipe
-//@route PUT /api/recipe:/id
-//@access private
-
+/**
+ * @desc Update recipe
+ * @route PUT /api/recipes/by-draft
+ * @access private
+ * @param {Object} req - The request object
+ * @returns {Object} - The updated recipe and message Recipe updated
+ */
 const updateRecipe = asyncHandler(async (req, res, next) => {
   try {
     const recipe = await recipeService.updateRecipe(req);
@@ -142,13 +153,19 @@ const updateRecipe = asyncHandler(async (req, res, next) => {
   }
 });
 
-//@desc Delete recipe
-//@route DELETE /api/recipe:/id
-//@access private
-
+/**
+ * @desc Delete recipe
+ * @route DELETE /api/recipes/:id
+ * @access private
+ * @param {string} req.query.id - The id of the recipe
+ * @param {string} req.user.id - The id of the user
+ * @returns {string}  -  Recipe deleted
+ */
 const deleteRecipe = asyncHandler(async (req, res, next) => {
   try {
-    await recipeService.deleteRecipe(req);
+    const recipeId = req.query.id;
+    const userId = req.user.id;
+    await recipeService.deleteRecipe(recipeId, userId);
     const ipAddress =
       req.headers["x-forwarded-for"] || req.connection.remoteAddress;
     const clientIp = ipAddress.split(",")[0];
@@ -158,9 +175,16 @@ const deleteRecipe = asyncHandler(async (req, res, next) => {
     next(error);
   }
 });
-//@access load Data with language
-//@desc Load data to select
-//@route GET /api/recipe/loadDataToSelect
+
+/**
+ * @desc  Load data to select
+ * @route GET /api/recipes/data
+ * @access public
+ * @param {string} req.query.language - The language of the data
+ * @param {string} req.query.page - The page number
+ * @param {string} req.query.size - The size of the page
+ * @returns {Object}  - Recipe dishes, types and cuisines
+ */
 const loadDataToSelect = asyncHandler(async (req, res, next) => {
   try {
     const { language, page, size } = req.query;
@@ -177,9 +201,15 @@ const loadDataToSelect = asyncHandler(async (req, res, next) => {
     next(error);
   }
 });
-// @desc Load currency and languages
-// @route GET /api/recipe/loadCurrencyAndLanguges
-// @access public
+
+/**
+ * @desc  Load curency&languages
+ * @route GET /api/recipes/load-currency-languages
+ * @access public
+ * @param {string} req.query.page - The page number
+ * @param {string} req.query.size - The size of the page
+ * @returns {Object}  - Currency and languages
+ */
 const loadCurrencyAndLanguges = asyncHandler(async (req, res, next) => {
   try {
     const { page, size } = req.query;
@@ -195,9 +225,15 @@ const loadCurrencyAndLanguges = asyncHandler(async (req, res, next) => {
     next(error);
   }
 });
-// @desc Load ingredients
-// @route GET /api/recipe/loadIngredients
-// @access public
+
+/**
+ * @desc  Load ingredients
+ * @route GET /api/recipes/load-ingredients
+ * @access public
+ * @param {string} req.query.page - The page number
+ * @param {string} req.query.size - The size of the page
+ * @returns {Object}  - Ingredients
+ */
 const loadIngredients = asyncHandler(async (req, res, next) => {
   try {
     const { page, size } = req.query;
@@ -214,12 +250,20 @@ const loadIngredients = asyncHandler(async (req, res, next) => {
     next(error);
   }
 });
-// @desc Create payment intent
-// @route POST /api/recipe/create-payment-intent
-// @access private
+
+/**
+ * @desc  create payment intent
+ * @route GET /api/recipes/load-ingredients
+ * @access public
+ * @param {string} req.body.recipeId - The recipe id
+ * @param {string} req.query.currency - The currency of the data
+ * @returns {Object}  - Payment intent
+ */
 const createPaymentIntent = asyncHandler(async (req, res, next) => {
   try {
-    const payment = await recipeService.createPaymentIntent(req, res);
+    const { recipeId } = req.body;
+    const { currency } = req.query;
+    const payment = await recipeService.createPaymentIntent(recipeId, currency);
 
     return res.status(200).json(payment);
   } catch (error) {
@@ -227,63 +271,90 @@ const createPaymentIntent = asyncHandler(async (req, res, next) => {
     next(error);
   }
 });
-// @desc Get all payment recipes
-// @route GET /api/recipe/payment-recipes
-// @access public
+
+/**
+ * @desc  get all payment recipes
+ * @route GET /api/recipes/payment-recipes
+ * @access public
+ * @param {string} req.user.id - The id of the user
+ * @param {number} req.query.page - The page number
+ * @param {number} req.query.size - The size number
+ * @param {string} req.query.language - The language of the data
+ * @param {string} req.query.currency - The currency of the data
+ * @returns {Object}  - Payment recipes
+ */
 const getAllPaymentRecipes = asyncHandler(async (req, res, next) => {
   try {
+    const userId = req.user.id;
     const { page, size, language, currency } = req.query;
     const redisKey = `AllPaymentRecipes${language}${currency}`;
-    const loadData = await redisGetModelsWithPaginating(
+    const recipes = await redisGetModelsWithPaginating(
       page,
       redisKey,
       size,
       recipeService.getAllPaymentRecipes,
-      req.user.id,
+      userId,
       language,
       currency,
     );
-    return res.status(200).json(loadData);
+    return res.status(200).json(recipes);
   } catch (error) {
     console.log(error);
+    next(error);
   }
 });
 
-// @desc Get recipes collection
-// @route GET /api/recipe/collection
-// @access public
+/**
+ * @desc  get all recipes collection
+ * @route GET /api/recipes/collection
+ * @access public
+ * @param {string} req.user.id - The id of the user
+ * @param {number} req.query.page - The page number
+ * @param {number} req.query.size - The size number
+ * @param {string} req.query.language - The language of the data
+ * @param {string} req.query.currency - The currency of the data
+ * @returns {Object}  - Recipes collection
+ */
 const getRecipesCollection = asyncHandler(async (req, res, next) => {
   try {
+    const userId = req.user.id;
     const { page, size, language, currency } = req.query;
-    const redisKey = `RecipesCollection${language}${currency}`;
-    const loadData = await redisGetModelsWithPaginating(
+    const redisKey = `RecipesCollection${language}${currency}${userId}${page}${size}`;
+    const recipes = await redisGetModelsWithPaginating(
       page,
       redisKey,
       size,
       recipeService.getRecipesCollection,
-      req,
+      userId,
+      currency,
+      language,
     );
-    return res.status(200).json(loadData);
+    return res.status(200).json(recipes);
   } catch (error) {
     console.log(error);
+    next(error);
   }
 });
-// @desc Get sesions status
-// @route GET /api/recipe/sesions-status
-// @access public
+
+/**
+ * @desc  get sesions status
+ * @route GET /api/recipes/webhooks
+ * @access public
+ * @param {Object} req.body.event - The event of the user payment session
+ * @returns {Object}  - Session status
+ */
 const getSesionsStatus = asyncHandler(async (req, res, next) => {
   try {
-    const session = await recipeService.getSesionsStatus(req);
+    const { event } = req.body;
+    const session = await recipeService.getSesionsStatus(event);
     return res.status(200).json(session);
   } catch (error) {
     console.log(error);
-
     next(error);
   }
 });
 
 module.exports = {
-  getRecipe,
   getRecipes,
   setFavoriteRecipes,
   createRecipe,

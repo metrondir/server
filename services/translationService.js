@@ -9,6 +9,11 @@ const translate = new Translate({
   projectId: CREDENTIALS.project_id,
 });
 
+/**
+ * @desc Detects the language of the text.
+ * @param {string} text - The text to detect the language.
+ * @returns {string} The detected language.
+ */
 async function detectLanguage(text) {
   try {
     const response = await axios.post(
@@ -36,6 +41,13 @@ async function detectLanguage(text) {
   }
 }
 
+/**
+ * @desc Handles the API error.
+ * @param {Error} error - The error to handle.
+ * @param {function} retryFunction - The function to retry.
+ * @param {any} args - The arguments to pass to the function.
+ * @returns {Promise} The result of the query.
+ */
 async function handleApiError(error, retryFunction, ...args) {
   if (
     error.response &&
@@ -49,6 +61,12 @@ async function handleApiError(error, retryFunction, ...args) {
   }
 }
 
+/**
+ * @desc Translates the text to the given language.
+ * @param {string} text - The text to translate.
+ * @param {string} language - The language to translate to.
+ * @returns {string} The translated text.
+ */
 async function translateText(text, language) {
   if (language == "cz") language = "cs";
   if (language == "ua") language = "uk";
@@ -64,6 +82,11 @@ async function translateText(text, language) {
   }
 }
 
+/**
+ * @desc Translates the minutes to the given language.
+ * @param {string} language - The language to translate to.
+ * @returns {string} The translated minutes.
+ */
 async function translateAndAppendMinutes(language) {
   if (language == "cz") language = "cs";
   if (language == "ua") language = "uk";
@@ -73,6 +96,12 @@ async function translateAndAppendMinutes(language) {
   return ` ${min}`;
 }
 
+/**
+ * @desc Translates the recipe fields to the given language.
+ * @param {Object} recipe - The recipe to translate.
+ * @param {string} language - The language to translate to.
+ * @returns {Promise} The translated recipe.
+ */
 async function translateRecipeFields(recipe, language) {
   if (language == "cz") language = "cs";
   if (language == "ua") language = "uk";
@@ -89,6 +118,12 @@ async function translateRecipeFields(recipe, language) {
   );
 }
 
+/**
+ * @desc Translates the recipe information to the given language.
+ * @param {Object} recipe - The recipe to translate.
+ * @param {string} language - The language to translate to.
+ * @returns {Promise} The translated recipe.
+ */
 async function translateRecipeInformation(recipe, language) {
   if (language == "cz") language = "cs";
   if (language == "ua") language = "uk";
@@ -100,16 +135,27 @@ async function translateRecipeInformation(recipe, language) {
   recipe.readyInMinutes += min;
 }
 
+/**
+ * @desc Translates the recipe and appends the minutes to the given language.
+ * @param {string} recipe - The recipe to translate.
+ * @param {string} language - The language to translate to.
+ * @returns {Promise} The translated recipe.
+ */
 async function translateAndAppendMinutesFav(recipe, language) {
   if (language == "cz") language = "cs";
   if (language == "ua") language = "uk";
   if (language == "sp") language = "es";
 
   recipe = await translateText(recipe, language);
-  console.log(recipe);
   return recipe;
 }
 
+/**
+ * @desc Translates the recipe fav information to the given language.
+ * @param {Object} recipe - The recipe to translate.
+ * @param {string} language - The language to translate to.
+ * @returns {Promise} The translated recipe.
+ */
 async function translateRecipeFavInformation(recipe, language) {
   if (language == "cz") language = "cs";
   if (language == "ua") language = "uk";
@@ -122,6 +168,13 @@ async function translateRecipeFavInformation(recipe, language) {
 
   await translateRecipeFields(recipe, language);
 }
+
+/**
+ * @desc Translates the recipe to the given language.
+ * @param {Object} recipe - The recipe to translate.
+ * @param {string} language - The language to translate to.
+ * @returns {Promise}  The translated recipe.
+ */
 async function translateRecipePost(recipe, language) {
   if (language == "cz") language = "cs";
   if (language == "ua") language = "uk";
@@ -179,6 +232,12 @@ async function translateRecipePost(recipe, language) {
   }
 }
 
+/**
+ * @desc Translates the recipe to the given language.
+ * @param {Object} recipe - The recipe to translate.
+ * @param {string} language - The language to translate to.
+ * @returns {Promise} The translated recipe.
+ */
 async function translateRecipeGet(recipe, language) {
   if (language == "cz") language = "cs";
   if (language == "ua") language = "uk";
@@ -237,6 +296,12 @@ async function translateRecipeGet(recipe, language) {
   }
 }
 
+/**
+ * @desc Translates the recipe information to the given language.
+ * @param {Object} recipe - The recipe to translate.
+ * @param {string} language - The language to translate to.
+ * @returns {Promise} The translated recipe.
+ */
 const TranslateRecipeInformation = async (recipe, language) => {
   if (language == "cz") language = "cs";
   if (language == "ua") language = "uk";
