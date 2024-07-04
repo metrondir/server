@@ -123,7 +123,7 @@ const registration = asyncHandler(async (username, email, password) => {
 /**
  * @desc Activate the user.
  * @param {string} activationLink - The activation link to activate.
- * @returns {Object} The user data and tokens.
+ * @returns {Promise<Object>} The user data and tokens.
  */
 const activate = asyncHandler(async (activationLink) => {
   try {

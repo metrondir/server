@@ -110,7 +110,7 @@ const getRecipes = async (currency, language, userId) => {
 /**
  * @desc Create a recipe.
  * @param {Object} req - The request object.
- * @returns {Object} The created recipe.
+ * @returns {Promise<Object>} The created recipe.
  */
 const createRecipe = async (req) => {
   try {
@@ -243,7 +243,7 @@ const handlePaymentInfo = async (body, user, recipe) => {
 /**
  * @desc Create a recipe by draft.
  * @param {Object} req - The request object.
- * @returns {Object} The created recipe by draft.
+ * @returns {Promise<Object>} The created recipe by draft.
  */
 const createRecipeByDraft = async (req) => {
   try {
@@ -286,9 +286,9 @@ const createRecipeByDraft = async (req) => {
 };
 
 /**
- * @desc
+ * @desc Handle the image upload.
  * @param {string} path - The path to the image.
- * @returns {string}  - The uploaded image link.
+ * @returns {Promise<string>}  - The uploaded image link.
  */
 const handleImageUpload = async (path) => {
   const imageBase64 = await readImageAsBase64(path);

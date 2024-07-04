@@ -107,7 +107,7 @@ const fetchRecipesData = async (response, language, currency) => {
  * @param {string} currency - The currency to change to.
  * @param {string} refreshToken - The refresh token.
  * @param {string} ingredients - The ingredients to search by.
- * @returns {Promise} The array of recipes.
+ * @returns {Promise<Object} The array of recipes.
  */
 const fetchRecipesByIngredients = async (
   number,
@@ -179,7 +179,7 @@ const fetchRecipesByIngredients = async (
  * @param {string} refreshToken - The refresh token.
  * @param {string} sort - The value to sort by.
  * @param {string} sortDirection - The direction of the sort.
- * @returns {Promise} The array of recipes.
+ * @returns {Promise<Object>} The array of recipes.
  */
 const fetchRecipesUnified = async (
   query,
@@ -332,7 +332,7 @@ const sortRecipes = (recipes, sort, sortDirection) => {
  * @param {string} language - The language of the data.
  * @param {string} refreshToken - The refresh token.
  * @param {string} currency - The currency of the data.
- * @returns {Promise} The array of recipes.
+ * @returns {Promise<Object>} The array of recipes.
  */
 const fetchRandomRecipes = async (limit, language, refreshToken, currency) => {
   const apiKey = getApiKey();
@@ -431,7 +431,7 @@ const fetchRecommendedRecipes = async (recipeId, language, currency) => {
  * @param {string} language - The language to translate to.
  * @param {string} currency - The currency to change to.
  * @param {string} refreshToken - The refresh token.
- * @returns {Promise} The recipe information.
+ * @returns {Promise<Object>} The recipe information.
  */
 const fetchInformationByRecommended = async (
   recipeId,
@@ -564,7 +564,7 @@ const parsedIngredients = async (ingredients) => {
  * @param {string} language - The language to translate to.
  * @param {string} currency - The currency to change to.
  * @param {string} refreshToken - The refresh token.
- * @returns {Promise} The recipe information.
+ * @returns {Promise<Object>} The recipe information.
  */
 const fetchInformationById = async (
   recipeId,

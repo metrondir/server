@@ -68,7 +68,7 @@ const getRecipes = asyncHandler(async (req, res, next) => {
  * @param {string} req.cookies.refreshToken - The refresh token of the user
  * @param {string} req.query.id - The  id of the recipe
  * @param {string} req.user.id - The  id of the user
- * @returns {string} - Favorite recipe created
+ * @returns {Promise<string>} - Favorite recipe created
  */
 const setFavoriteRecipes = asyncHandler(async (req, res, next) => {
   try {
@@ -92,7 +92,7 @@ const setFavoriteRecipes = asyncHandler(async (req, res, next) => {
  * @route POST /api/recipes
  * @access private
  * @param {Object} req - The request object
- * @returns {string} - Recipe created
+ * @returns {Promise<string>} - Recipe created
  */
 const createRecipe = [
   upload.single("image"),
@@ -115,7 +115,7 @@ const createRecipe = [
  * @route POST /api/recipes/by-draft
  * @access private
  * @param {Object} req - The request object
- * @returns {string} - Recipe created By draft for 3 days
+ * @returns {Promise<string>} - Recipe created By draft for 3 days
  */
 const createRecipeByDraft = [
   upload.single("image"),
@@ -138,7 +138,7 @@ const createRecipeByDraft = [
  * @route PUT /api/recipes/by-draft
  * @access private
  * @param {Object} req - The request object
- * @returns {Object} - The updated recipe and message Recipe updated
+ * @returns {Promise<Object>} - The updated recipe and message Recipe updated
  */
 const updateRecipe = asyncHandler(async (req, res, next) => {
   try {
@@ -257,7 +257,7 @@ const loadIngredients = asyncHandler(async (req, res, next) => {
  * @access public
  * @param {string} req.body.recipeId - The recipe id
  * @param {string} req.query.currency - The currency of the data
- * @returns {Object}  - Payment intent
+ * @returns {Promise<Object>}  - Payment intent
  */
 const createPaymentIntent = asyncHandler(async (req, res, next) => {
   try {
@@ -341,7 +341,7 @@ const getRecipesCollection = asyncHandler(async (req, res, next) => {
  * @route GET /api/recipes/webhooks
  * @access public
  * @param {Object} req.body.event - The event of the user payment session
- * @returns {Object}  - Session status
+ * @returns {Promise<Object>}  - Session status
  */
 const getSesionsStatus = asyncHandler(async (req, res, next) => {
   try {
