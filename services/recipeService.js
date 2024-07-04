@@ -755,7 +755,7 @@ const formatRecipePrices = async (recipes, currency) => {
       recipes.map((recipe) => changeCurrency(recipe, currency)),
     );
   } else {
-    recipes.map((recipe) => {
+    recipes.foreach((recipe) => {
       recipe.pricePerServing = `${recipe.pricePerServing} USD`;
       if (recipe.paymentInfo?.price) {
         recipe.paymentInfo.price = `${recipe.paymentInfo.price} USD`;
