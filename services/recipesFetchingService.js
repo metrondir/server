@@ -405,8 +405,7 @@ const fetchRecommendedRecipes = async (recipeId, language, currency) => {
     const url = `${baseUrl}/${recipeId}/similar?apiKey=${apiKey}`;
     try {
       const response = await axios.get(url);
-      const stringId = recipeId.toString();
-      if (stringId.length <= 7) {
+      if (recipeId.length <= 7) {
         return Promise.all(
           response.data.map(async (recipe) =>
             fetchInformationByRecommended(recipe.id, language, currency),
@@ -462,7 +461,7 @@ const fetchInformationByRecommended = async (
       (recipeData.pricePerServing / 100).toFixed(2),
     );
     const recipeBase = {
-      id: recipeData.recipeId,
+      id: recipeData.id,
       title: recipeData.title,
       dishTypes: recipeData.dishTypes || [],
       image: recipeData.image,
@@ -470,7 +469,6 @@ const fetchInformationByRecommended = async (
       pricePerServing: !currency ? pricePerServing + " USD" : pricePerServing,
       isFavourite,
     };
-
     if (language !== "en" && language) {
       await translateRecipeInformation(recipeData, language);
       recipeBase.readyInMinutes = recipeData.readyInMinutes;
