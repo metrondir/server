@@ -578,7 +578,6 @@ const fetchInformationById = async (
     const pricePerServing = currency
       ? data.pricePerServing
       : parseFloat(data.pricePerServing) + " USD";
-
     return {
       id: data._id || data.recipeId,
       title: data.title,
@@ -643,7 +642,7 @@ const fetchInformationById = async (
     } else {
       handlePaymentStatus(data, {});
     }
-
+    console.log(favourites);
     const isFavourite = favourites.some(
       (fav) => fav.recipe.toString() === data._id.toString(),
     );

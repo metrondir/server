@@ -72,7 +72,7 @@ const getRecipes = asyncHandler(async (req, res, next) => {
  */
 const setFavoriteRecipes = asyncHandler(async (req, res, next) => {
   try {
-    const { recipeId } = req.query.id;
+    const recipeId = req.query.id;
     const userId = req.user.id;
     const refreshToken = req.cookies.refreshToken;
     await recipeService.setFavoriteRecipes(recipeId, userId, refreshToken);
@@ -258,13 +258,13 @@ const loadIngredients = asyncHandler(async (req, res, next) => {
  * @desc  create payment intent
  * @route GET /api/recipes/load-ingredients
  * @access public
- * @param {string} req.body.recipeId - The recipe id
+ * @param {string} req.body.id - The recipe id
  * @param {string} req.query.currency - The currency of the data
  * @returns {Promise<Object>}  - Payment intent
  */
 const createPaymentIntent = asyncHandler(async (req, res, next) => {
   try {
-    const { recipeId } = req.body;
+    const { recipeId } = req.body.id;
     const { currency } = req.query;
     const payment = await recipeService.createPaymentIntent(recipeId, currency);
 

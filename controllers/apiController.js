@@ -32,7 +32,7 @@ const {
  */
 const getUnifiedRecipes = asyncHandler(async (req, res, next) => {
   try {
-    const { refreshToken } = req.cookies.refreshToken;
+    const refreshToken = req.cookies.refreshToken;
     const {
       query,
       limit,
@@ -93,7 +93,7 @@ const getRandomRecipes = asyncHandler(async (req, res, next) => {
       req.headers["x-forwarded-for"] || req.connection.remoteAddress;
     const clientIp = ipAddress.split(",")[0];
 
-    const { refreshToken } = req.cookies.refreshToken;
+    const refreshToken = req.cookies.refreshToken;
 
     const redisKey = `${clientIp}random-recipes${refreshToken}${language}${currency}${limit}`;
     const recipes = await redisGetModelsWithPaginating(
@@ -126,7 +126,7 @@ const getRandomRecipes = asyncHandler(async (req, res, next) => {
  */
 const getInformationById = asyncHandler(async (req, res, next) => {
   try {
-    const { recipeId } = req.params;
+    const recipeId = req.params.id;
     const { language, currency } = req.query;
     const refreshToken = req.cookies.refreshToken;
     const recipe = await fetchInformationById(
@@ -155,7 +155,7 @@ const getInformationById = asyncHandler(async (req, res, next) => {
  */
 const getRecommendedRecipes = asyncHandler(async (req, res, next) => {
   try {
-    const { recipeId } = req.params;
+    const recipeId = req.params.id;
     const { language, currency, page, size } = req.query;
     const ipAddress =
       req.headers["x-forwarded-for"] || req.connection.remoteAddress;
@@ -228,7 +228,7 @@ const getFavouriteRecipes = asyncHandler(async (req, res, next) => {
  */
 const getRecipesByIngridients = asyncHandler(async (req, res, next) => {
   try {
-    const { refreshToken } = req.cookies.refreshToken;
+    const refreshToken = req.cookies.refreshToken;
     const { ingredients, number, language, page, size, currency } = req.query;
 
     const ipAddress =
