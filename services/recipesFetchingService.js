@@ -456,7 +456,7 @@ const fetchInformationByRecommended = async (
     }
     const recipeData = response.data;
     const isFavourite = favourites.some(
-      (fav) => fav.recipe.toString() === recipeData.recipeId.toString(),
+      (fav) => fav.recipe === recipeData.recipeId,
     );
     const pricePerServing = parseFloat(
       (recipeData.pricePerServing / 100).toFixed(2),
@@ -578,6 +578,7 @@ const fetchInformationById = async (
     const pricePerServing = currency
       ? data.pricePerServing
       : parseFloat(data.pricePerServing) + " USD";
+
     return {
       id: data._id || data.recipeId,
       title: data.title,
@@ -666,9 +667,7 @@ const fetchInformationById = async (
       const user = await findUserByRefreshToken(refreshToken);
       favourites = await FavoriteRecipe.find({ user: user._id });
     }
-    const isFavourite = favourites.some(
-      (fav) => fav.recipe.toString() === data.recipeId.toString(),
-    );
+    const isFavourite = favourites.some((fav) => fav.recipe === data.recipeId);
 
     if (language !== "en" && language) {
       await handleRecipeTranslation(data, language);
