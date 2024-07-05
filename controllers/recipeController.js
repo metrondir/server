@@ -75,7 +75,6 @@ const setFavoriteRecipes = asyncHandler(async (req, res, next) => {
     const recipeId = req.params.id;
     const userId = req.user.id;
     const refreshToken = req.cookies.refreshToken;
-    console.log(refreshToken, "refreshToken");
     await recipeService.setFavoriteRecipes(recipeId, userId, refreshToken);
     const ipAddress =
       req.headers["x-forwarded-for"] || req.connection.remoteAddress;
