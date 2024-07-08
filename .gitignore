@@ -2,3 +2,6 @@
 .env
 .env.test
 /logs
+/coverage
+versel.json
+/utils/top-1k-ingredients.txt

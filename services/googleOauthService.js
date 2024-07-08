@@ -21,19 +21,13 @@ const getGoogleOauthTokens = asyncHandler(async (code) => {
     redirect_uri: process.env.CLIENT_REDIRECT_GOOGLE,
     grant_type: "authorization_code",
   };
-  try {
-    const response = await axios.post(url, qs.stringify(data), {
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-    });
+  const response = await axios.post(url, qs.stringify(data), {
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+  });
 
-    return response.data;
-  } catch (error) {
-    throw ApiError.BadRequest(
-      `Google OAuth token error: ${error.response?.data || error.message}`,
-    );
-  }
+  return response.data;
 });
 
 /**
@@ -43,21 +37,15 @@ const getGoogleOauthTokens = asyncHandler(async (code) => {
  * @returns {Object} The Google user data.
  */
 const getGoogleUser = asyncHandler(async ({ id_token, access_token }) => {
-  try {
-    const response = await axios.get(
-      `https://www.googleapis.com/oauth2/v1/userinfo?alt=json&access_token=${access_token}`,
-      {
-        headers: {
-          Authorization: `Bearer ${id_token}`,
-        },
+  const response = await axios.get(
+    `https://www.googleapis.com/oauth2/v1/userinfo?alt=json&access_token=${access_token}`,
+    {
+      headers: {
+        Authorization: `Bearer ${id_token}`,
       },
-    );
-    return response.data;
-  } catch (error) {
-    throw ApiError.BadRequest(
-      `Google OAuth user error: ${error.response?.data || error.message}`,
-    );
-  }
+    },
+  );
+  return response.data;
 });
 
 /**
@@ -80,43 +68,39 @@ const findAndUpdateUser = asyncHandler(async (query, update, options = {}) => {
  */
 const googleOauthHandler = asyncHandler(async (req, res) => {
   const code = req.query.code;
-  try {
-    const { id_token, access_token } = await getGoogleOauthTokens(code);
-    const googleUserData = await getGoogleUser({ id_token, access_token });
+  const { id_token, access_token } = await getGoogleOauthTokens(code);
+  const googleUserData = await getGoogleUser({ id_token, access_token });
 
-    if (!googleUserData.verified_email) {
-      return ApiError.Forbbiden({ error: "Email is not verified" });
-    }
-    const user = await findAndUpdateUser(
-      { email: googleUserData.email },
-      {
-        username: googleUserData.name,
-        picture: googleUserData.picture,
-        password: bcrypt.hashSync(googleUserData.id, 10),
-        isActivated: true,
-      },
-
-      { upsert: true, new: true },
-    );
-    const userDto = new UserDto(user);
-    const tokens = generateTokens({ ...userDto });
-    await saveTokens(userDto.id, tokens.refreshToken);
-    res.cookie("refreshToken", tokens.refreshToken, {
-      maxAge: process.env.COOKIE_MAX_AGE,
-      secure: true,
-      httpOnly: true,
-      sameSite: "None",
-    });
-    res.cookie("accessToken", tokens.accessToken, {
-      maxAge: process.env.COOKIE_MAX_AGE,
-      secure: true,
-      httpOnly: true,
-      sameSite: "None",
-    });
-    res.redirect(`${process.env.API_URL}`);
-  } catch (error) {
-    throw ApiError.BadRequest(error.response?.data || error.message);
+  if (!googleUserData.verified_email) {
+    return ApiError.Forbbiden({ error: "Email is not verified" });
   }
+  const user = await findAndUpdateUser(
+    { email: googleUserData.email },
+    {
+      username: googleUserData.name,
+      picture: googleUserData.picture,
+      password: bcrypt.hashSync(googleUserData.id, 10),
+      isActivated: true,
+    },
+
+    { upsert: true, new: true },
+  );
+  const userDto = new UserDto(user);
+  const tokens = generateTokens({ ...userDto });
+  await saveTokens(userDto.id, tokens.refreshToken);
+  res.cookie("refreshToken", tokens.refreshToken, {
+    maxAge: process.env.COOKIE_MAX_AGE,
+    secure: true,
+    httpOnly: true,
+    sameSite: "None",
+  });
+  res.cookie("accessToken", tokens.accessToken, {
+    maxAge: process.env.COOKIE_MAX_AGE,
+    secure: true,
+    httpOnly: true,
+    sameSite: "None",
+  });
+  res.redirect(`${process.env.API_URL}`);
 });
 
 module.exports = { googleOauthHandler };

@@ -124,60 +124,54 @@ const registration = asyncHandler(async (username, email, password) => {
  * @returns {Promise<Object>} The user data and tokens.
  */
 const activate = asyncHandler(async (activationLink) => {
-  try {
-    const registrationDetails =
-      await getRegistrationDetailsByActivationLink(activationLink);
+  const registrationDetails =
+    await getRegistrationDetailsByActivationLink(activationLink);
 
-    if (!registrationDetails) {
-      throw ApiError.BadRequest("Incorrect activation link");
-    }
-
-    const currentTimestamp = moment();
-    if (
-      currentTimestamp.isAfter(registrationDetails.activationLinkExpiration)
-    ) {
-      const deprecatedActivationLink = registrationDetails.activationLink;
-      const newActivationLink = uuid.v4();
-      const newActivationLinkExpiration = moment()
-        .add(10, "minutes")
-        .toISOString();
-
-      await storeRegistrationDetails(newActivationLink, {
-        username: registrationDetails.username,
-        email: registrationDetails.email,
-        hashedPassword: registrationDetails.hashedPassword,
-        activationLinkExpiration: newActivationLinkExpiration,
-      });
-
-      await sendActivationEmail(
-        registrationDetails.email,
-        `${process.env.CLIENT_URL}/api/users/activate/${newActivationLink}`,
-      );
-      await deleteRegistrationDetailsByActivationLink(deprecatedActivationLink);
-
-      throw ApiError.BadRequest(
-        "Activation link has expired. A new activation link has been sent to your email.",
-      );
-    }
-
-    const user = await createUser(
-      registrationDetails.username,
-      registrationDetails.email,
-      registrationDetails.hashedPassword,
-      registrationDetails.activationLink,
-      registrationDetails.activationLinkExpiration,
-    );
-    user.isActivated = true;
-    user.activationLinkExpiration = undefined;
-    await user.save();
-    await deleteRegistrationDetailsByActivationLink(activationLink);
-    const userDto = new UserDto(user);
-    const tokens = generateTokens({ ...userDto });
-    await saveTokens(userDto.id, tokens.refreshToken);
-    return { ...tokens, user: userDto };
-  } catch (error) {
-    throw ApiError.BadRequest(error.message);
+  if (!registrationDetails) {
+    throw ApiError.BadRequest("Incorrect activation link");
   }
+
+  const currentTimestamp = moment();
+  if (currentTimestamp.isAfter(registrationDetails.activationLinkExpiration)) {
+    const deprecatedActivationLink = registrationDetails.activationLink;
+    const newActivationLink = uuid.v4();
+    const newActivationLinkExpiration = moment()
+      .add(10, "minutes")
+      .toISOString();
+
+    await storeRegistrationDetails(newActivationLink, {
+      username: registrationDetails.username,
+      email: registrationDetails.email,
+      hashedPassword: registrationDetails.hashedPassword,
+      activationLinkExpiration: newActivationLinkExpiration,
+    });
+
+    await sendActivationEmail(
+      registrationDetails.email,
+      `${process.env.CLIENT_URL}/api/users/activate/${newActivationLink}`,
+    );
+    await deleteRegistrationDetailsByActivationLink(deprecatedActivationLink);
+
+    throw ApiError.BadRequest(
+      "Activation link has expired. A new activation link has been sent to your email.",
+    );
+  }
+
+  const user = await createUser(
+    registrationDetails.username,
+    registrationDetails.email,
+    registrationDetails.hashedPassword,
+    registrationDetails.activationLink,
+    registrationDetails.activationLinkExpiration,
+  );
+  user.isActivated = true;
+  user.activationLinkExpiration = undefined;
+  await user.save();
+  await deleteRegistrationDetailsByActivationLink(activationLink);
+  const userDto = new UserDto(user);
+  const tokens = generateTokens({ ...userDto });
+  await saveTokens(userDto.id, tokens.refreshToken);
+  return { ...tokens, user: userDto };
 });
 
 /**
@@ -211,13 +205,8 @@ const login = asyncHandler(async (email, password) => {
  * @returns {Promise} The logout result.
  */
 const logout = asyncHandler(async (refreshToken, accessToken) => {
-  try {
-    await removeToken(refreshToken);
-    return await setBlackListToken(accessToken);
-  } catch (error) {
-    console.log(error.message);
-    throw ApiError.BadRequest("Something went wrong");
-  }
+  await removeToken(refreshToken);
+  return await setBlackListToken(accessToken);
 });
 
 /**

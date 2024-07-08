@@ -80,7 +80,7 @@ const setFavoriteRecipes = asyncHandler(async (req, res, next) => {
       req.headers["x-forwarded-for"] || req.connection.remoteAddress;
     const clientIp = ipAddress.split(",")[0];
 
-    onDataChanged(clientIp);
+    await onDataChanged(clientIp);
     return res.status(201).json("Favorite recipe created");
   } catch (error) {
     next(error);
@@ -104,7 +104,7 @@ const createRecipe = [
       const ipAddress =
         req.headers["x-forwarded-for"] || req.connection.remoteAddress;
       const clientIp = ipAddress.split(",")[0].concat("my-recipes");
-      onDataChanged(clientIp);
+      await onDataChanged(clientIp);
 
       return res.status(201).json("Recipe created");
     } catch (error) {
@@ -128,7 +128,7 @@ const createRecipeByDraft = [
         req.headers["x-forwarded-for"] || req.connection.remoteAddress;
       const clientIp = ipAddress.split(",")[0].concat("my-recipes");
       await recipeService.createRecipeByDraft(req);
-      onDataChanged(clientIp);
+      await onDataChanged(clientIp);
       return res.status(201).json("Recipe created By draft for 3 days");
     } catch (error) {
       next(error);
@@ -149,7 +149,7 @@ const updateRecipe = asyncHandler(async (req, res, next) => {
     const ipAddress =
       req.headers["x-forwarded-for"] || req.connection.remoteAddress;
     const clientIp = ipAddress.split(",")[0];
-    onDataChanged(clientIp);
+    await onDataChanged(clientIp);
     return res.status(200).json({ recipe, message: "Recipe updated" });
   } catch (error) {
     next(error);
@@ -172,7 +172,7 @@ const deleteRecipe = asyncHandler(async (req, res, next) => {
     const ipAddress =
       req.headers["x-forwarded-for"] || req.connection.remoteAddress;
     const clientIp = ipAddress.split(",")[0];
-    onDataChanged(clientIp);
+    await onDataChanged(clientIp);
     return res.status(200).json("Recipe deleted");
   } catch (error) {
     next(error);

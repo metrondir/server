@@ -14,7 +14,6 @@ const logger = require("./utils/logger");
 const port = process.env.PORT || 5000;
 const app = express();
 connectDb();
-
 app.disable("x-powered-by");
 app.use(helmet());
 app.use(express.json());

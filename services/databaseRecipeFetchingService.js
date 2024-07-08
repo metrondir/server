@@ -1,5 +1,4 @@
 const Recipe = require("../models/recipeModel");
-const ApiError = require("../middleware/apiError");
 const SpoonacularRecipeModel = require("../models/spoonacularRecipeModel");
 const mongoose = require("mongoose");
 
@@ -57,27 +56,23 @@ const getSpoonAcularChangedLikeRecipe = async (limit, sortDirection) => {
  */
 const getRecipesByCategories = async (sortDirection, valueSort, query) => {
   let sortValue = sortDirection === "desc" ? -1 : 1;
-  try {
-    let queryObject = {};
+  let queryObject = {};
 
-    if (query && query !== "undefined" && query !== "") {
-      queryObject.title = { $regex: new RegExp(query, "i") };
-    }
-    if (valueSort === "time") {
-      valueSort = "readyInMinutes";
-    } else if (valueSort === "popularity") {
-      valueSort = "aggregateLikes";
-    } else if (valueSort === "price") {
-      valueSort = "pricePerServing";
-    }
-    const recipes = await Recipe.find(queryObject).sort({
-      [valueSort]: sortValue,
-    });
-
-    return recipes;
-  } catch (error) {
-    throw ApiError.BadRequest(error.message);
+  if (query && query !== "undefined" && query !== "") {
+    queryObject.title = { $regex: new RegExp(query, "i") };
   }
+  if (valueSort === "time") {
+    valueSort = "readyInMinutes";
+  } else if (valueSort === "popularity") {
+    valueSort = "aggregateLikes";
+  } else if (valueSort === "price") {
+    valueSort = "pricePerServing";
+  }
+  const recipes = await Recipe.find(queryObject).sort({
+    [valueSort]: sortValue,
+  });
+
+  return recipes;
 };
 
 /**
@@ -137,25 +132,21 @@ const getRecipesFromDatabaseComplex = async (
   if (maxReadyTime && maxReadyTime != "undefined" && maxReadyTime != "") {
     pipeline[0].$match.readyInMinutes = { $lte: Number(maxReadyTime) };
   }
-  try {
-    let recipes = await Recipe.aggregate(pipeline);
-    if (sort && sortDirection) {
-      const sortDirectionFactor = sortDirection === "desc" ? -1 : 1;
-      recipes = recipes.sort((a, b) => {
-        if (sort === "time") {
-          return sortDirectionFactor * (a.readyInMinutes - b.readyInMinutes);
-        } else if (sort === "popularity") {
-          return sortDirectionFactor * (a.aggregateLikes - b.aggregateLikes);
-        } else if (sort === "price") {
-          return sortDirectionFactor * (a.pricePerServing - b.pricePerServing);
-        }
-        return 0;
-      });
-    }
-    return recipes;
-  } catch (error) {
-    throw ApiError.BadRequest(error.message);
+  let recipes = await Recipe.aggregate(pipeline);
+  if (sort && sortDirection) {
+    const sortDirectionFactor = sortDirection === "desc" ? -1 : 1;
+    recipes = recipes.sort((a, b) => {
+      if (sort === "time") {
+        return sortDirectionFactor * (a.readyInMinutes - b.readyInMinutes);
+      } else if (sort === "popularity") {
+        return sortDirectionFactor * (a.aggregateLikes - b.aggregateLikes);
+      } else if (sort === "price") {
+        return sortDirectionFactor * (a.pricePerServing - b.pricePerServing);
+      }
+      return 0;
+    });
   }
+  return recipes;
 };
 
 module.exports = {

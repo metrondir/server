@@ -20,43 +20,33 @@ class EmailService {
   }
 
   async sendActivationGmail(to, link) {
-    try {
-      await this.transporter.sendMail({
-        from: process.env.SMTP_USER,
-        to,
-        subject: `Activation link ${this.apiUrl}`,
-        text: "",
-        html: `
+    await this.transporter.sendMail({
+      from: process.env.SMTP_USER,
+      to,
+      subject: `Activation link ${this.apiUrl}`,
+      text: "",
+      html: `
 						 <div>
 							  <h1>For activation follow the link</h1>
 							  <a href="${link}">${link}</a>
 						 </div>
 					`,
-      });
-    } catch (error) {
-      throw ApiError.BadRequest(`Error sending activation email: ${error}`);
-    }
+    });
   }
 
   async sendChangePasswordUser(to, link) {
-    try {
-      await this.transporter.sendMail({
-        from: process.env.SMTP_USER,
-        to,
-        subject: `Confirmation link to change password ${this.apiUrl}`,
-        text: "",
-        html: `
+    await this.transporter.sendMail({
+      from: process.env.SMTP_USER,
+      to,
+      subject: `Confirmation link to change password ${this.apiUrl}`,
+      text: "",
+      html: `
 						 <div>
 							  <h1>For Change password</h1>
 							  <a href="${link}">${link}</a>
 						 </div>
 					`,
-      });
-    } catch (error) {
-      throw ApiError.BadRequest(
-        `Error sending change password email: ${error}`,
-      );
-    }
+    });
   }
 }
 

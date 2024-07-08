@@ -3,44 +3,6 @@ const redis = require("../config/redisClient");
 const { paginateArray } = require("./paginatedService");
 
 /**
- * @desc Gets the models from Redis or the database.
- * @param {string} model - The model to get from Redis or the database.
- * @param {Object} res - The response object.
- * @param {Object} conditions - The conditions to pass to the query.
- * @returns {Promise} The result of the query.
- */
-const redisGetModels = async (model, res, conditions = {}) => {
-  try {
-    const redisKey = `${model.modelName.toLowerCase()}`;
-    const redisModels = await new Promise((resolve, reject) => {
-      redis.get(redisKey, (err, redisModels) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(redisModels);
-        }
-      });
-    });
-
-    if (redisModels) {
-      console.log("FROM Redis");
-      res.json(JSON.parse(redisModels));
-    } else {
-      console.log("FROM DB");
-      const models = await model.find(conditions);
-      redis.setex(
-        redisKey,
-        process.env.DEFAULT_EXPIRATION_REDIS_KEY_TIME,
-        JSON.stringify(models),
-      );
-      res.json(models);
-    }
-  } catch (error) {
-    throw ApiError.BadRequest(error.message);
-  }
-};
-
-/**
  * @desc Gets the models with pagination from Redis or the database.
  * @param {number} page - The page number.
  * @param {string} redisKey - The key to store in Redis.
@@ -64,40 +26,31 @@ const redisGetModelsWithPaginating = async (
   currency,
   ...args
 ) => {
-  try {
-    const redisData = await new Promise((resolve, reject) => {
-      redis.get(redisKey, (err, redisData) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(redisData);
-        }
-      });
+  const redisData = await new Promise((resolve, reject) => {
+    redis.get(redisKey, (err, redisData) => {
+      resolve(redisData);
     });
+  });
 
-    if (redisData) {
-      console.log("FROM Redis");
+  if (redisData) {
+    console.log("FROM Redis");
 
-      const parsedData = JSON.parse(redisData);
-      const paginatedResult = paginateArray(parsedData, page, size);
-      return paginatedResult;
+    const parsedData = JSON.parse(redisData);
+    const paginatedResult = paginateArray(parsedData, page, size);
+    return paginatedResult;
+  } else {
+    console.log("FROM DB");
+
+    const data = await func(limit, language, refreshToken, currency, ...args);
+
+    redis.setex(redisKey, 60, JSON.stringify(data));
+
+    if (!data || data.length === 0) {
+      return [];
     } else {
-      console.log("FROM DB");
-
-      const data = await func(limit, language, refreshToken, currency, ...args);
-
-      redis.setex(redisKey, 60, JSON.stringify(data));
-
-      if (!data || data.length === 0) {
-        return [];
-      } else {
-        const paginatedResult = paginateArray(data, page, size);
-        return paginatedResult;
-      }
+      const paginatedResult = paginateArray(data, page, size);
+      return paginatedResult;
     }
-  } catch (error) {
-    console.log(error);
-    throw ApiError.BadRequest(error.message);
   }
 };
 
@@ -136,16 +89,6 @@ const getRecipeByUserIdAndRecipeId = async (userId, recipeId) => {
 };
 
 /**
- * @desc Stores the registration details.
- * @param {string} activationLink - The activation link.
- * @param {Object} details - The details to store.
- * @returns {Promise} The result of the query.
- */
-const storeRegistrationDetails = async (activationLink, details) => {
-  await redis.hset("registrations", activationLink, JSON.stringify(details));
-};
-
-/**
  * @desc Stores the recipe.
  * @param {Object} recipe - The recipe to store.
  * @returns {Promise} The result of the query.
@@ -159,13 +102,22 @@ const storeRecipe = async (recipe) => {
 };
 
 /**
+ * @desc Stores the registration details.
+ * @param {string} activationLink - The activation link.
+ * @param {Object} details - The details to store.
+ * @returns {Promise} The result of the query.
+ */
+const storeRegistrationDetails = async (activationLink, details) => {
+  await redis.hset("registrations", activationLink, JSON.stringify(details));
+};
+
+/**
  * @desc Gets the registration details by the activation link.
  * @param {string} activationLink - The activation link.
  * @returns {Promise<Object>} The details.
  */
 const getRegistrationDetailsByActivationLink = async (activationLink) => {
-  const detailsString = await redis.hget("registrations", activationLink);
-  return detailsString ? JSON.parse(detailsString) : null;
+  return JSON.parse(await redis.hget("registrations", activationLink));
 };
 
 /**
@@ -220,16 +172,12 @@ const deleteCustomer = async (customerId) => {
  * @returns {Promise} The result of the query.
  */
 const setBlackListToken = async (token) => {
-  try {
-    const expirationTime =
-      parseInt(process.env.ACCESS_TOKEN_EXPIRATION_TIME, 10) * 60;
+  const expirationTime =
+    parseInt(process.env.ACCESS_TOKEN_EXPIRATION_TIME, 10) * 60;
 
-    await redis.hset("blacklist", token, "blacklisted");
+  await redis.hset("blacklist", token, "blacklisted");
 
-    await redis.expire("blacklist", expirationTime);
-  } catch (error) {
-    console.error(`Error setting blacklist for token ${token}:`, error);
-  }
+  await redis.expire("blacklist", expirationTime);
 };
 
 /**
@@ -248,24 +196,19 @@ const checkBlackListToken = async (token) => {
  * @returns {Promise} The result of the query.
  */
 const onDataChanged = async (ipAddress) => {
-  try {
-    const pattern = `${ipAddress}*`;
+  const pattern = `${ipAddress}*`;
 
-    const keys = await redis.keys(pattern);
+  const keys = await redis.keys(pattern);
 
-    const deletePromises = keys.map((key) => {
-      return redis.del(key);
-    });
+  const deletePromises = keys.map((key) => {
+    return redis.del(key);
+  });
 
-    await Promise.all(deletePromises);
-  } catch (error) {
-    res.json("Error deleting keys:", error.message);
-  }
+  await Promise.all(deletePromises);
 };
 
 module.exports = {
   redisGetModelsWithPaginating,
-  redisGetModels,
   onDataChanged,
   paginateArray,
   storeRegistrationDetails,

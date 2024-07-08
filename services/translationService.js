@@ -10,38 +10,6 @@ const translate = new Translate({
 });
 
 /**
- * @desc Detects the language of the text.
- * @param {string} text - The text to detect the language.
- * @returns {string} The detected language.
- */
-async function detectLanguage(text) {
-  try {
-    const response = await axios.post(
-      "https://api-free.deepl.com/v2/translate",
-      {
-        text,
-        target_lang: "en",
-      },
-      {
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        params: {
-          auth_key: process.env.DEEPL_API_KEY,
-        },
-        responseType: "json",
-      },
-    );
-
-    const detectedLanguage =
-      response.data.translations[0].detected_source_language;
-    return detectedLanguage.toLowerCase();
-  } catch (error) {
-    throw ApiError.BadRequest(error.message);
-  }
-}
-
-/**
  * @desc Handles the API error.
  * @param {Error} error - The error to handle.
  * @param {function} retryFunction - The function to retry.
@@ -62,6 +30,34 @@ async function handleApiError(error, retryFunction, ...args) {
 }
 
 /**
+ * @desc Detects the language of the text.
+ * @param {string} text - The text to detect the language.
+ * @returns {string} The detected language.
+ */
+async function detectLanguage(text) {
+  const response = await axios.post(
+    "https://api-free.deepl.com/v2/translate",
+    {
+      text,
+      target_lang: "en",
+    },
+    {
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      params: {
+        auth_key: process.env.DEEPL_API_KEY,
+      },
+      responseType: "json",
+    },
+  );
+
+  const detectedLanguage =
+    response.data.translations[0].detected_source_language;
+  return detectedLanguage.toLowerCase();
+}
+
+/**
  * @desc Translates the text to the given language.
  * @param {string} text - The text to translate.
  * @param {string} language - The language to translate to.
@@ -71,15 +67,10 @@ async function translateText(text, language) {
   if (language == "cz") language = "cs";
   if (language == "ua") language = "uk";
   if (language == "sp") language = "es";
-  try {
-    if (!text) return "";
+  if (!text) return "";
 
-    const [translation] = await translate.translate(text, language);
-    return translation;
-  } catch (error) {
-    console.log(error);
-    throw error;
-  }
+  const [translation] = await translate.translate(text, language);
+  return translation;
 }
 
 /**
@@ -180,56 +171,49 @@ async function translateRecipePost(recipe, language) {
   if (language == "ua") language = "uk";
   if (language == "sp") language = "es";
 
-  try {
-    if (language == "en" || !language) {
-      return recipe;
-    }
+  if (language == "en" || !language) {
+    return recipe;
+  }
 
-    let lang = "en";
-    recipe.title = await translateText(recipe.title, lang);
-    recipe.instructions = await translateText(recipe.instructions, language);
-    if (!language == "en")
-      recipe.readyInMinutes += await translateText("min", language);
+  let lang = "en";
+  recipe.title = await translateText(recipe.title, lang);
+  recipe.instructions = await translateText(recipe.instructions, language);
+  if (!language == "en")
+    recipe.readyInMinutes += await translateText("min", language);
 
-    if (Array.isArray(recipe.dishTypes)) {
-      recipe.dishTypes = await Promise.all(
-        recipe.dishTypes.map(async (dishType) => {
-          return await translateText(dishType, language);
-        }),
-      );
-    }
-
-    // Similarly, for diets and cuisines
-    if (Array.isArray(recipe.diets)) {
-      recipe.diets = await Promise.all(
-        recipe.diets.map(async (diet) => {
-          return await translateText(diet, language);
-        }),
-      );
-    }
-
-    if (Array.isArray(recipe.cuisines)) {
-      recipe.cuisines = await Promise.all(
-        recipe.cuisines.map(async (cuisine) => {
-          return await translateText(cuisine, language);
-        }),
-      );
-    }
-    recipe.extendedIngredients = await Promise.all(
-      recipe.extendedIngredients.map(async (ingredient) => {
-        ingredient.original = await translateText(
-          ingredient.original,
-          language,
-        );
-
-        return ingredient;
+  if (Array.isArray(recipe.dishTypes)) {
+    recipe.dishTypes = await Promise.all(
+      recipe.dishTypes.map(async (dishType) => {
+        return await translateText(dishType, language);
       }),
     );
-
-    return recipe;
-  } catch (error) {
-    throw ApiError.BadRequest(error.message);
   }
+
+  // Similarly, for diets and cuisines
+  if (Array.isArray(recipe.diets)) {
+    recipe.diets = await Promise.all(
+      recipe.diets.map(async (diet) => {
+        return await translateText(diet, language);
+      }),
+    );
+  }
+
+  if (Array.isArray(recipe.cuisines)) {
+    recipe.cuisines = await Promise.all(
+      recipe.cuisines.map(async (cuisine) => {
+        return await translateText(cuisine, language);
+      }),
+    );
+  }
+  recipe.extendedIngredients = await Promise.all(
+    recipe.extendedIngredients.map(async (ingredient) => {
+      ingredient.original = await translateText(ingredient.original, language);
+
+      return ingredient;
+    }),
+  );
+
+  return recipe;
 }
 
 /**
@@ -243,57 +227,53 @@ async function translateRecipeGet(recipe, language) {
   if (language == "ua") language = "uk";
   if (language == "sp") language = "es";
 
-  try {
-    if (language == "en" || !language) {
-      recipe.readyInMinutes += " min";
-      return recipe;
-    }
-
-    recipe.title = await translateText(recipe.title, language);
-    if (recipe.instructions && recipe.instructions.length > 0)
-      recipe.instructions = await translateText(recipe.instructions, language);
-
-    if (!language == "en")
-      recipe.readyInMinutes += await translateText("min", language);
-
-    if (Array.isArray(recipe.dishTypes)) {
-      recipe.dishTypes = await Promise.all(
-        recipe.dishTypes.map(async (dishType) => {
-          return await translateText(dishType, language);
-        }),
-      );
-    }
-
-    if (Array.isArray(recipe.diets)) {
-      recipe.diets = await Promise.all(
-        recipe.diets.map(async (diet) => {
-          return await translateText(diet, language);
-        }),
-      );
-    }
-
-    if (Array.isArray(recipe.cuisines)) {
-      recipe.cuisines = await Promise.all(
-        recipe.cuisines.map(async (cuisine) => {
-          return await translateText(cuisine, language);
-        }),
-      );
-    }
-    if (recipe.extendedIngredients)
-      recipe.extendedIngredients = await Promise.all(
-        recipe.extendedIngredients.map(async (ingredient) => {
-          ingredient.original = await translateText(
-            ingredient.original,
-            language,
-          );
-
-          return ingredient;
-        }),
-      );
+  if (language == "en" || !language) {
+    recipe.readyInMinutes += " min";
     return recipe;
-  } catch (error) {
-    throw ApiError.BadRequest(error.message);
   }
+
+  recipe.title = await translateText(recipe.title, language);
+  if (recipe.instructions && recipe.instructions.length > 0)
+    recipe.instructions = await translateText(recipe.instructions, language);
+
+  if (!language == "en")
+    recipe.readyInMinutes += await translateText("min", language);
+
+  if (Array.isArray(recipe.dishTypes)) {
+    recipe.dishTypes = await Promise.all(
+      recipe.dishTypes.map(async (dishType) => {
+        return await translateText(dishType, language);
+      }),
+    );
+  }
+
+  if (Array.isArray(recipe.diets)) {
+    recipe.diets = await Promise.all(
+      recipe.diets.map(async (diet) => {
+        return await translateText(diet, language);
+      }),
+    );
+  }
+
+  if (Array.isArray(recipe.cuisines)) {
+    recipe.cuisines = await Promise.all(
+      recipe.cuisines.map(async (cuisine) => {
+        return await translateText(cuisine, language);
+      }),
+    );
+  }
+  if (recipe.extendedIngredients)
+    recipe.extendedIngredients = await Promise.all(
+      recipe.extendedIngredients.map(async (ingredient) => {
+        ingredient.original = await translateText(
+          ingredient.original,
+          language,
+        );
+
+        return ingredient;
+      }),
+    );
+  return recipe;
 }
 
 /**
@@ -336,8 +316,8 @@ const TranslateRecipeInformation = async (recipe, language) => {
 
 module.exports = {
   translateText,
-  translateAndAppendMinutes,
   handleApiError,
+  translateAndAppendMinutes,
   translateRecipeFields,
   translateRecipeInformation,
   TranslateRecipeInformation,

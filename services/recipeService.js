@@ -113,41 +113,34 @@ const getRecipes = async (currency, language, userId) => {
  * @returns {Promise<Object>} The created recipe.
  */
 const createRecipe = async (req) => {
-  try {
-    const processedBody = processRequestBody(req.body);
-    const imageBase64 = await readImageAsBase64(req.file.path);
-    const detectedIngredients = await detectFoodIngredients(imageBase64);
-    if (detectedIngredients.length === 0) {
-      throw ApiError.BadRequest("Image is not a food");
-    }
-
-    const imgurLink = await uploadToImgur(req.file.path);
-    const language = await detectLanguage(processedBody.instructions);
-    const user = await User.findById(req.user.id);
-
-    let recipe = await translateRecipePost(processedBody, language);
-    recipe.pricePerServing = await parsedIngredients(
-      recipe.extendedIngredients,
-    );
-    recipe.image = imgurLink;
-    recipe.user = req.user.id;
-
-    await handlePaymentInfo(req.body, user, recipe);
-
-    recipe.instructions = createInstructionsHTML(recipe.instructions);
-    recipe = new Recipe(recipe);
-    await recipe.save();
-
-    if (req.body.price) {
-      user.boughtRecipes.push(recipe._id);
-      await user.save();
-    }
-
-    return recipe;
-  } catch (error) {
-    console.error(error.message);
-    throw ApiError.BadRequest(error.message);
+  const processedBody = processRequestBody(req.body);
+  const imageBase64 = await readImageAsBase64(req.file.path);
+  const detectedIngredients = await detectFoodIngredients(imageBase64);
+  if (detectedIngredients.length === 0) {
+    throw ApiError.BadRequest("Image is not a food");
   }
+
+  const imgurLink = await uploadToImgur(req.file.path);
+  const language = await detectLanguage(processedBody.instructions);
+  const user = await User.findById(req.user.id);
+
+  let recipe = await translateRecipePost(processedBody, language);
+  recipe.pricePerServing = await parsedIngredients(recipe.extendedIngredients);
+  recipe.image = imgurLink;
+  recipe.user = req.user.id;
+
+  await handlePaymentInfo(req.body, user, recipe);
+
+  recipe.instructions = createInstructionsHTML(recipe.instructions);
+  recipe = new Recipe(recipe);
+  await recipe.save();
+
+  if (req.body.price) {
+    user.boughtRecipes.push(recipe._id);
+    await user.save();
+  }
+
+  return recipe;
 };
 
 /**
@@ -245,43 +238,38 @@ const handlePaymentInfo = async (body, user, recipe) => {
  * @returns {Promise<Object>} The created recipe by draft.
  */
 const createRecipeByDraft = async (req) => {
-  try {
-    const processedBody = processRequestBody(req.body);
-    const imgurLink = req.file
-      ? await handleImageUpload(req.file.path)
-      : undefined;
-    const language = processedBody.instructions
-      ? await detectLanguage(processedBody.instructions)
-      : undefined;
-    const user = await User.findById(req.user.id);
+  const processedBody = processRequestBody(req.body);
+  const imgurLink = req.file
+    ? await handleImageUpload(req.file.path)
+    : undefined;
+  const language = processedBody.instructions
+    ? await detectLanguage(processedBody.instructions)
+    : undefined;
+  const user = await User.findById(req.user.id);
 
-    let recipe = await translateRecipePost(processedBody, language);
-    recipe.pricePerServing = recipe.extendedIngredients
-      ? await calculateCost(recipe.extendedIngredients)
-      : undefined;
-    recipe.image = imgurLink;
-    recipe.user = req.user.id;
+  let recipe = await translateRecipePost(processedBody, language);
+  recipe.pricePerServing = recipe.extendedIngredients
+    ? await calculateCost(recipe.extendedIngredients)
+    : undefined;
+  recipe.image = imgurLink;
+  recipe.user = req.user.id;
 
-    handlePaymentInfo(req.body, user, recipe);
+  handlePaymentInfo(req.body, user, recipe);
 
-    if (recipe.instructions) {
-      recipe.instructions = createInstructionsHTML(recipe.instructions);
-    }
-
-    recipe = new Recipe(recipe);
-    await recipe.save();
-
-    if (req.body.stripeAccountId) {
-      user.boughtRecipes.push(recipe._id);
-      await user.save();
-    }
-
-    await storeRecipe(recipe);
-    return recipe;
-  } catch (error) {
-    console.error(error.message);
-    throw ApiError.BadRequest(error.message);
+  if (recipe.instructions) {
+    recipe.instructions = createInstructionsHTML(recipe.instructions);
   }
+
+  recipe = new Recipe(recipe);
+  await recipe.save();
+
+  if (req.body.stripeAccountId) {
+    user.boughtRecipes.push(recipe._id);
+    await user.save();
+  }
+
+  await storeRecipe(recipe);
+  return recipe;
 };
 
 /**
@@ -311,31 +299,23 @@ const handleImageUpload = async (path) => {
  * @returns {Object} The recipes collection.
  */
 const getRecipesCollection = async (userId, currency, language) => {
-  try {
-    const [myRecipes, favoriteRecipes, user, allRecipes] = await Promise.all([
-      Recipe.find({ user: userId }).lean(),
-      FavoriteRecipe.find({ user: userId }).lean(),
-      User.findById(userId).lean(),
-      Recipe.find({ "paymentInfo.paymentStatus": false }).lean(),
-    ]);
+  const [myRecipes, favoriteRecipes, user, allRecipes] = await Promise.all([
+    Recipe.find({ user: userId }).lean(),
+    FavoriteRecipe.find({ user: userId }).lean(),
+    User.findById(userId).lean(),
+    Recipe.find({ "paymentInfo.paymentStatus": false }).lean(),
+  ]);
 
-    const updatedRecipes = updateRecipesWithDefaultInstructions(
-      allRecipes,
-      user,
-    );
+  const updatedRecipes = updateRecipesWithDefaultInstructions(allRecipes, user);
 
-    const allData = [...myRecipes, ...favoriteRecipes, ...updatedRecipes];
+  const allData = [...myRecipes, ...favoriteRecipes, ...updatedRecipes];
 
-    await translateRecipes(allData, language);
-    if (currency) {
-      await changeCurrency(allData, currency);
-    }
-
-    return allData;
-  } catch (error) {
-    console.error(error.message);
-    throw ApiError.BadRequest("Error fetching recipes collection");
+  await translateRecipes(allData, language);
+  if (currency) {
+    await changeCurrency(allData, currency);
   }
+
+  return allData;
 };
 
 /**
@@ -376,82 +356,73 @@ const translateRecipes = async (recipes, language) => {
  * @returns {Promise<Object>} - The favorite recipe.
  */
 const setFavoriteRecipes = async (recipeId, userId, refreshToken) => {
-  try {
-    const existingFavoriteRecipe = await FavoriteRecipe.findOne({
-      recipe: recipeId,
-      user: userId,
-    });
-    const existedSpoonacularRecipe = await SpoonacularRecipeModel.findOne({
-      id: recipeId,
-    });
+  const existingFavoriteRecipe = await FavoriteRecipe.findOne({
+    recipe: recipeId,
+    user: userId,
+  });
+  const existedSpoonacularRecipe = await SpoonacularRecipeModel.findOne({
+    id: recipeId,
+  });
 
-    if (existingFavoriteRecipe) {
-      const deletedFavoriteRecipe = await deleteFavoriteRecipe(
-        existingFavoriteRecipe,
-        recipeId,
-        existedSpoonacularRecipe,
-      );
-      await FavoriteRecipe.updateMany(
-        { recipe: { $in: recipeId } },
-        { $inc: { aggregateLikes: -1 } },
-      );
-      return { isDeleted: true, data: deletedFavoriteRecipe };
-    }
-
-    const recipe = await fetchInformationById(
+  if (existingFavoriteRecipe) {
+    const deletedFavoriteRecipe = await deleteFavoriteRecipe(
+      existingFavoriteRecipe,
       recipeId,
-      "en",
-      null,
-      refreshToken,
+      existedSpoonacularRecipe,
     );
-    let foundAggLike;
-    if (recipeId.length <= 8) {
-      foundAggLike = await SpoonacularRecipeModel.find({ id: recipeId });
-    }
-
-    if (recipeId.length >= 9) {
-      foundAggLike = await Recipe.find({ _id: recipeId });
-    }
-
     await FavoriteRecipe.updateMany(
       { recipe: { $in: recipeId } },
-      { $inc: { aggregateLikes: +1 } },
+      { $inc: { aggregateLikes: -1 } },
     );
-    let instructions;
-    if (Array.isArray(recipe.instructions)) {
-      instructions = recipe.instructions.join("\n");
-    } else if (typeof recipe.instructions === "string") {
-      instructions = recipe.instructions;
-    } else {
-      instructions = undefined;
-    }
-
-    const newFavoriteRecipe = new FavoriteRecipe({
-      recipeId: recipe.id,
-      title: recipe.title,
-      extendedIngredients: recipe.extendedIngredients,
-      pricePerServing: recipe.pricePerServing,
-      cuisines: recipe.cuisines,
-      dishTypes: recipe.dishTypes,
-      instructions: instructions,
-      aggregateLikes:
-        foundAggLike.length !== 0
-          ? foundAggLike[0].aggregateLikes + 1
-          : recipe.aggregateLikes,
-      diets: recipe.diets,
-      image: recipe.image,
-      readyInMinutes: recipe.readyInMinutes,
-      user: userId,
-      recipe: recipeId,
-    });
-    await newFavoriteRecipe.save();
-
-    await updateRecipeLikes(recipeId, existedSpoonacularRecipe);
-
-    return { isDeleted: false, data: newFavoriteRecipe };
-  } catch (error) {
-    throw ApiError.BadRequest("Recipe not found");
+    return { isDeleted: true, data: deletedFavoriteRecipe };
   }
+
+  const recipe = await fetchInformationById(recipeId, "en", null, refreshToken);
+  let foundAggLike;
+  if (recipeId.length <= 8) {
+    foundAggLike = await SpoonacularRecipeModel.find({ id: recipeId });
+  }
+
+  if (recipeId.length >= 9) {
+    foundAggLike = await Recipe.find({ _id: recipeId });
+  }
+
+  await FavoriteRecipe.updateMany(
+    { recipe: { $in: recipeId } },
+    { $inc: { aggregateLikes: +1 } },
+  );
+  let instructions;
+  if (Array.isArray(recipe.instructions)) {
+    instructions = recipe.instructions.join("\n");
+  } else if (typeof recipe.instructions === "string") {
+    instructions = recipe.instructions;
+  } else {
+    instructions = undefined;
+  }
+
+  const newFavoriteRecipe = new FavoriteRecipe({
+    recipeId: recipe.id,
+    title: recipe.title,
+    extendedIngredients: recipe.extendedIngredients,
+    pricePerServing: recipe.pricePerServing,
+    cuisines: recipe.cuisines,
+    dishTypes: recipe.dishTypes,
+    instructions: instructions,
+    aggregateLikes:
+      foundAggLike.length !== 0
+        ? foundAggLike[0].aggregateLikes + 1
+        : recipe.aggregateLikes,
+    diets: recipe.diets,
+    image: recipe.image,
+    readyInMinutes: recipe.readyInMinutes,
+    user: userId,
+    recipe: recipeId,
+  });
+  await newFavoriteRecipe.save();
+
+  await updateRecipeLikes(recipeId, existedSpoonacularRecipe);
+
+  return { isDeleted: false, data: newFavoriteRecipe };
 };
 
 /**
@@ -617,18 +588,12 @@ const getCurrencyAndLanguges = async () => {
  */
 const getIngredients = async () => {
   let ingredients;
-  try {
-    const fileContent = await fs.readFile(
-      "./utils/top-1k-ingredients.txt",
-      "utf-8",
-    );
+  const fileContent = await fs.readFile(
+    "./utils/top-1k-ingredients.txt",
+    "utf-8",
+  );
 
-    ingredients = fileContent.split("\r\n");
-  } catch (error) {
-    console.error(error.message);
-    throw ApiError.BadRequest("Error fetching ingredients");
-  }
-
+  ingredients = fileContent.split("\r\n");
   return ingredients;
 };
 
@@ -640,57 +605,53 @@ const getIngredients = async () => {
  * @returns {Promise<Object>} The created payment intent.
  */
 const createPaymentIntent = async (recipeId, userId, currency) => {
-  try {
-    const currencyMap = {
-      ua: "uah",
-      cz: "czk",
-      europeanunion: "eur",
-      gb: "gbp",
-      nz: "nzd",
-      pl: "pln",
-      jp: "jpy",
-      ec: "usd",
-    };
-    const recipe = await Recipe.findById(recipeId.toString());
-    const price = changeCurrencyPrice(recipe.paymentInfo.price, currency);
-    currency = currencyMap[currency] || currency;
+  const currencyMap = {
+    ua: "uah",
+    cz: "czk",
+    europeanunion: "eur",
+    gb: "gbp",
+    nz: "nzd",
+    pl: "pln",
+    jp: "jpy",
+    ec: "usd",
+  };
+  const recipe = await Recipe.findById(recipeId.toString());
+  const price = changeCurrencyPrice(recipe.paymentInfo.price, currency);
+  currency = currencyMap[currency] || currency;
 
-    const validCurrencies = [
-      "uah",
-      "czk",
-      "eur",
-      "gbp",
-      "nzd",
-      "pln",
-      "jpy",
-      "usd",
-    ];
+  const validCurrencies = [
+    "uah",
+    "czk",
+    "eur",
+    "gbp",
+    "nzd",
+    "pln",
+    "jpy",
+    "usd",
+  ];
 
-    if (currency && !validCurrencies.includes(currency)) {
-      throw ApiError.BadRequest("Invalid currency code");
-    }
-
-    const user = await User.findById(recipe.user);
-    if (!user) {
-      throw ApiError.BadRequest("User not found");
-    }
-
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: price * 100,
-      currency: currency || "usd",
-      transfer_data: {
-        destination: user.stripeAccountId,
-      },
-      metadata: {
-        userId: userId,
-        recipeId: recipeId,
-      },
-    });
-
-    return paymentIntent.client_secret;
-  } catch (error) {
-    throw ApiError.BadRequest("Error creating payment intent");
+  if (currency && !validCurrencies.includes(currency)) {
+    throw ApiError.BadRequest("Invalid currency code");
   }
+
+  const user = await User.findById(recipe.user);
+  if (!user) {
+    throw ApiError.BadRequest("User not found");
+  }
+
+  const paymentIntent = await stripe.paymentIntents.create({
+    amount: price * 100,
+    currency: currency || "usd",
+    transfer_data: {
+      destination: user.stripeAccountId,
+    },
+    metadata: {
+      userId: userId,
+      recipeId: recipeId,
+    },
+  });
+
+  return paymentIntent.client_secret;
 };
 
 /**
@@ -725,21 +686,16 @@ const getSesionsStatus = async (event) => {
  * @returns {Promis<Object>} The payment recipes.
  */
 const getAllPaymentRecipes = async (userId, language, currency) => {
-  try {
-    const user = await User.findById(userId).lean();
-    const recipes = await Recipe.find({
-      "paymentInfo.paymentStatus": true,
-    }).lean();
+  const user = await User.findById(userId).lean();
+  const recipes = await Recipe.find({
+    "paymentInfo.paymentStatus": true,
+  }).lean();
 
-    const updatedRecipes = updateRecipesWithDefaultInstructions(recipes, user);
-    await translateRecipes(updatedRecipes, language);
-    await formatRecipePrices(updatedRecipes, currency);
+  const updatedRecipes = updateRecipesWithDefaultInstructions(recipes, user);
+  await translateRecipes(updatedRecipes, language);
+  await formatRecipePrices(updatedRecipes, currency);
 
-    return updatedRecipes;
-  } catch (error) {
-    console.error(error.message);
-    throw ApiError.BadRequest("Error fetching payment recipes");
-  }
+  return updatedRecipes;
 };
 
 /**
