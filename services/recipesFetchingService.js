@@ -66,9 +66,7 @@ const fetchRecipesData = async (response, language, currency) => {
       id: recipe.id || recipe._id,
       title: recipe.title,
       image: recipe.image,
-      pricePerServing: !currency
-        ? parseFloat((recipe.pricePerServing / 100).toFixed(2)) + " USD"
-        : parseFloat((recipe.pricePerServing / 100).toFixed(2)),
+      pricePerServing: recipe.pricePerServing,
       readyInMinutes: recipe.readyInMinutes + " min",
       dishTypes: recipe.dishTypes || [],
       isFavourite: recipe?.isFavourite,
@@ -86,9 +84,7 @@ const fetchRecipesData = async (response, language, currency) => {
       title: recipe.title,
       image: recipe.image,
       cuisines: recipe.cuisines || [],
-      pricePerServing: !currency
-        ? parseFloat((recipe.pricePerServing / 100).toFixed(2)) + " USD"
-        : parseFloat((recipe.pricePerServing / 100).toFixed(2)),
+      pricePerServing: pricePerServing,
       readyInMinutes:
         typeof recipe.readyInMinutes === "number"
           ? `${recipe.readyInMinutes} ${translatedMin}`
@@ -411,16 +407,13 @@ const fetchInformationByRecommended = async (
   const isFavourite = favourites.some(
     (fav) => fav.recipe.toString() == recipeData.id.toString(),
   );
-  const pricePerServing = parseFloat(
-    (recipeData.pricePerServing / 100).toFixed(2),
-  );
   const recipeBase = {
     id: recipeData.id,
     title: recipeData.title,
     dishTypes: recipeData.dishTypes || [],
     image: recipeData.image,
     readyInMinutes: recipeData.readyInMinutes + " min",
-    pricePerServing: !currency ? pricePerServing + " USD" : pricePerServing,
+    pricePerServing: recipeData.pricePerServing,
     isFavourite: isFavourite,
   };
   if (language !== "en" && language) {
@@ -510,9 +503,6 @@ const fetchInformationById = async (
   const apiKey = getApiKey();
 
   const createRecipeObject = (data, isFavourite, currency, language) => {
-    const pricePerServing = currency
-      ? data.pricePerServing
-      : parseFloat(data.pricePerServing) + " USD";
     return {
       id: data._id || data.recipeId,
       title: data.title,
@@ -522,7 +512,7 @@ const fetchInformationById = async (
       extendedIngredients:
         data.extendedIngredients?.map((ingredient) => ingredient.original) ||
         [],
-      pricePerServing,
+      pricePerServing: data.pricePerServing,
       readyInMinutes: data.readyInMinutes + " min",
       dishTypes: data.dishTypes || [],
       aggregateLikes: data.aggregateLikes,
@@ -566,7 +556,7 @@ const fetchInformationById = async (
   };
 
   const fetchRecipeFromDB = async (recipeId, refreshToken) => {
-    const data = await Recipe.findById(recipeId);
+    const data = await Recipe.findById(recipeId).lean();
     if (!data) throw ApiError.BadRequest("Recipe not found");
 
     let favourites = [];
