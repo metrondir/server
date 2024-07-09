@@ -42,12 +42,21 @@ const refactorInstructionbyHTML = (instructionsString) => {
     return htmlString;
   }
   if (instructionsString.includes("<p>")) {
-    const instructionsArray = instructionsString.split(/<\/p>/);
+    let instructionsArray;
+
+    if (instructionsString.match(/<p>/g).length === 1) {
+      const cleanedString = instructionsString.replace(/<p>|<\/p>/g, "");
+      instructionsArray = cleanedString.split(".");
+    } else {
+      instructionsArray = instructionsString.split(/<\/p>/);
+    }
+
     let htmlString = "<ol>";
 
     for (const instruction of instructionsArray) {
-      if (instruction.trim() !== "") {
-        htmlString += `<li>${instruction.trim()}</li>`;
+      const cleanedInstruction = instruction.replace(/<p>/, "");
+      if (cleanedInstruction !== "") {
+        htmlString += `<li>${cleanedInstruction}</li>`;
       }
     }
 
@@ -67,6 +76,7 @@ const refactorInstructionbyHTML = (instructionsString) => {
     htmlString += "</ol>";
     return htmlString;
   }
+
   const instructionsArray = instructionsString.split(".");
   let htmlString = "<ol>";
 
