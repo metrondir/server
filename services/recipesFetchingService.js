@@ -175,6 +175,16 @@ const fetchRecipesUnified = async (
   sort,
   sortDirection,
 ) => {
+  if (
+    !sort &&
+    !sortDirection &&
+    !cuisine &&
+    !diet &&
+    maxReadyTime == 1000 &&
+    !type
+  ) {
+    return fetchRandomRecipes(limit, language, refreshToken, currency);
+  }
   const url = buildRecipeUrl(
     query,
     limit,
