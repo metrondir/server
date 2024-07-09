@@ -9,9 +9,6 @@ const RecipeModel = require("../models/recipeModel");
  * @returns {Array} The array of recipes with the changed currency.
  */
 const changeCurrency = asynchHandler(async (recipes, currency) => {
-  if (currency === "us") {
-    return recipes;
-  }
   const price = await CurencyModel.find({ lan: currency });
   if (price && price.length > 0 && recipes.length > 1) {
     const pricePerDollar = price[0].pricePerDollar;
@@ -19,11 +16,10 @@ const changeCurrency = asynchHandler(async (recipes, currency) => {
       if (typeof recipe.pricePerServing === "string") {
         recipe.pricePerServing = parseFloat(recipe.pricePerServing);
       }
-
       recipe.pricePerServing *= pricePerDollar;
-      if (recipe.servings > 1) {
-        recipe.pricePerServing /= recipe.servings;
-      }
+
+      recipes.pricePerServing /= 100;
+
       recipe.pricePerServing = parseFloat(recipe.pricePerServing).toFixed(2);
       recipe.pricePerServing = `${recipe.pricePerServing} ${price[0].name}`;
 
@@ -39,14 +35,10 @@ const changeCurrency = asynchHandler(async (recipes, currency) => {
 
     return recipes;
   } else {
-    if (currency === "us") {
-      return recipes;
-    }
     const pricePerDollar = price[0].pricePerDollar;
     recipes.pricePerServing *= pricePerDollar;
-    if (recipes.servings > 1) {
-      recipes.pricePerServing /= recipes.servings;
-    }
+
+    recipes.pricePerServing /= 100;
     recipes.pricePerServing = parseFloat(recipes.pricePerServing.toFixed(2));
 
     recipes.pricePerServing = `${recipes.pricePerServing} ${price[0].name}`;
