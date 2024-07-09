@@ -18,6 +18,9 @@ const {
 } = require("./databaseRecipeFetchingService");
 const { findUserByRefreshToken } = require("./userService");
 const { changeCurrency } = require("./changeCurrencyRecipesService");
+const {
+  refactorInstructionbyHTML,
+} = require("../utils/createInstructionsLikeList");
 const ApiError = require("../middleware/apiError");
 
 /**
@@ -598,7 +601,9 @@ const fetchInformationById = async (
       favourites = await FavoriteRecipe.find({ user: user._id });
     }
     const isFavourite = favourites.some((fav) => fav.recipe == data.id);
+    const refactorInstructions = refactorInstructionbyHTML(data.instructions);
 
+    data.instructions = refactorInstructions;
     if (language !== "en" && language) {
       await handleRecipeTranslation(data, language);
     }
