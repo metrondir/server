@@ -23,6 +23,7 @@ const createInstructionsHTML = (instructionsString) => {
  * @returns {string} The HTML list of instructions.
  */
 const refactorInstructionbyHTML = (instructionsString) => {
+  console.log(instructionsString);
   if (!instructionsString) return "";
   if (typeof instructionsString !== "string") return "";
   if (instructionsString.includes("<ol>")) return instructionsString;
@@ -42,6 +43,19 @@ const refactorInstructionbyHTML = (instructionsString) => {
   }
   if (instructionsString.includes("<p>")) {
     const instructionsArray = instructionsString.split(/<\/p>/);
+    let htmlString = "<ol>";
+
+    for (const instruction of instructionsArray) {
+      if (instruction.trim() !== "") {
+        htmlString += `<li>${instruction.trim()}</li>`;
+      }
+    }
+
+    htmlString += "</ol>";
+    return htmlString;
+  }
+  if (instructionsString.includes("<br>")) {
+    const instructionsArray = instructionsString.split(/<br>/);
     let htmlString = "<ol>";
 
     for (const instruction of instructionsArray) {

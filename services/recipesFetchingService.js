@@ -179,6 +179,7 @@ const fetchRecipesUnified = async (
   sortDirection,
 ) => {
   if (
+    !query &&
     !sort &&
     !sortDirection &&
     !cuisine &&
