@@ -151,11 +151,13 @@ const getInformationById = asyncHandler(async (req, res, next) => {
  * @param   {string} req.query.currency - Currency for recipe pricing
  * @param   {number} req.query.page - Page number for pagination
  * @param   {number} req.query.size - Size of the page for pagination
+ * @param   {string} req.cookies.refreshToken - Refresh token
  * @returns {Object} - The response object recommended recipes
  */
 const getRecommendedRecipes = asyncHandler(async (req, res, next) => {
   try {
     const recipeId = req.params.id;
+    const refreshToken = req.cookies.refreshToken;
     const { language, currency, page, size } = req.query;
     const ipAddress =
       req.headers["x-forwarded-for"] || req.connection.remoteAddress;
@@ -169,6 +171,7 @@ const getRecommendedRecipes = asyncHandler(async (req, res, next) => {
       recipeId,
       language,
       currency,
+      refreshToken,
     );
     const filteredDbRecipes = recipes.filter((recipe) => recipe);
     res.status(200).json(filteredDbRecipes);

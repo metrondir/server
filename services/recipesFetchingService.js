@@ -339,9 +339,15 @@ const fetchRandomRecipes = async (limit, language, refreshToken, currency) => {
  * @param {string} recipeId - The id of the recipe.
  * @param {string} language - The language to translate to.
  * @param {string} currency - The currency to change to.
+ * @param {string} refreshToken - The refresh token.
  * @returns {Promise} The array of recommended recipes.
  */
-const fetchRecommendedRecipes = async (recipeId, language, currency) => {
+const fetchRecommendedRecipes = async (
+  recipeId,
+  language,
+  currency,
+  refreshToken,
+) => {
   const apiKey = getApiKey();
   if (recipeId.length > 9) {
     const recipeByBD = await Recipe.findById(recipeId);
@@ -352,6 +358,7 @@ const fetchRecommendedRecipes = async (recipeId, language, currency) => {
         response.data.results[0].recipeId,
         language,
         currency,
+        refreshToken,
       );
     } else {
       return "This recipe dont have recomended recepts";
@@ -362,7 +369,12 @@ const fetchRecommendedRecipes = async (recipeId, language, currency) => {
     if (recipeId.length <= 7) {
       return Promise.all(
         response.data.map(async (recipe) =>
-          fetchInformationByRecommended(recipe.id, language, currency),
+          fetchInformationByRecommended(
+            recipe.id,
+            language,
+            currency,
+            refreshToken,
+          ),
         ),
       );
     }
@@ -386,20 +398,18 @@ const fetchInformationByRecommended = async (
   const apiKey = getApiKey();
   const url = `${baseUrl}/${recipeId}/information?includeNutrition=false&apiKey=${apiKey}`;
   let favourites = [];
-
   if (refreshToken) {
     const user = await findUserByRefreshToken(refreshToken);
     favourites = await FavoriteRecipe.find({ user: user._id });
   }
 
   const response = await axios.get(url);
-
-  if (response.data.instructions == null) {
+  if (response.data.instructions === null) {
     return;
   }
   const recipeData = response.data;
   const isFavourite = favourites.some(
-    (fav) => fav.recipe === recipeData.recipeId,
+    (fav) => fav.recipe.toString() == recipeData.id.toString(),
   );
   const pricePerServing = parseFloat(
     (recipeData.pricePerServing / 100).toFixed(2),
@@ -411,7 +421,7 @@ const fetchInformationByRecommended = async (
     image: recipeData.image,
     readyInMinutes: recipeData.readyInMinutes + " min",
     pricePerServing: !currency ? pricePerServing + " USD" : pricePerServing,
-    isFavourite,
+    isFavourite: isFavourite,
   };
   if (language !== "en" && language) {
     await translateRecipeInformation(recipeData, language);
@@ -421,7 +431,6 @@ const fetchInformationByRecommended = async (
   if (currency) {
     await changeCurrency(recipeBase, currency);
   }
-  console.log(recipeBase);
   return recipeBase;
 };
 
@@ -504,7 +513,6 @@ const fetchInformationById = async (
     const pricePerServing = currency
       ? data.pricePerServing
       : parseFloat(data.pricePerServing) + " USD";
-
     return {
       id: data._id || data.recipeId,
       title: data.title,
@@ -586,13 +594,12 @@ const fetchInformationById = async (
     const url = `${baseUrl}/${recipeId}/information?includeNutrition=false&apiKey=${apiKey}`;
     const response = await axios.get(url);
     const data = response.data;
-
     let favourites = [];
     if (refreshToken) {
       const user = await findUserByRefreshToken(refreshToken);
       favourites = await FavoriteRecipe.find({ user: user._id });
     }
-    const isFavourite = favourites.some((fav) => fav.recipe === data.recipeId);
+    const isFavourite = favourites.some((fav) => fav.recipe === data.id);
 
     if (language !== "en" && language) {
       await handleRecipeTranslation(data, language);

@@ -9,6 +9,9 @@ const RecipeModel = require("../models/recipeModel");
  * @returns {Array} The array of recipes with the changed currency.
  */
 const changeCurrency = asynchHandler(async (recipes, currency) => {
+  if (currency === "us") {
+    return recipes;
+  }
   const price = await CurencyModel.find({ lan: currency });
   if (price && price.length > 0 && recipes.length > 1) {
     const pricePerDollar = price[0].pricePerDollar;
@@ -18,7 +21,9 @@ const changeCurrency = asynchHandler(async (recipes, currency) => {
       }
 
       recipe.pricePerServing *= pricePerDollar;
-
+      if (recipe.servings > 1) {
+        recipe.pricePerServing /= recipe.servings;
+      }
       recipe.pricePerServing = parseFloat(recipe.pricePerServing).toFixed(2);
       recipe.pricePerServing = `${recipe.pricePerServing} ${price[0].name}`;
 
@@ -34,9 +39,14 @@ const changeCurrency = asynchHandler(async (recipes, currency) => {
 
     return recipes;
   } else {
+    if (currency === "us") {
+      return recipes;
+    }
     const pricePerDollar = price[0].pricePerDollar;
     recipes.pricePerServing *= pricePerDollar;
-
+    if (recipes.servings > 1) {
+      recipes.pricePerServing /= recipes.servings;
+    }
     recipes.pricePerServing = parseFloat(recipes.pricePerServing.toFixed(2));
 
     recipes.pricePerServing = `${recipes.pricePerServing} ${price[0].name}`;
@@ -60,6 +70,9 @@ const changeCurrency = asynchHandler(async (recipes, currency) => {
 const changeCurrencyForPayment = asynchHandler(async (recipeId, currency) => {
   const price = await CurencyModel.find({ name: currency });
   const recipe = await RecipeModel.findById(recipeId);
+  if (currency === "us") {
+    return parseFloat(recipe.paymentInfo.price.toFixed(2));
+  }
   const pricePerDollar = price[0].pricePerDollar;
 
   recipe.paymentInfo.price = parseFloat(
@@ -74,6 +87,9 @@ const changeCurrencyForPayment = asynchHandler(async (recipeId, currency) => {
  * @returns {number} The price with the changed currency.
  */
 const changeCurrencyPrice = asynchHandler(async (price, currency) => {
+  if (currency === "us") {
+    return parseFloat(price.toFixed(2));
+  }
   const currencyBd = await CurencyModel.find({ name: currency });
   const pricePerDollar = currencyBd[0].pricePerDollar;
   price *= pricePerDollar;
