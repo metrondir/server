@@ -577,9 +577,7 @@ const fetchInformationById = async (
     } else {
       handlePaymentStatus(data, {});
     }
-    const isFavourite = favourites.some(
-      (fav) => fav.recipe.toString() === data._id.toString(),
-    );
+    const isFavourite = favourites.some((fav) => fav.recipe == data._id);
 
     if (language !== "en" && language) {
       await handleRecipeTranslation(data, language);
@@ -599,7 +597,7 @@ const fetchInformationById = async (
       const user = await findUserByRefreshToken(refreshToken);
       favourites = await FavoriteRecipe.find({ user: user._id });
     }
-    const isFavourite = favourites.some((fav) => fav.recipe === data.id);
+    const isFavourite = favourites.some((fav) => fav.recipe == data.id);
 
     if (language !== "en" && language) {
       await handleRecipeTranslation(data, language);
