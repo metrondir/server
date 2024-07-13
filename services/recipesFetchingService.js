@@ -326,7 +326,7 @@ const fetchRandomRecipes = async (
     combinedRecipes,
     Math.min(limit, combinedRecipes.length),
   ).slice(0, limit);
-
+  console.log(randomSample, "randomSample");
   const mapedRecipes = await fetchRecipesData(randomSample, language, currency);
 
   if (isLogged) await markFavorites(mapedRecipes, userId);
@@ -502,8 +502,7 @@ const fetchInformationById = async (
   isLogged,
 ) => {
   const createRecipeObject = (data, isFavourite, language) => {
-    console.log(language, "language");
-    if (language !== "us" || !language) handleRecipeTranslation(data, language);
+    if (language !== "en" || !language) handleRecipeTranslation(data, language);
     return {
       id: data._id || data.recipeId,
       title: data.title,
@@ -571,7 +570,7 @@ const fetchInformationById = async (
 
     if (currency) await changeCurrency(data, currency);
 
-    return createRecipeObject(data, isFavourite, currency, language);
+    return createRecipeObject(data, isFavourite, language);
   };
 
   const fetchRecipeFromAPI = async () => {
@@ -589,7 +588,7 @@ const fetchInformationById = async (
       isFavourite =
         (await FavoriteRecipe.find({ user: userId, recipe: recipeId }))
           .length === 1;
-    return createRecipeObject(data, isFavourite, currency, language);
+    return createRecipeObject(data, isFavourite, language);
   };
 
   if (isSpoonacularRecipe(recipeId)) return await fetchRecipeFromAPI();
