@@ -7,6 +7,7 @@ const fs = require("fs").promises;
 const sharp = require("sharp");
 const axios = require("axios");
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+const { isSpoonacularRecipe } = require("../utils/repetetiveCondition");
 
 const {
   changeCurrency,
@@ -83,9 +84,8 @@ const getRecipes = async (currency, language, userId) => {
       transformRecipe(recipe, language, currency, minSuffix),
     );
 
-    if (currency) {
+    if (currency)
       updatedRecipes = await changeCurrency(updatedRecipes, currency);
-    }
 
     return updatedRecipes;
   } else {
@@ -99,9 +99,8 @@ const getRecipes = async (currency, language, userId) => {
       transformRecipe(recipe, language, currency, minSuffix),
     );
 
-    if (currency) {
+    if (currency)
       translatedRecipes = await changeCurrency(translatedRecipes, currency);
-    }
 
     return translatedRecipes;
   }
@@ -116,9 +115,8 @@ const createRecipe = async (req) => {
   const processedBody = processRequestBody(req.body);
   const imageBase64 = await readImageAsBase64(req.file.path);
   const detectedIngredients = await detectFoodIngredients(imageBase64);
-  if (detectedIngredients.length === 0) {
+  if (detectedIngredients.length === 0)
     throw ApiError.BadRequest("Image is not a food");
-  }
 
   const imgurLink = await uploadToImgur(req.file.path);
   const language = await detectLanguage(processedBody.instructions);
@@ -256,9 +254,8 @@ const createRecipeByDraft = async (req) => {
 
   handlePaymentInfo(req.body, user, recipe);
 
-  if (recipe.instructions) {
+  if (recipe.instructions)
     recipe.instructions = createInstructionsHTML(recipe.instructions);
-  }
 
   recipe = new Recipe(recipe);
   await recipe.save();
@@ -280,9 +277,8 @@ const createRecipeByDraft = async (req) => {
 const handleImageUpload = async (path) => {
   const imageBase64 = await readImageAsBase64(path);
   const detectedIngredients = await detectFoodIngredients(imageBase64);
-  if (detectedIngredients.length === 0) {
+  if (detectedIngredients.length === 0)
     throw ApiError.BadRequest("Image is not a food");
-  }
 
   const resizedImageBuffer = await sharp(path).resize(556, 370).toBuffer();
   const imgurResponse = await imgur.uploadBase64(
@@ -311,9 +307,7 @@ const getRecipesCollection = async (userId, currency, language) => {
   const allData = [...myRecipes, ...favoriteRecipes, ...updatedRecipes];
 
   await translateRecipes(allData, language);
-  if (currency) {
-    await changeCurrency(allData, currency);
-  }
+  if (currency) await changeCurrency(allData, currency);
 
   return allData;
 };
@@ -341,88 +335,85 @@ const updateRecipesWithDefaultInstructions = (recipes, user) => {
  * @returns {Promise<Object>} The translated recipes.
  */
 const translateRecipes = async (recipes, language) => {
-  if (language) {
+  if (language)
     await Promise.all(
       recipes.map((recipe) => translateRecipeGet(recipe, language)),
     );
-  }
 };
 
 /**
  * @desc Set favorite recipes
  * @param {string} recipeId  - The id of the recipe.
  * @param {string} userId - The id of the user.
- * @param {string} refreshToken - The refresh token
+ * @param {boolean} isLogged - The logged status of the user.
  * @returns {Promise<Object>} - The favorite recipe.
  */
-const setFavoriteRecipes = async (recipeId, userId, refreshToken) => {
-  const existingFavoriteRecipe = await FavoriteRecipe.findOne({
-    recipe: recipeId,
-    user: userId,
-  });
-  const existedSpoonacularRecipe = await SpoonacularRecipeModel.findOne({
-    id: recipeId,
-  });
+const setFavoriteRecipes = async (recipeId, userId, isLogged) => {
+  try {
+    const existingFavoriteRecipe = await FavoriteRecipe.findOne({
+      recipe: recipeId,
+      user: userId,
+    });
+    const existedSpoonacularRecipe = await SpoonacularRecipeModel.findOne({
+      id: recipeId,
+    });
 
-  if (existingFavoriteRecipe) {
-    const deletedFavoriteRecipe = await deleteFavoriteRecipe(
-      existingFavoriteRecipe,
-      recipeId,
-      existedSpoonacularRecipe,
-    );
+    if (existingFavoriteRecipe) {
+      const deletedFavoriteRecipe = await deleteFavoriteRecipe(
+        existingFavoriteRecipe,
+        recipeId,
+        existedSpoonacularRecipe,
+      );
+      await FavoriteRecipe.updateMany(
+        { recipe: { $in: recipeId } },
+        { $inc: { aggregateLikes: -1 } },
+      );
+      return { isDeleted: true, data: deletedFavoriteRecipe };
+    }
+
+    const recipe = await fetchInformationById(recipeId, "en", null, isLogged);
+    let foundAggLike;
+    if (isSpoonacularRecipe(recipeId))
+      foundAggLike = await SpoonacularRecipeModel.find({ id: recipeId });
+    else foundAggLike = await Recipe.findById({ _id: recipeId });
+
     await FavoriteRecipe.updateMany(
       { recipe: { $in: recipeId } },
-      { $inc: { aggregateLikes: -1 } },
+      { $inc: { aggregateLikes: +1 } },
     );
-    return { isDeleted: true, data: deletedFavoriteRecipe };
+    let instructions;
+    if (Array.isArray(recipe.instructions))
+      instructions = recipe.instructions.join("\n");
+    else if (typeof recipe.instructions === "string")
+      instructions = recipe.instructions;
+    else instructions = undefined;
+
+    const newFavoriteRecipe = new FavoriteRecipe({
+      recipeId: recipe.id,
+      title: recipe.title,
+      extendedIngredients: recipe.extendedIngredients,
+      pricePerServing: recipe.pricePerServing,
+      cuisines: recipe.cuisines,
+      dishTypes: recipe.dishTypes,
+      instructions: instructions,
+      aggregateLikes:
+        foundAggLike.length !== 0
+          ? foundAggLike[0].aggregateLikes + 1
+          : recipe.aggregateLikes,
+      diets: recipe.diets,
+      image: recipe.image,
+      readyInMinutes: recipe.readyInMinutes,
+      user: userId,
+      recipe: recipeId,
+    });
+    await newFavoriteRecipe.save();
+
+    await updateRecipeLikes(recipeId, existedSpoonacularRecipe);
+
+    return { isDeleted: false, data: newFavoriteRecipe };
+  } catch (err) {
+    console.log(err);
   }
-
-  const recipe = await fetchInformationById(recipeId, "en", null, refreshToken);
-  let foundAggLike;
-  if (recipeId.length <= 8) {
-    foundAggLike = await SpoonacularRecipeModel.find({ id: recipeId });
-  }
-
-  if (recipeId.length >= 9) {
-    foundAggLike = await Recipe.find({ _id: recipeId });
-  }
-
-  await FavoriteRecipe.updateMany(
-    { recipe: { $in: recipeId } },
-    { $inc: { aggregateLikes: +1 } },
-  );
-  let instructions;
-  if (Array.isArray(recipe.instructions)) {
-    instructions = recipe.instructions.join("\n");
-  } else if (typeof recipe.instructions === "string") {
-    instructions = recipe.instructions;
-  } else {
-    instructions = undefined;
-  }
-
-  const newFavoriteRecipe = new FavoriteRecipe({
-    recipeId: recipe.id,
-    title: recipe.title,
-    extendedIngredients: recipe.extendedIngredients,
-    pricePerServing: recipe.pricePerServing,
-    cuisines: recipe.cuisines,
-    dishTypes: recipe.dishTypes,
-    instructions: instructions,
-    aggregateLikes:
-      foundAggLike.length !== 0
-        ? foundAggLike[0].aggregateLikes + 1
-        : recipe.aggregateLikes,
-    diets: recipe.diets,
-    image: recipe.image,
-    readyInMinutes: recipe.readyInMinutes,
-    user: userId,
-    recipe: recipeId,
-  });
-  await newFavoriteRecipe.save();
-
-  await updateRecipeLikes(recipeId, existedSpoonacularRecipe);
-
-  return { isDeleted: false, data: newFavoriteRecipe };
 };
 
 /**
@@ -440,11 +431,9 @@ const deleteFavoriteRecipe = async (
   const deletedFavoriteRecipe = await FavoriteRecipe.findByIdAndDelete(
     existingFavoriteRecipe._id,
   );
-  if (recipeId >= 8) {
+  if (isSpoonacularRecipe(recipeId))
     await updateSpoonacularRecipeLikes(existedSpoonacularRecipe, recipeId, -1);
-  } else {
-    await updateRecipeLikes(recipeId, null, -1);
-  }
+  else await updateRecipeLikes(recipeId, null, -1);
 
   return deletedFavoriteRecipe;
 };
@@ -461,13 +450,13 @@ const updateRecipeLikes = async (
   existedSpoonacularRecipe,
   likesDelta = 1,
 ) => {
-  if (recipeId >= 8) {
+  if (isSpoonacularRecipe(recipeId))
     await updateSpoonacularRecipeLikes(
       existedSpoonacularRecipe,
       recipeId,
       likesDelta,
     );
-  } else {
+  else {
     const recipe = await Recipe.findById(recipeId);
     recipe.aggregateLikes += likesDelta;
     await recipe.save();
@@ -507,9 +496,7 @@ const updateSpoonacularRecipeLikes = async (
  */
 const updateRecipe = async (req) => {
   const recipe = await Recipe.findById(req.params.id);
-  if (!recipe) {
-    throw ApiError.BadRequest("Recipe not found");
-  }
+  if (!recipe) throw ApiError.BadRequest("Recipe not found");
 
   if (
     req.body.extendedIngredients &&
@@ -541,17 +528,14 @@ const updateRecipe = async (req) => {
  */
 const deleteRecipe = async (recipeId, userId) => {
   const user = await User.findById(userId);
-  if (!user) {
-    throw ApiError.BadRequest("User not found");
-  }
+  if (!user) throw ApiError.BadRequest("User not found");
 
   const recipe = await Recipe.findById(recipeId);
-  if (recipe.user.toString() !== userId) {
+  if (recipe.user.toString() !== userId)
     throw ApiError.BadRequest("You can't delete this recipe");
-  }
-  if (!recipe) {
-    throw ApiError.BadRequest("Recipe not found");
-  }
+
+  if (!recipe) throw ApiError.BadRequest("Recipe not found");
+
   return await Recipe.deleteOne({ id: recipeId });
 };
 
@@ -561,9 +545,7 @@ const deleteRecipe = async (recipeId, userId) => {
  * @returns {Promise<Object>} The dishtypes cuisines diets.
  */
 const loadData = async (language) => {
-  if (language == "en" || language == undefined) {
-    return data;
-  }
+  if (language == "en" || language == undefined) return data;
   const translatedData = await TranslateRecipeInformation(data, language);
 
   return translatedData;
@@ -630,14 +612,11 @@ const createPaymentIntent = async (recipeId, userId, currency) => {
     "usd",
   ];
 
-  if (currency && !validCurrencies.includes(currency)) {
+  if (currency && !validCurrencies.includes(currency))
     throw ApiError.BadRequest("Invalid currency code");
-  }
 
   const user = await User.findById(recipe.user);
-  if (!user) {
-    throw ApiError.BadRequest("User not found");
-  }
+  if (!user) throw ApiError.BadRequest("User not found");
 
   const paymentIntent = await stripe.paymentIntents.create({
     amount: price * 100,
@@ -705,18 +684,16 @@ const getAllPaymentRecipes = async (userId, language, currency) => {
  * @returns {Promise<Object>} The formatted recipes.
  */
 const formatRecipePrices = async (recipes, currency) => {
-  if (currency) {
+  if (currency)
     await Promise.all(
       recipes.map((recipe) => changeCurrency(recipe, currency)),
     );
-  } else {
+  else
     recipes.foreach((recipe) => {
       recipe.pricePerServing = `${recipe.pricePerServing} USD`;
-      if (recipe.paymentInfo?.price) {
+      if (recipe.paymentInfo?.price)
         recipe.paymentInfo.price = `${recipe.paymentInfo.price} USD`;
-      }
     });
-  }
 };
 
 module.exports = {

@@ -10,7 +10,6 @@ const { paginateArray } = require("./paginatedService");
  * @param {function} func - The function to call if the data is not in Redis.
  * @param {number} limit - The limit of the query.
  * @param {string} language - The language of the data.
- * @param {string} refreshToken - The refresh token.
  * @param {string} currency - The currency of the data.
  * @param {any} args - The arguments to pass to the function.
  * @returns {Promise} The paginated result.
@@ -22,7 +21,6 @@ const redisGetModelsWithPaginating = async (
   func,
   limit,
   language,
-  refreshToken,
   currency,
   ...args
 ) => {
@@ -41,7 +39,7 @@ const redisGetModelsWithPaginating = async (
   } else {
     console.log("FROM DB");
 
-    const data = await func(limit, language, refreshToken, currency, ...args);
+    const data = await func(limit, language, currency, ...args);
 
     redis.setex(redisKey, 60, JSON.stringify(data));
 

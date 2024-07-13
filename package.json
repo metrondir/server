@@ -53,6 +53,7 @@
     "redis-cli": "^1.4.0",
     "sharp": "^0.33.2",
     "slugify": "^1.6.6",
+    "socket.io": "^4.7.5",
     "stripe": "^15.2.0",
     "stripe-cli": "^0.1.0",
     "tslib": "^2.6.2",

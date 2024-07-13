@@ -54,7 +54,20 @@ const userSchema = mongoose.Schema(
       type: String,
       required: false,
     },
+    likedComments: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Comment",
+      },
+    ],
+    reactedComments: [
+      {
+        commentId: { type: mongoose.Schema.Types.ObjectId, ref: "Comment" },
+        reaction: { type: String, required: true },
+      },
+    ],
   },
+
   {
     timestamps: true,
   },

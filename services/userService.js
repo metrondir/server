@@ -30,11 +30,10 @@ const {
  */
 async function validateEmailUniqueness(email) {
   const candidate = await User.findOne({ email });
-  if (candidate) {
+  if (candidate)
     throw ApiError.BadRequest(
       `User with this email ${email} already registered`,
     );
-  }
 }
 
 /**
@@ -127,9 +126,8 @@ const activate = asyncHandler(async (activationLink) => {
   const registrationDetails =
     await getRegistrationDetailsByActivationLink(activationLink);
 
-  if (!registrationDetails) {
+  if (!registrationDetails)
     throw ApiError.BadRequest("Incorrect activation link");
-  }
 
   const currentTimestamp = moment();
   if (currentTimestamp.isAfter(registrationDetails.activationLinkExpiration)) {
@@ -167,7 +165,9 @@ const activate = asyncHandler(async (activationLink) => {
   user.isActivated = true;
   user.activationLinkExpiration = undefined;
   await user.save();
+
   await deleteRegistrationDetailsByActivationLink(activationLink);
+
   const userDto = new UserDto(user);
   const tokens = generateTokens({ ...userDto });
   await saveTokens(userDto.id, tokens.refreshToken);
@@ -182,16 +182,14 @@ const activate = asyncHandler(async (activationLink) => {
  */
 const login = asyncHandler(async (email, password) => {
   const user = await User.findOne({ email });
-  if (!user) {
+  if (!user)
     throw ApiError.BadRequest(`User with this email ${email} not found`);
-  }
-  if (!password) {
-    throw ApiError.BadRequest("Password must be not empty");
-  }
+
+  if (!password) throw ApiError.BadRequest("Password must be not empty");
+
   const isPassEquals = await bcrypt.compare(password, user.password);
-  if (!isPassEquals) {
-    throw ApiError.BadRequest("Incorrect password");
-  }
+  if (!isPassEquals) throw ApiError.BadRequest("Incorrect password");
+
   const userDto = new UserDto(user);
   const tokens = generateTokens({ ...userDto });
   await saveTokens(userDto.id, tokens.refreshToken);
@@ -215,15 +213,10 @@ const logout = asyncHandler(async (refreshToken, accessToken) => {
  * @returns {Object} The tokens and user data
  */
 const refresh = asyncHandler(async (refreshToken) => {
-  if (!refreshToken) {
-    throw ApiError.Forbbiden("User unauthenticated");
-  }
+  if (!refreshToken) throw ApiError.Forbbiden("User unauthenticated");
 
   const userData = await validateRefreshToken(refreshToken);
-
-  if (!userData) {
-    throw ApiError.Forbbiden("User unauthenticated");
-  }
+  if (!userData) throw ApiError.Forbbiden("User unauthenticated");
 
   const user = await User.findById(userData.user);
   const userDto = new UserDto(user);
@@ -240,13 +233,10 @@ const refresh = asyncHandler(async (refreshToken) => {
  */
 const forgetPassword = asyncHandler(async (email) => {
   const user = await User.findOne({ email });
-  if (!user) {
+  if (!user)
     throw ApiError.BadRequest(`User with this email ${email} not found`);
-  }
 
-  if (!user.isActivated) {
-    throw ApiError.BadRequest("User is not activated");
-  }
+  if (!user.isActivated) throw ApiError.BadRequest("User is not activated");
 
   const changePasswordLink = uuid.v4();
   const changePasswordLinkExpiration = await createLinkWithTime();
@@ -257,7 +247,9 @@ const forgetPassword = asyncHandler(async (email) => {
   user.changePasswordLink = changePasswordLink;
   user.isChangePasswordLink = false;
   user.changePasswordLinkExpiration = changePasswordLinkExpiration;
+
   await user.save();
+
   return changePasswordLink;
 });
 
@@ -268,22 +260,21 @@ const forgetPassword = asyncHandler(async (email) => {
  * @returns {Object} The user and tokens.
  */
 const changePassword = asyncHandler(async (email, password) => {
-  if (!password) {
-    throw ApiError.BadRequest("Incorrect new password");
-  }
+  if (!password) throw ApiError.BadRequest("Incorrect new password");
+
   const user = await User.findOne({
     email,
     changePasswordLink: { $exists: true, $ne: null },
   });
-  if (!user) {
+  if (!user)
     throw ApiError.BadRequest(`User doest not exsit or link has been expired`);
-  }
-  if (!user.isChangePasswordLink) {
+
+  if (!user.isChangePasswordLink)
     throw ApiError.BadRequest(`User not activate link for change password`);
-  }
-  if (email !== user.email) {
+
+  if (email !== user.email)
     throw ApiError.BadRequest(`User with this email ${email} not found`);
-  }
+
   const hashedPassword = await bcrypt.hash(password, 10);
   const isMatch = await bcrypt.compare(password, user.password);
   if (isMatch) {
@@ -296,7 +287,9 @@ const changePassword = asyncHandler(async (email, password) => {
   user.changePasswordLink = undefined;
   user.isChangePasswordLink = undefined;
   user.changePasswordLinkExpiration = undefined;
+
   await user.save();
+
   const userDto = new UserDto(user);
   const tokens = generateTokens({ ...userDto });
   await saveTokens(userDto.id, tokens.refreshToken);
@@ -311,9 +304,8 @@ const changePassword = asyncHandler(async (email, password) => {
  */
 const changePasswordLink = asyncHandler(async (changePasswordLink) => {
   const user = await User.findOne({ changePasswordLink: changePasswordLink });
-  if (!user) {
-    throw ApiError.BadRequest("Invalid change password link");
-  }
+  if (!user) throw ApiError.BadRequest("Invalid change password link");
+
   const currentTimestamp = moment();
   if (currentTimestamp.isAfter(user.changePasswordLinkExpiration)) {
     user.changePasswordLink = uuid.v4();
@@ -347,9 +339,7 @@ const deleteUser = asyncHandler(async (userId) => {
     { $inc: { aggregateLikes: -1 } },
   );
   await removeToken(user.refreshToken);
-  if (!user) {
-    throw ApiError.BadRequest("User not found");
-  }
+  if (!user) throw ApiError.BadRequest("User not found");
 });
 
 module.exports = {

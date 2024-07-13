@@ -5,19 +5,12 @@ const mongoose = require("mongoose");
 /**
  * @desc Get the recipes from the database randomly.
  * @param {number} limit // The limit of the query.
- * @returns {Promise<Object>} The result of the query.
- */
-const getRecipesFromDatabaseRandom = async (limit) => {
-  return await Recipe.aggregate([{ $sample: { size: Math.floor(limit) } }]);
-};
-
-/**
- * @desc Get the recipes from the database with the changed like recipe.
- * @param {number} limit - The limit of the query.
  * @param {string} userId - The id of the user.
  * @returns {Promise<Object>} The result of the query.
  */
-const getRecipesFromDatabaseRandomWithUsers = async (limit, userId) => {
+const getRecipesFromDatabaseRandom = async (limit, userId) => {
+  if (!userId)
+    return await Recipe.aggregate([{ $sample: { size: Math.floor(limit) } }]);
   return await Recipe.aggregate([
     { $match: { user: { $ne: new mongoose.Types.ObjectId(userId) } } },
     { $sample: { size: Math.floor(limit) } },
@@ -150,7 +143,6 @@ const getRecipesFromDatabaseComplex = async (
 };
 
 module.exports = {
-  getRecipesFromDatabaseRandomWithUsers,
   getRecipesFromDatabaseByIngridients,
   getRecipesFromDatabaseComplex,
   getRecipesByCategories,

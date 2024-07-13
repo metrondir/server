@@ -116,6 +116,7 @@ async function translateRecipeFields(recipe, language) {
  * @returns {Promise} The translated recipe.
  */
 async function translateRecipeInformation(recipe, language) {
+  if (language == "en" || !language) return recipe;
   if (language == "cz") language = "cs";
   if (language == "ua") language = "uk";
   if (language == "sp") language = "es";

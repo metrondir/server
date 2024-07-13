@@ -53,11 +53,26 @@ async function validateAccessToken(accessToken, refreshToken) {
     userData = new UserDto(user);
     const tokens = generateTokens({ ...userData });
     await saveTokens(userData.id, tokens.refreshToken);
-
+    userData.isLogged = true;
     return { userData, tokens };
   }
+  userData.isLogged = true;
   return { userData, tokens: null };
 }
+
+/**
+ * @desc Check if the user is logged.
+ * @param {string} accessToken - The access token to validate.
+ * @param {string} refreshToken - The refresh token to validate.
+ *
+ */
+const isUserLogged = asyncHandler(async (accessToken, refreshToken) => {
+  let userData = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET, {
+    ignoreExpiration: true,
+  });
+  userData.isLogged = true;
+  return { userData };
+});
 
 /**
  * @desc Validate the refresh token.
@@ -103,4 +118,5 @@ module.exports = {
   validateAccessToken,
   validateRefreshToken,
   findToken,
+  isUserLogged,
 };

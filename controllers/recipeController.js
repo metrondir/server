@@ -65,7 +65,7 @@ const getRecipes = asyncHandler(async (req, res, next) => {
  * @desc Set  favorite recipe
  * @route Get /api/recipes/favourite:id
  * @access private
- * @param {string} req.cookies.refreshToken - The refresh token of the user
+ * @param {boolean} req.user.isLogged - The user is logged
  * @param {string} req.params.id - The  id of the recipe
  * @param {string} req.user.id - The  id of the user
  * @returns {Promise<void>} - Favorite recipe created
@@ -74,8 +74,8 @@ const setFavoriteRecipes = asyncHandler(async (req, res, next) => {
   try {
     const recipeId = req.params.id;
     const userId = req.user.id;
-    const refreshToken = req.cookies.refreshToken;
-    await recipeService.setFavoriteRecipes(recipeId, userId, refreshToken);
+    const isLogged = req.user.isLogged;
+    await recipeService.setFavoriteRecipes(recipeId, userId, isLogged);
     const ipAddress =
       req.headers["x-forwarded-for"] || req.connection.remoteAddress;
     const clientIp = ipAddress.split(",")[0];
@@ -84,6 +84,7 @@ const setFavoriteRecipes = asyncHandler(async (req, res, next) => {
     return res.status(201).json("Favorite recipe created");
   } catch (error) {
     next(error);
+    console.log(error);
   }
 });
 

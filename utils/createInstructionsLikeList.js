@@ -8,9 +8,8 @@ const createInstructionsHTML = (instructionsString) => {
   let htmlString = "<ol>";
 
   for (const instruction of instructionsArray) {
-    if (instruction.trim() !== "") {
+    if (instruction.trim() !== "")
       htmlString += `<li>${instruction.trim()}</li>`;
-    }
   }
 
   htmlString += "</ol>";
@@ -23,7 +22,6 @@ const createInstructionsHTML = (instructionsString) => {
  * @returns {string} The HTML list of instructions.
  */
 const refactorInstructionbyHTML = (instructionsString) => {
-  console.log(instructionsString);
   if (!instructionsString) return "";
   if (typeof instructionsString !== "string") return "";
   if (instructionsString.includes("<ol>")) return instructionsString;
@@ -32,9 +30,8 @@ const refactorInstructionbyHTML = (instructionsString) => {
     let htmlString = "<ol>";
 
     for (const instruction of instructionsArray) {
-      if (instruction.trim() !== "") {
+      if (instruction.trim() !== "")
         htmlString += `<li>${instruction.trim()}</li>`;
-      }
     }
 
     htmlString += "</ol>";
@@ -47,17 +44,14 @@ const refactorInstructionbyHTML = (instructionsString) => {
     if (instructionsString.match(/<p>/g).length === 1) {
       const cleanedString = instructionsString.replace(/<p>|<\/p>/g, "");
       instructionsArray = cleanedString.split(".");
-    } else {
-      instructionsArray = instructionsString.split(/<\/p>/);
-    }
+    } else instructionsArray = instructionsString.split(/<\/p>/);
 
     let htmlString = "<ol>";
 
     for (const instruction of instructionsArray) {
       const cleanedInstruction = instruction.replace(/<p>/, "");
-      if (cleanedInstruction !== "") {
+      if (cleanedInstruction !== "")
         htmlString += `<li>${cleanedInstruction}</li>`;
-      }
     }
 
     htmlString += "</ol>";
@@ -68,9 +62,8 @@ const refactorInstructionbyHTML = (instructionsString) => {
     let htmlString = "<ol>";
 
     for (const instruction of instructionsArray) {
-      if (instruction.trim() !== "") {
+      if (instruction.trim() !== "")
         htmlString += `<li>${instruction.trim()}</li>`;
-      }
     }
 
     htmlString += "</ol>";
@@ -81,9 +74,8 @@ const refactorInstructionbyHTML = (instructionsString) => {
   let htmlString = "<ol>";
 
   for (const instruction of instructionsArray) {
-    if (instruction.trim() !== "") {
+    if (instruction.trim() !== "")
       htmlString += `<li>${instruction.trim()}</li>`;
-    }
   }
 
   htmlString += "</ol>";

@@ -19,7 +19,8 @@ module.exports = async function (req, res, next) {
     ) {
       throw ApiError.Forbidden("User unauthenticated");
     }
-
+    req.user = req.user || {};
+    req.user.isLogged = false;
     const { userData, tokens } = await validateAccessToken(
       accessToken,
       refreshToken,

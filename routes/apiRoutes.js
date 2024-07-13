@@ -8,18 +8,20 @@ const {
   translateRecipe,
 } = require("../controllers/apiController");
 
+const isLoggedMiddlware = require("../middleware/isLoggedMiddlware");
+
 const router = express.Router();
 
-router.get("/", getUnifiedRecipes);
+router.get("/", isLoggedMiddlware, getUnifiedRecipes);
 
-router.post("/translate", translateRecipe);
+router.post("/translate", isLoggedMiddlware, translateRecipe);
 
-router.get("/random", getRandomRecipes);
+router.get("/random", isLoggedMiddlware, getRandomRecipes);
 
-router.get("/recommended/:id", getRecommendedRecipes);
+router.get("/recommended/:id", isLoggedMiddlware, getRecommendedRecipes);
 
-router.get("/ingredients", getRecipesByIngridients);
+router.get("/ingredients", isLoggedMiddlware, getRecipesByIngridients);
 
-router.get("/:id", getInformationById);
+router.get("/:id", isLoggedMiddlware, getInformationById);
 
 module.exports = router;
