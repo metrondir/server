@@ -326,7 +326,6 @@ const fetchRandomRecipes = async (
     combinedRecipes,
     Math.min(limit, combinedRecipes.length),
   ).slice(0, limit);
-  console.log(randomSample, "randomSample");
   const mapedRecipes = await fetchRecipesData(randomSample, language, currency);
 
   if (isLogged) await markFavorites(mapedRecipes, userId);

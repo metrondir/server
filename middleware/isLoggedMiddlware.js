@@ -15,7 +15,6 @@ module.exports = async function (req, res, next) {
     req.user = userData;
     next();
   } catch (error) {
-    console.log(error);
     return next(error);
   }
 };
