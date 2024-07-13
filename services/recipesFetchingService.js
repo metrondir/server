@@ -355,8 +355,7 @@ const fetchRecommendedRecipes = async (
     const recipeByDB = await Recipe.findById(recipeId);
     const url = `${baseUrl}/complexSearch?apiKey=${getApiKey()}&query=${recipeByDB.title}&number=1&addRecipeNutrition=true`;
     const response = await axios.get(url);
-    if (response.data.results.length === 0)
-      return "This recipe dont have recomended recepts";
+    if (response.data.results.length === 0) return [];
     return await fetchRecommendedRecipes(
       response.data.results[0].recipeId,
       language,
