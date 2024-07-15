@@ -349,71 +349,72 @@ const translateRecipes = async (recipes, language) => {
  * @returns {Promise<Object>} - The favorite recipe.
  */
 const setFavoriteRecipes = async (recipeId, userId, isLogged) => {
-  try {
-    const existingFavoriteRecipe = await FavoriteRecipe.findOne({
-      recipe: recipeId,
-      user: userId,
-    });
-    const existedSpoonacularRecipe = await SpoonacularRecipeModel.findOne({
-      id: recipeId,
-    });
+  const existingFavoriteRecipe = await FavoriteRecipe.findOne({
+    recipe: recipeId,
+    user: userId,
+  });
+  const existedSpoonacularRecipe = await SpoonacularRecipeModel.findOne({
+    id: recipeId,
+  });
 
-    if (existingFavoriteRecipe) {
-      const deletedFavoriteRecipe = await deleteFavoriteRecipe(
-        existingFavoriteRecipe,
-        recipeId,
-        existedSpoonacularRecipe,
-      );
-      await FavoriteRecipe.updateMany(
-        { recipe: { $in: recipeId } },
-        { $inc: { aggregateLikes: -1 } },
-      );
-      return { isDeleted: true, data: deletedFavoriteRecipe };
-    }
-
-    const recipe = await fetchInformationById(recipeId, "en", null, isLogged);
-    let foundAggLike;
-    if (isSpoonacularRecipe(recipeId))
-      foundAggLike = await SpoonacularRecipeModel.find({ id: recipeId });
-    else foundAggLike = await Recipe.findById({ _id: recipeId });
-
+  if (existingFavoriteRecipe) {
+    const deletedFavoriteRecipe = await deleteFavoriteRecipe(
+      existingFavoriteRecipe,
+      recipeId,
+      existedSpoonacularRecipe,
+    );
     await FavoriteRecipe.updateMany(
       { recipe: { $in: recipeId } },
-      { $inc: { aggregateLikes: +1 } },
+      { $inc: { aggregateLikes: -1 } },
     );
-    let instructions;
-    if (Array.isArray(recipe.instructions))
-      instructions = recipe.instructions.join("\n");
-    else if (typeof recipe.instructions === "string")
-      instructions = recipe.instructions;
-    else instructions = undefined;
-
-    const newFavoriteRecipe = new FavoriteRecipe({
-      recipeId: recipe.id,
-      title: recipe.title,
-      extendedIngredients: recipe.extendedIngredients,
-      pricePerServing: recipe.pricePerServing,
-      cuisines: recipe.cuisines,
-      dishTypes: recipe.dishTypes,
-      instructions: instructions,
-      aggregateLikes:
-        foundAggLike.length !== 0
-          ? foundAggLike[0].aggregateLikes + 1
-          : recipe.aggregateLikes,
-      diets: recipe.diets,
-      image: recipe.image,
-      readyInMinutes: recipe.readyInMinutes,
-      user: userId,
-      recipe: recipeId,
-    });
-    await newFavoriteRecipe.save();
-
-    await updateRecipeLikes(recipeId, existedSpoonacularRecipe);
-
-    return { isDeleted: false, data: newFavoriteRecipe };
-  } catch (err) {
-    console.log(err);
+    return { isDeleted: true, data: deletedFavoriteRecipe };
   }
+
+  const recipe = await fetchInformationById(
+    recipeId,
+    "en",
+    null,
+    userId,
+    isLogged,
+  );
+  let foundAggLike;
+  if (isSpoonacularRecipe(recipeId))
+    foundAggLike = await SpoonacularRecipeModel.findOne({ id: recipeId });
+  else foundAggLike = await Recipe.findById({ _id: recipeId });
+  await FavoriteRecipe.updateMany(
+    { recipe: { $in: recipeId } },
+    { $inc: { aggregateLikes: +1 } },
+  );
+  let instructions;
+  if (Array.isArray(recipe.instructions))
+    instructions = recipe.instructions.join("\n");
+  else if (typeof recipe.instructions === "string")
+    instructions = recipe.instructions;
+  else instructions = undefined;
+  const newFavoriteRecipe = new FavoriteRecipe({
+    recipeId: recipe.id,
+    title: recipe.title,
+    extendedIngredients: recipe.extendedIngredients,
+    pricePerServing: recipe.pricePerServing,
+    cuisines: recipe.cuisines,
+    dishTypes: recipe.dishTypes,
+    instructions: instructions,
+    aggregateLikes:
+      foundAggLike && foundAggLike.aggregateLikes
+        ? foundAggLike.aggregateLikes + 1
+        : recipe.aggregateLikes + 1,
+    diets: recipe.diets,
+    image: recipe.image,
+    readyInMinutes: recipe.readyInMinutes,
+    user: userId,
+    recipe: recipeId,
+    paymentInfo: recipe?.paymentInfo,
+  });
+  await newFavoriteRecipe.save();
+
+  await updateRecipeLikes(recipeId, existedSpoonacularRecipe);
+
+  return { isDeleted: false, data: newFavoriteRecipe };
 };
 
 /**

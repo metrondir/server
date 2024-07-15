@@ -142,10 +142,24 @@ const getRecipesFromDatabaseComplex = async (
   return recipes;
 };
 
+/**
+ * @desc Get the recipes from the database with similar title.
+ * @param {string} title - The title to search by.
+ * @param {string} recipeId - The id of the recipe.
+ * @returns {Promise<Object>} The result of the query.
+ */
+const getRecipesFromDatabaseByTitle = async (title, recipeId) => {
+  return await Recipe.find({
+    title: { $regex: new RegExp(title, "i") },
+    _id: { $ne: recipeId },
+  });
+};
+
 module.exports = {
   getRecipesFromDatabaseByIngridients,
   getRecipesFromDatabaseComplex,
   getRecipesByCategories,
   getSpoonAcularChangedLikeRecipe,
   getRecipesFromDatabaseRandom,
+  getRecipesFromDatabaseByTitle,
 };

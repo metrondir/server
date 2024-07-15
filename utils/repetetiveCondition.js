@@ -4,7 +4,9 @@
  * @returns {boolean} - Returns true if the recipe ID is from Spoonacular, false if it is from the database.
  */
 function isSpoonacularRecipe(recipeId) {
-  return recipeId.length <= 10;
+  return recipeId
+    ? typeof recipeId === "number" || recipeId.length <= 10
+    : false;
 }
 
 module.exports = {

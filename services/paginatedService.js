@@ -58,7 +58,6 @@ const paginateArray = (data, page, size) => {
     totalItems: totalItems,
     totalPages: Math.ceil(totalItems / pageSize),
   };
-
   result.results = data.slice(startIndex, endIndex);
 
   return result;

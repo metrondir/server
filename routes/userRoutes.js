@@ -23,13 +23,18 @@ router.post(
   registerUser,
 );
 
-router.post("/login", loginUser);
+router.post(
+  "/login",
+  body("email").isEmail(),
+  body("password").isLength({ min: 7, max: 50 }),
+  loginUser,
+);
 
 router.get("/logout", authMiddleware, logoutUser);
 
 router.get("/activate/:link", activateUser);
 
-router.post("/forget-password", forgetPasswordUser);
+router.post("/forget-password", body("email").isEmail(), forgetPasswordUser);
 
 router.get("/change-password/:link", changePasswordUserLink);
 

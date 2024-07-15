@@ -135,7 +135,7 @@ const getCommentsByRecipeId = asyncHandler(
     if (!comments) return [];
     if (isLogged) {
       comments.some((comment) => {
-        if (comment.likes.includes(userId)) comment.liked = true;
+        if (comment.likes.includes(userId)) comment.likes = true;
         if (comment.reactions.includes(userId)) comment.reacted = true;
         return comment.replies.some((reply) => {
           if (reply.likes.includes(userId)) reply.liked = true;
@@ -176,7 +176,7 @@ const getCommentsByParentCommentId = asyncHandler(
     if (!comments) throw ApiError.NotFound("Comments not found");
     if (isLogged) {
       comments.some((comment) => {
-        if (comment.likes.includes(userId)) comment.liked = true;
+        if (comment.likes.includes(userId)) comment.likes = true;
         if (comment.reactions.includes(userId)) comment.reacted = true;
         return comment.replies.some((reply) => {
           if (reply.likes.includes(userId)) reply.liked = true;
@@ -205,7 +205,7 @@ const getCommentsByCommentId = asyncHandler(
     if (!comments) throw ApiError.NotFound("Comments not found");
     if (isLogged) {
       comments.some((comment) => {
-        if (comment.likes.includes(userId)) comment.liked = true;
+        if (comment.likes.includes(userId)) comment.likes = true;
         if (comment.reactions.includes(userId)) comment.reacted = true;
         return comment.replies.some((reply) => {
           if (reply.likes.includes(userId)) reply.liked = true;
@@ -232,7 +232,7 @@ const getCommentsByTags = asyncHandler(
     if (!comments) throw ApiError.NotFound("Comments not found");
     if (isLogged) {
       comments.some((comment) => {
-        if (comment.likes.includes(userId)) comment.liked = true;
+        if (comment.likes.includes(userId)) comment.likes = true;
         if (comment.reactions.includes(userId)) comment.reacted = true;
         return comment.replies.some((reply) => {
           if (reply.likes.includes(userId)) reply.liked = true;
