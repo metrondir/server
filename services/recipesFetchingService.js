@@ -89,18 +89,13 @@ const markFavouriteRecipe = async (recipe, userId) => {
  */
 
 const mapRecipes = async (response, language, currency) => {
-  if (language == "en" || !language) {
-    const recipes = response.map((recipe) => new recipeEnDto(recipe));
+  if (language == "en" || !language)
+    return response.map((recipe) => new recipeEnDto(recipe));
 
-    if (currency) await changeCurrency(recipes, currency);
-    return recipes;
-  }
   await Promise.all(
     response.map((recipe) => translateRecipeInformation(recipe, language)),
   );
-  const recipes = response.map((recipe) => new recipeDto(recipe));
-  if (currency) await changeCurrency(recipes, currency);
-  return recipes;
+  return response.map((recipe) => new recipeDto(recipe));
 };
 
 /**

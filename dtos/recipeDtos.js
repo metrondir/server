@@ -25,6 +25,7 @@ class recipeEnDto {
   title;
   image;
   readyInMinutes;
+  pricePerServing;
   diets;
   cuisines;
   dishTypes;
@@ -36,6 +37,7 @@ class recipeEnDto {
     this.image = model.image;
     this.readyInMinutes = model.readyInMinutes + " min";
     this.diets = model.diets || [];
+    this.pricePerServing = model.pricePerServing;
     this.cuisines = model.cuisines || [];
     this.dishTypes = model.dishTypes || [];
     this.isFavourite = model.isFavourite;
@@ -46,6 +48,7 @@ class favouriteRecipeEnDto {
   title;
   image;
   readyInMinutes;
+  pricePerServing;
   diets;
   cuisines;
   dishTypes;
@@ -56,6 +59,7 @@ class favouriteRecipeEnDto {
     this.title = model.title;
     this.image = model.image;
     this.readyInMinutes = model.readyInMinutes + " min";
+    this.pricePerServing = model.pricePerServing;
     this.diets = model.diets || [];
     this.cuisines = model.cuisines || [];
     this.dishTypes = model.dishTypes || [];
