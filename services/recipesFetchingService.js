@@ -84,11 +84,10 @@ const markFavouriteRecipe = async (recipe, userId) => {
  * @desc Fetch the data of the recipes.
  * @param {Array} response - The array of recipes to fetch data from.
  * @param {string} language - The language to translate to.
- * @param {string} currency - The currency to change to.
  * @returns {Promise<Array>} The array of recipes with the fetched data.
  */
 
-const mapRecipes = async (response, language, currency) => {
+const mapRecipes = async (response, language) => {
   if (language == "en" || !language)
     return response.map((recipe) => new recipeEnDto(recipe));
 
@@ -267,7 +266,7 @@ const fetchRecipesUnified = async (
     limit,
   );
 
-  const mappedRecipes = await mapRecipes(sortedRecipes, language, currency);
+  const mappedRecipes = await mapRecipes(sortedRecipes, language);
 
   if (isLogged) await markFavorites(mappedRecipes, userId);
 
@@ -367,7 +366,7 @@ const fetchRandomRecipes = async (
     combinedRecipes,
     Math.min(limit, combinedRecipes.length),
   ).slice(0, limit);
-  const mappedRecipes = await mapRecipes(randomSample, language, currency);
+  const mappedRecipes = await mapRecipes(randomSample, language);
 
   if (isLogged) await markFavorites(mappedRecipes, userId);
 
