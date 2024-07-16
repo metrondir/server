@@ -330,8 +330,8 @@ const getRecipesCollection = asyncHandler(async (req, res, next) => {
       size,
       recipeService.getRecipesCollection,
       userId,
-      currency,
       language,
+      currency,
     );
     return res.status(200).json(recipes);
   } catch (error) {

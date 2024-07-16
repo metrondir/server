@@ -5,19 +5,20 @@ module.exports = async function (req, res, next) {
   try {
     const refreshToken = req.cookies.refreshToken;
     const accessToken = req.cookies.accessToken;
+    console.log(accessToken, refreshToken);
     if (
       accessToken == null &&
       refreshToken == null &&
       !req.headers.authorization
     ) {
-      throw ApiError.Forbidden("User unauthenticated");
+      throw ApiError.BadRequest("User unauthenticated");
     }
 
     if (
       !accessToken ||
       (accessToken === "null" && !refreshToken && !req.headers.authorization)
     ) {
-      throw ApiError.Forbidden("User unauthenticated");
+      throw ApiError.BadRequest("User unauthenticated");
     }
     req.user = req.user || {};
     req.user.isLogged = false;
@@ -54,6 +55,7 @@ module.exports = async function (req, res, next) {
     }
     next();
   } catch (error) {
+    console.log(error);
     return next(error);
   }
 };

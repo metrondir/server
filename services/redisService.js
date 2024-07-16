@@ -21,12 +21,15 @@ const redisGetModelsWithPaginating = async (
   func,
   limit,
   language,
-  currency,
   ...args
 ) => {
   const redisData = await new Promise((resolve, reject) => {
     redis.get(redisKey, (err, redisData) => {
-      resolve(redisData);
+      if (err) {
+        reject(new ApiError(err.message, 500));
+      } else {
+        resolve(redisData);
+      }
     });
   });
 
@@ -39,7 +42,7 @@ const redisGetModelsWithPaginating = async (
   } else {
     console.log("FROM DB");
 
-    const data = await func(limit, language, currency, ...args);
+    const data = await func(limit, language, ...args);
 
     redis.setex(redisKey, 60, JSON.stringify(data));
 

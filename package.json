@@ -15,6 +15,7 @@
   "author": "Roman",
   "license": "MIT",
   "dependencies": {
+    "@faker-js/faker": "^8.4.1",
     "@google-cloud/translate": "^8.0.3",
     "async_hooks": "^1.0.0",
     "axios": "^1.6.2",
@@ -34,6 +35,7 @@
     "express-validation": "^4.1.0",
     "express-validator": "^7.0.1",
     "express-winston": "^4.2.0",
+    "faker": "^6.6.6",
     "fs": "^0.0.1-security",
     "helmet": "^7.1.0",
     "imgur": "^1.0.2",
@@ -57,6 +59,7 @@
     "stripe": "^15.2.0",
     "stripe-cli": "^0.1.0",
     "tslib": "^2.6.2",
+    "unsplash-js": "^7.0.19",
     "uuid": "^9.0.1",
     "uuidv7": "^1.0.1",
     "winston": "^3.11.0",

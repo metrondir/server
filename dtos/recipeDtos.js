@@ -55,7 +55,7 @@ class favouriteRecipeEnDto {
   isFavourite;
 
   constructor(model) {
-    this.id = model._id || model.id;
+    this.id = model.recipe;
     this.title = model.title;
     this.image = model.image;
     this.readyInMinutes = model.readyInMinutes + " min";
@@ -77,7 +77,7 @@ class favouriteRecipeDto {
   isFavourite;
 
   constructor(model) {
-    this.id = model._id || model.id;
+    this.id = model.recipe;
     this.title = model.title;
     this.image = model.image;
     this.readyInMinutes = model.readyInMinutes;

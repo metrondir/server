@@ -22,7 +22,6 @@ const {
  * @param   {string} req.query.language - Language for the recipes
  * @param   {number} req.query.page - Page number for pagination
  * @param   {number} req.query.size - Size of the page for pagination
- * @param   {string} req.query.currency - Currency for recipe pricing
  * @param   {Object} req.query.type - Type of the recipe
  * @param   {Object} req.query.diet - Diet of the recipe
  * @param   {Object} req.query.cuisine - Cuisine of the recipe
@@ -46,14 +45,13 @@ const getUnifiedRecipes = asyncHandler(async (req, res, next) => {
       language,
       page,
       size,
-      currency,
       sort,
       sortDirection,
     } = req.query;
     const ipAddress =
       req.headers["x-forwarded-for"] || req.connection.remoteAddress;
     const clientIp = ipAddress.split(",")[0];
-    const redisKey = `${clientIp}search-recipes${userId}$${isLogged}${language}${query}${currency}${limit}${type}${diet}${cuisine}${maxReadyTime}${sort}${sortDirection}`;
+    const redisKey = `${clientIp}search-recipes${userId}$${isLogged}${language}${query}${limit}${type}${diet}${cuisine}${maxReadyTime}${sort}${sortDirection}`;
     const recipes = await redisGetModelsWithPaginating(
       page,
       redisKey,
@@ -66,7 +64,6 @@ const getUnifiedRecipes = asyncHandler(async (req, res, next) => {
       cuisine,
       maxReadyTime,
       language,
-      currency,
       userId,
       isLogged,
       sort,
@@ -86,25 +83,18 @@ const getUnifiedRecipes = asyncHandler(async (req, res, next) => {
  * @param   {string} req.query.language - Language for the recipes
  * @param   {number} req.query.page - Page number for pagination
  * @param   {number} req.query.size - Size of the page for pagination
- * @param   {string} req.query.currency - Currency for recipe pricing
  * @param   {string} req.user.id - The user ID
  * @param   {boolean} req.user.isLogged - The user is logged in
  * @returns {Object} - The response object random recipes
  */
 const getRandomRecipes = asyncHandler(async (req, res, next) => {
   try {
-    const { limit, language, page, size, currency } = req.query;
+    const { limit, language, page, size } = req.query;
 
     const userId = req.user.id;
     const isLogged = req.user.isLogged;
 
-    const recipes = await fetchRandomRecipes(
-      limit,
-      language,
-      currency,
-      userId,
-      isLogged,
-    );
+    const recipes = await fetchRandomRecipes(limit, language, userId, isLogged);
     const pagineRandomRecipes = paginateArray(recipes, page, size);
     res.status(200).json(pagineRandomRecipes);
   } catch (error) {
@@ -198,6 +188,7 @@ const getRecommendedRecipes = asyncHandler(async (req, res, next) => {
  */
 const getFavouriteRecipes = asyncHandler(async (req, res, next) => {
   try {
+    console.log(req.user);
     const userId = req.user.id;
     const { language, page, size, currency } = req.query;
     const ipAddress =
@@ -230,7 +221,6 @@ const getFavouriteRecipes = asyncHandler(async (req, res, next) => {
  * @param   {string} req.query.language - Language for the recipes
  * @param   {number} req.query.page - Page number for pagination
  * @param   {number} req.query.size - Size of the page for pagination
- * @param   {string} req.query.currency - Currency for recipe pricing
  * @param   {string} req.user.id - The user ID
  * @param   {boolean} req.user.isLogged - The user is logged in
  * @returns {Object} - The response object recipes by ingredients
@@ -239,12 +229,12 @@ const getRecipesByIngridients = asyncHandler(async (req, res, next) => {
   try {
     const userId = req.user.id;
     const isLogged = req.user.isLogged;
-    const { ingredients, number, language, page, size, currency } = req.query;
+    const { ingredients, number, language, page, size } = req.query;
 
     const ipAddress =
       req.headers["x-forwarded-for"] || req.connection.remoteAddress;
     const clientIp = ipAddress.split(",")[0];
-    const redisKey = `${clientIp}searchByIngredients-recipes${userId}${isLogged}${language}${currency}${number}${ingredients}`;
+    const redisKey = `${clientIp}searchByIngredients-recipes${userId}${isLogged}${language}${number}${ingredients}`;
 
     const recipes = await redisGetModelsWithPaginating(
       page,
@@ -253,7 +243,6 @@ const getRecipesByIngridients = asyncHandler(async (req, res, next) => {
       fetchRecipesByIngredients,
       number,
       language,
-      currency,
       userId,
       isLogged,
       ingredients,

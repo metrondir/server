@@ -124,6 +124,7 @@ const createRecipe = async (req) => {
 
   let recipe = await translateRecipePost(processedBody, language);
   recipe.pricePerServing = await parsedIngredients(recipe.extendedIngredients);
+  recipe.pricePerServing *= 100;
   recipe.image = imgurLink;
   recipe.user = req.user.id;
 
