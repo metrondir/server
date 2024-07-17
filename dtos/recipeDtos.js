@@ -43,29 +43,6 @@ class recipeEnDto {
     this.isFavourite = model.isFavourite;
   }
 }
-class favouriteRecipeEnDto {
-  id;
-  title;
-  image;
-  readyInMinutes;
-  pricePerServing;
-  diets;
-  cuisines;
-  dishTypes;
-  isFavourite;
-
-  constructor(model) {
-    this.id = model.recipe;
-    this.title = model.title;
-    this.image = model.image;
-    this.readyInMinutes = model.readyInMinutes + " min";
-    this.pricePerServing = model.pricePerServing;
-    this.diets = model.diets || [];
-    this.cuisines = model.cuisines || [];
-    this.dishTypes = model.dishTypes || [];
-    this.isFavourite = true;
-  }
-}
 class favouriteRecipeDto {
   id;
   title;
@@ -91,5 +68,4 @@ module.exports = {
   recipeDto,
   recipeEnDto,
   favouriteRecipeDto,
-  favouriteRecipeEnDto,
 };

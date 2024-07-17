@@ -18,7 +18,6 @@ const {
   recipeDto,
   recipeEnDto,
   favouriteRecipeDto,
-  favouriteRecipeEnDto,
 } = require("../dtos/recipeDtos");
 const {
   recipeDetailEnDto,
@@ -107,7 +106,7 @@ const mapRecipes = async (response, language) => {
 
 const mapFavouriteRecipes = async (response, language, currency) => {
   if (language == "en" || !language) {
-    const recipes = response.map((recipe) => new favouriteRecipeEnDto(recipe));
+    const recipes = response.map((recipe) => new favouriteRecipeDto(recipe));
     if (currency) await changeCurrency(recipes, currency);
     return recipes;
   }
