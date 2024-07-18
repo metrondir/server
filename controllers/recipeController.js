@@ -7,6 +7,7 @@ const {
   redisGetModelsWithPaginating,
   onDataChanged,
 } = require("../services/redisService");
+const ApiError = require("../middleware/apiError");
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, "./uploads");
@@ -259,15 +260,21 @@ const loadIngredients = asyncHandler(async (req, res, next) => {
  * @desc  create payment intent
  * @route GET /api/recipes/load-ingredients
  * @access public
- * @param {string} req.body.id - The recipe id
+ * @param {string} req.body.recipeId - The recipe id
  * @param {string} req.query.currency - The currency of the data
+ * @param {string} req.user.id - The id of the user
  * @returns {Promise<Object>}  - Payment intent
  */
 const createPaymentIntent = asyncHandler(async (req, res, next) => {
   try {
-    const { recipeId } = req.body.id;
-    const { currency } = req.query;
-    const payment = await recipeService.createPaymentIntent(recipeId, currency);
+    const recipeId = req.body.recipeId;
+    const currency = req.query.currency;
+    const userId = req.user.id;
+    const payment = await recipeService.createPaymentIntent(
+      recipeId,
+      userId,
+      currency,
+    );
 
     return res.status(200).json(payment);
   } catch (error) {

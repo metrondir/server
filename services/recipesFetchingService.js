@@ -132,7 +132,7 @@ const mapRecipesDetail = async (response, language, currency) => {
     return recipes;
   }
   await Promise.all(
-    response.forEach((recipe) => translateRecipeInformation(recipe, language)),
+    response.map((recipe) => translateRecipeInformation(recipe, language)),
   );
   const recipes = new recipeDetailDto(response);
   if (currency) await changeCurrency(recipes, currency);
@@ -382,30 +382,17 @@ const fetchRecommendedRecipes = async (
   userId,
   isLogged,
 ) => {
-  try {
-    if (!isSpoonacularRecipe(recipeId)) {
-      const recipeByDB = await Recipe.findById(recipeId);
-      const url = `${baseUrl}/complexSearch?apiKey=${getApiKey()}&query=${recipeByDB.title}&number=1&addRecipeNutrition=true`;
-      const [response, recipesFromDb] = await Promise.all([
-        axios.get(url),
-        getRecipesFromDatabaseByTitle(recipeByDB.title, recipeId),
-      ]);
-      const allRecipes = [...response.data.results, ...recipesFromDb];
-      if (allRecipes.length === 0) return [];
-      return Promise.all(
-        allRecipes
-          .map(async (recipe) =>
-            fetchInformationByRecommended(
-              recipe.id,
-              language,
-              currency,
-              userId,
-              isLogged,
-            ),
-          )
-          .filter((recipe) => recipe !== undefined),
-      );
-    }
+  let allRecipes = [];
+
+  if (!isSpoonacularRecipe(recipeId)) {
+    const recipeByDB = await Recipe.findById(recipeId);
+    const url = `${baseUrl}/complexSearch?apiKey=${getApiKey()}&query=${recipeByDB.title}&number=1&addRecipeNutrition=true`;
+    const [response, recipesFromDb] = await Promise.all([
+      axios.get(url),
+      getRecipesFromDatabaseByTitle(recipeByDB.title, recipeId),
+    ]);
+    allRecipes = [...response.data.results, ...recipesFromDb];
+  } else {
     const url = `${baseUrl}/${recipeId}/similar?apiKey=${getApiKey()}`;
     const urlForTitle = `${baseUrl}/${recipeId}/information?includeNutrition=false&apiKey=${getApiKey()}`;
     const [responseForTitle, response] = await Promise.all([
@@ -417,24 +404,25 @@ const fetchRecommendedRecipes = async (
       responseForTitle.data.title,
       null,
     );
-    const allRecipes = [...response.data, ...recipesFromDb];
-    return Promise.all(
-      allRecipes
-        .map(async (recipe) =>
-          fetchInformationByRecommended(
-            recipe.id,
-            language,
-            currency,
-            userId,
-            isLogged,
-          ),
-        )
-        .filter((recipe) => recipe !== undefined),
-    );
-  } catch (error) {
-    console.log(error);
-    throw ApiError.BadRequest("Failed to fetch recommended recipes");
+    allRecipes = [...response.data, ...recipesFromDb];
   }
+
+  if (allRecipes.length === 0) return [];
+
+  const recipePromises = allRecipes.map(async (recipe) =>
+    fetchInformationByRecommended(
+      recipe.id,
+      language,
+      currency,
+      userId,
+      isLogged,
+    ),
+  );
+
+  const recipesWithInfo = await Promise.all(recipePromises);
+  return recipesWithInfo.filter(
+    (recipe) => recipe !== undefined && recipe !== null,
+  );
 };
 
 /**
@@ -453,24 +441,20 @@ const fetchInformationByRecommended = async (
   userId,
   isLogged,
 ) => {
-  try {
-    if (!isSpoonacularRecipe(recipeId)) {
-      const recipe = mapRecipesDetail(recipeId, language, currency);
-      if (isLogged) await markFavouriteRecipe(recipe, userId);
-      return recipe;
-    }
-    const url = `${baseUrl}/${recipeId}/information?includeNutrition=false&apiKey=${getApiKey()}`;
-
-    const response = await axios.get(url);
-    if (response.data.instructions === null) return;
-    const recipeData = response.data;
-    const recipe = await mapRecipesDetail(recipeData, language, currency);
-    if (isLogged) await markFavouriteRecipe(recipe, userId);
-    return recipe;
-  } catch (error) {
-    console.log(error);
-    throw ApiError.BadRequest("Failed to fetch recommended recipes");
+  if (!isSpoonacularRecipe(recipeId)) {
+    const recipe = await Recipe.findById(recipeId).lean();
+    const mappedRecipes = mapRecipesDetail(recipe, language, currency);
+    if (isLogged) await markFavouriteRecipe(mappedRecipes, userId);
+    return mappedRecipes;
   }
+  const url = `${baseUrl}/${recipeId}/information?includeNutrition=false&apiKey=${getApiKey()}`;
+
+  const response = await axios.get(url);
+  if (!response.data || response.data.instructions === null) return;
+  const recipeData = response.data;
+  const recipe = await mapRecipesDetail(recipeData, language, currency);
+  if (isLogged) await markFavouriteRecipe(recipe, userId);
+  return recipe;
 };
 
 /**
@@ -547,14 +531,10 @@ const fetchInformationById = async (
   userId,
   isLogged,
 ) => {
-  console.log(
-    recipeId + " " + language + " " + currency + " " + userId + " " + isLogged,
-  );
   const handlePaymentStatus = (data, user) => {
     if (
       !data.paymentInfo.paymentStatus &&
       user.boughtRecipes &&
-      Array.isArray(user.boughtRecipes) &&
       !user.boughtRecipes.includes(data._id.toString())
     ) {
       data.instructions = `<ol><li>Boil water in a large pot.</li><li>Add pasta to the boiling water.</li><li>Cook pasta according to package instructions until al dente.</li><li>Drain pasta in a colander.</li><li>Return pasta to the pot.</li><li>Add your favorite sauce and mix well.</li><li>Serve hot and enjoy!</li></ol>`;
@@ -564,9 +544,7 @@ const fetchInformationById = async (
   };
 
   const fetchRecipeFromDB = async () => {
-    console.log(recipeId);
     const data = await Recipe.findById(recipeId).lean();
-    console.log(data);
     if (!data) throw ApiError.BadRequest("Recipe not found");
 
     if (isLogged) {

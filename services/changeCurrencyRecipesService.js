@@ -84,13 +84,19 @@ const changeCurrencyForPayment = asynchHandler(async (recipeId, currency) => {
  * @returns {number} The price with the changed currency.
  */
 const changeCurrencyPrice = asynchHandler(async (price, currency) => {
-  if (currency === "us") {
+  try {
+    if (currency === "us") {
+      return parseFloat(price.toFixed(2));
+    }
+    const currencyBd = await CurencyModel.find({ lan: currency });
+    console.log(currencyBd);
+    const pricePerDollar = currencyBd[0].pricePerDollar;
+    price *= pricePerDollar;
     return parseFloat(price.toFixed(2));
+  } catch (error) {
+    console.log(error);
+    throw new Error("Error changing currency", error);
   }
-  const currencyBd = await CurencyModel.find({ name: currency });
-  const pricePerDollar = currencyBd[0].pricePerDollar;
-  price *= pricePerDollar;
-  return parseFloat(price.toFixed(2));
 });
 
 module.exports = {

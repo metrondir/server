@@ -5,7 +5,6 @@ module.exports = async function (req, res, next) {
   try {
     const refreshToken = req.cookies.refreshToken;
     const accessToken = req.cookies.accessToken;
-    console.log(accessToken, refreshToken);
     if (
       accessToken == null &&
       refreshToken == null &&

@@ -150,8 +150,8 @@ const getRecipesFromDatabaseComplex = async (
  */
 const getRecipesFromDatabaseByTitle = async (title, recipeId) => {
   return await Recipe.find({
+    _id: { $ne: new mongoose.Types.ObjectId(recipeId) },
     title: { $regex: new RegExp(title, "i") },
-    _id: { $ne: recipeId },
   });
 };
 

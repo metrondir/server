@@ -589,50 +589,54 @@ const getIngredients = async () => {
  * @returns {Promise<Object>} The created payment intent.
  */
 const createPaymentIntent = async (recipeId, userId, currency) => {
-  const currencyMap = {
-    ua: "uah",
-    cz: "czk",
-    europeanunion: "eur",
-    gb: "gbp",
-    nz: "nzd",
-    pl: "pln",
-    jp: "jpy",
-    ec: "usd",
-  };
-  const recipe = await Recipe.findById(recipeId.toString());
-  const price = changeCurrencyPrice(recipe.paymentInfo.price, currency);
-  currency = currencyMap[currency] || currency;
+  try {
+    const currencyMap = {
+      ua: "uah",
+      cz: "czk",
+      europeanunion: "eur",
+      gb: "gbp",
+      nz: "nzd",
+      pl: "pln",
+      jp: "jpy",
+      ec: "usd",
+    };
+    const recipe = await Recipe.findById(recipeId);
+    const price = await changeCurrencyPrice(recipe.paymentInfo.price, currency);
+    currency = currencyMap[currency] || currency;
 
-  const validCurrencies = [
-    "uah",
-    "czk",
-    "eur",
-    "gbp",
-    "nzd",
-    "pln",
-    "jpy",
-    "usd",
-  ];
+    const validCurrencies = [
+      "uah",
+      "czk",
+      "eur",
+      "gbp",
+      "nzd",
+      "pln",
+      "jpy",
+      "usd",
+    ];
 
-  if (currency && !validCurrencies.includes(currency))
-    throw ApiError.BadRequest("Invalid currency code");
+    if (currency && !validCurrencies.includes(currency))
+      throw ApiError.BadRequest("Invalid currency code");
 
-  const user = await User.findById(recipe.user);
-  if (!user) throw ApiError.BadRequest("User not found");
+    const user = await User.findById(recipe.user);
+    if (!user) throw ApiError.BadRequest("User not found");
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: price * 100,
+      currency: currency || "usd",
+      transfer_data: {
+        destination: user.stripeAccountId,
+      },
+      metadata: {
+        userId: userId,
+        recipeId: recipeId,
+      },
+    });
 
-  const paymentIntent = await stripe.paymentIntents.create({
-    amount: price * 100,
-    currency: currency || "usd",
-    transfer_data: {
-      destination: user.stripeAccountId,
-    },
-    metadata: {
-      userId: userId,
-      recipeId: recipeId,
-    },
-  });
-
-  return paymentIntent.client_secret;
+    return paymentIntent.client_secret;
+  } catch (error) {
+    console.log(error);
+    throw ApiError.BadRequest("Error creating payment intent");
+  }
 };
 
 /**

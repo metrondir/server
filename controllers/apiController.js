@@ -188,7 +188,6 @@ const getRecommendedRecipes = asyncHandler(async (req, res, next) => {
  */
 const getFavouriteRecipes = asyncHandler(async (req, res, next) => {
   try {
-    console.log(req.user);
     const userId = req.user.id;
     const { language, page, size, currency } = req.query;
     const ipAddress =
