@@ -261,14 +261,11 @@ const deleteUserById = asyncHandler(async (req, res, next) => {
  * @route GET /api/users/is-logged-in
  * @access private
  * @param {string} req.user.id - The id of the user
- * @returns {boolean}
+ * @returns {boolean} true
  */
 const isLoggedUser = asyncHandler(async (req, res, next) => {
   try {
-    if (req.user.id) {
-      return res.status(200).json(true);
-    }
-    return res.status(200).json(false);
+    return res.status(200).json(true);
   } catch (error) {
     next(error);
   }

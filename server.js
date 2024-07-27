@@ -12,12 +12,12 @@ require("winston-mongodb");
 const logger = require("./utils/logger");
 const http = require("http");
 const socketIo = require("socket.io");
-
+//const { parseCurrencyExchange } = require("./services/fetchParseCurrency");
 //const seedRecipes = require("./utils/seedRecipes");
 const port = process.env.PORT || 5000;
 const app = express();
-
 connectDb();
+//parseCurrencyExchange();
 
 //seedRecipes();
 app.disable("x-powered-by");
