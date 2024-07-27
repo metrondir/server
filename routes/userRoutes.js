@@ -9,6 +9,7 @@ const {
   changePasswordUserLink,
   changePasswordUser,
   deleteUserById,
+  isLoggedUser,
 } = require("../controllers/userController");
 const { googleOauthHandler } = require("../services/googleOauthService");
 const authMiddleware = require("../middleware/authMiddleware");
@@ -45,6 +46,8 @@ router.post(
 );
 
 router.get("/refresh", refreshTokenUser);
+
+router.get("/is-logged", authMiddleware, isLoggedUser);
 
 router.get("/sessions/oauth/google", googleOauthHandler);
 

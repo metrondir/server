@@ -256,6 +256,24 @@ const deleteUserById = asyncHandler(async (req, res, next) => {
   }
 });
 
+/**
+ * @desc Check if user is logged in
+ * @route GET /api/users/is-logged-in
+ * @access private
+ * @param {string} req.user.id - The id of the user
+ * @returns {boolean}
+ */
+const isLoggedUser = asyncHandler(async (req, res, next) => {
+  try {
+    if (req.user.id) {
+      return res.status(200).json(true);
+    }
+    return res.status(200).json(false);
+  } catch (error) {
+    next(error);
+  }
+});
+
 module.exports = {
   registerUser,
   loginUser,
@@ -266,4 +284,5 @@ module.exports = {
   changePasswordUserLink,
   forgetPasswordUser,
   deleteUserById,
+  isLoggedUser,
 };
