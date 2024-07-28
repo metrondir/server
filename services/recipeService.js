@@ -645,24 +645,12 @@ const createPaymentIntent = async (recipeId, userId, currency) => {
  * @param {Object} event - The event object.
  * @returns {Promise<Object>} - The status of the session.
  */
-const getSesionsStatus = async (event) => {
+const getSesionsStatus = async (type, metadata) => {
   let received = false;
-  console.log(event, "event");
-  console.log(event?.type, "event");
-  switch (event?.type) {
+  switch (type) {
     case "payment_intent.succeeded": {
-      const paymentIntent = event?.data?.object;
-      console.log(event?.data?.object?.metadata?.userId);
-      const user = await User.findById(event?.data?.object?.metadata?.userId);
-      console.log(user, "user");
-      console.log(event?.data?.object?.metadata?.recipeId, "recipeId");
-      console.log(user?.boughtRecipes, "boughtRecipes");
-      console.log(
-        user?.boughtRecipes?.includes(event?.data?.object?.metadata?.recipeId),
-        "includes",
-      );
-
-      user?.boughtRecipes?.push(paymentIntent?.metadata?.recipeId);
+      const user = await User.findById(metadata.userId);
+      user?.boughtRecipes?.push(metadata.recipeId);
       await user?.save();
       received = true;
       break;
