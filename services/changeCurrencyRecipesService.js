@@ -89,7 +89,6 @@ const changeCurrencyPrice = asynchHandler(async (price, currency) => {
       return parseFloat(price.toFixed(2));
     }
     const currencyBd = await CurencyModel.find({ lan: currency });
-    console.log(currencyBd);
     const pricePerDollar = currencyBd[0].pricePerDollar;
     price *= pricePerDollar;
     return parseFloat(price.toFixed(2));
