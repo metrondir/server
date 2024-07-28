@@ -356,8 +356,8 @@ const getRecipesCollection = asyncHandler(async (req, res, next) => {
  */
 const getSesionsStatus = asyncHandler(async (req, res, next) => {
   try {
-    console.log(req.data.metadata);
-    const { metadata } = req.data.metadata;
+    console.log(req.body.data.object.metadata);
+    const { metadata } = req.body.data.object.metadata;
     const { type } = req.body;
     console.log(type);
     const session = await recipeService.getSesionsStatus(type, metadata);
