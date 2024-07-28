@@ -602,6 +602,7 @@ const createPaymentIntent = async (recipeId, userId, currency) => {
     };
     const recipe = await Recipe.findById(recipeId);
     const price = await changeCurrencyPrice(recipe.paymentInfo.price, currency);
+    const priceInt = parseInt(price);
     currency = currencyMap[currency] || currency;
 
     const validCurrencies = [
@@ -621,7 +622,7 @@ const createPaymentIntent = async (recipeId, userId, currency) => {
     const user = await User.findById(recipe.user);
     if (!user) throw ApiError.BadRequest("User not found");
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: price * 100,
+      amount: priceInt * 100,
       currency: currency || "usd",
       transfer_data: {
         destination: user.stripeAccountId,
