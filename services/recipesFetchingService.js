@@ -532,6 +532,8 @@ const fetchInformationById = async (
   isLogged,
 ) => {
   const handlePaymentStatus = (data, user) => {
+    console.log(data);
+    console.log(user);
     if (
       !data.paymentInfo.paymentStatus &&
       user.boughtRecipes &&

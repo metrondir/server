@@ -650,7 +650,16 @@ const getSesionsStatus = async (event) => {
   switch (event?.type) {
     case "payment_intent.succeeded": {
       const paymentIntent = event?.data?.object;
+      console.log(event?.data?.object?.metadata?.userId);
       const user = await User.findById(event?.data?.object?.metadata?.userId);
+      console.log(user, "user");
+      console.log(event?.data?.object?.metadata?.recipeId, "recipeId");
+      console.log(user?.boughtRecipes, "boughtRecipes");
+      console.log(
+        user?.boughtRecipes?.includes(event?.data?.object?.metadata?.recipeId),
+        "includes",
+      );
+
       user?.boughtRecipes?.push(paymentIntent?.metadata?.recipeId);
       await user?.save();
       received = true;
