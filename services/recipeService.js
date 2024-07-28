@@ -647,6 +647,7 @@ const createPaymentIntent = async (recipeId, userId, currency) => {
  */
 const getSesionsStatus = async (type, metadata) => {
   let received = false;
+  console.log(metadata);
   switch (type) {
     case "payment_intent.succeeded": {
       const user = await User.findById(metadata.userId);
