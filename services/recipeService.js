@@ -647,6 +647,7 @@ const createPaymentIntent = async (recipeId, userId, currency) => {
  */
 const getSesionsStatus = async (event) => {
   let received = false;
+  console.log(event, "event");
   console.log(event?.type, "event");
   switch (event?.type) {
     case "payment_intent.succeeded": {
