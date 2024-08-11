@@ -545,6 +545,7 @@ const fetchInformationById = async (
 
   const fetchRecipeFromDB = async () => {
     const data = await Recipe.findById(recipeId).lean();
+    console.log(data);
     if (!data) throw ApiError.BadRequest("Recipe not found");
 
     if (isLogged) {

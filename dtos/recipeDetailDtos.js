@@ -10,7 +10,7 @@ class recipeDetailDto {
   isFavourite;
   aggregateLikes;
   paymentStatus;
-
+  price;
   constructor(model) {
     this.id = model._id || model.id;
     this.title = model.title;
@@ -24,6 +24,7 @@ class recipeDetailDto {
     this.isFavourite = model.isFavourite;
     this.aggregateLikes = model.aggregateLikes;
     this.paymentStatus = model.paymentStatus;
+    this.price = model.paymentInfo?.price;
   }
 }
 class recipeDetailEnDto {
@@ -38,7 +39,7 @@ class recipeDetailEnDto {
   isFavourite;
   aggregateLikes;
   paymentStatus;
-
+  price;
   constructor(model) {
     this.id = model._id || model.id;
     this.title = model.title;
@@ -52,6 +53,7 @@ class recipeDetailEnDto {
     this.isFavourite = model.isFavourite;
     this.aggregateLikes = model.aggregateLikes;
     this.paymentStatus = model.paymentStatus;
+    this.price = model.paymentInfo?.price;
   }
 }
 
