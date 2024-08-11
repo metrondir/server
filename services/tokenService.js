@@ -14,7 +14,7 @@ const { uuidv7 } = require("uuidv7");
  */
 function generateTokens(payload) {
   const accessToken = jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, {
-    expiresIn: "3s",
+    expiresIn: process.env.ACCESS_TOKEN_EXPIRATION_TIME,
   });
   const refreshToken = jwt.sign(
     { id: uuidv7() },
